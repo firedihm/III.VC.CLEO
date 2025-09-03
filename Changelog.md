@@ -1,3 +1,11 @@
+## 2.2.0
+
+- Codebase overhaul: rewritten in C++.
+- Fixed compound bitwise operators. ([#34](https://github.com/cleolibrary/III.VC.CLEO/issues/34))
+- CLEO function calls can now be properly evaluated in conditional statements.
+- Scripts now keep track of dynamically allocated objects
+- Support for persistent scripts (.csp): loaded once on CLEO start, unloaded on CLEO termination
+
 ## 2.1.1
 
 - Added support for chinese text in fxt files. ([#16](https://github.com/cleolibrary/III.VC.CLEO/issues/16)) ([#18](https://github.com/cleolibrary/III.VC.CLEO/issues/18))

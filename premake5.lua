@@ -1,160 +1,138 @@
-workspace "III.VC.CLEO"
-   configurations { "Release", "Debug", "Release_xp" }
-   platforms { "Win32" }
-   architecture "x32"
-   location "build"
-   objdir ("build/obj")
-   buildlog ("build/log/%{prj.name}.log")
-   
-   kind "SharedLib"
-   language "C++"
-   cdialect "C17"
-   cppdialect "C++latest"
-   targetdir "bin"
-   targetextension ".asi"
-   characterset ("MBCS")
-   staticruntime "On"		
+workspace "CLEO"
+	configurations { "Release", "Debug" }
+	platforms "Win32"
+	architecture "x32"
+	location "build"
+	objdir "build/obj"
+	libdirs "bin"
+	buildlog "build/log/%{prj.name}.log"
 
-   defines { "_CRT_SECURE_NO_WARNINGS",  "_CRT_NON_CONFORMING_SWPRINTFS" }
-   defines { "rsc_CompanyName=\"CLEO\"" }
-   defines { "rsc_LegalCopyright=\"MIT License\""} 
-   defines { "rsc_InternalName=\"%{prj.name}\"", "rsc_ProductName=\"%{prj.name}\"", "rsc_OriginalFilename=\"%{prj.name}.asi\"" }
-   defines { "rsc_FileDescription=\"https://cleo.li\"" }
-   defines { "rsc_UpdateUrl=\"https://github.com/cleolibrary/III.VC.CLEO\"" }
-   
-   files { "source/III.VC.CLEO/*.h", "source/III.VC.CLEO/*.cpp" }
-   files { "source/III.VC.CLEO/*.def" }
-   files { "Resources/*.rc" }
-   includedirs { "external/injector/include" }
-   
-   pbcommands = { 
-      "setlocal EnableDelayedExpansion",
-      --"set \"path=" .. (gamepath) .. "\"",
-      "set file=$(TargetPath)",
-      "FOR %%i IN (\"%file%\") DO (",
-      "set filename=%%~ni",
-      "set fileextension=%%~xi",
-      "set target=!path!!filename!!fileextension!",
-      "if exist \"!target!\" copy /y \"!file!\" \"!target!\"",
-      ")" }
+	kind "SharedLib"
+	language "C++"
+	cdialect "C17"
+	cppdialect "C++latest"
+	characterset "MBCS"
+	staticruntime "On"
 
-   function setpaths (gamepath, exepath, scriptspath)
-      scriptspath = scriptspath or "scripts/"
-      if (gamepath) then
-         cmdcopy = { "set \"path=" .. gamepath .. scriptspath .. "\"" }
-         table.insert(cmdcopy, pbcommands)
-         postbuildcommands (cmdcopy)
-         debugdir (gamepath)
-         if (exepath) then
-            debugcommand (gamepath .. exepath)
-            dir, file = exepath:match'(.*/)(.*)'
-            debugdir (gamepath .. (dir or ""))
-         end
-      end
-      targetdir ("bin" .. scriptspath)
-   end
-   
-   filter "configurations:Release_xp"
-      toolset "v141_xp"
-      buildoptions { "/Zc:threadSafeInit-" }
-   
-   filter "configurations:Debug*"
-      defines "DEBUG"
-      symbols "On"
+	defines {
+		"uchar=unsigned char",
+		"ushort=unsigned short",
+		"uint=unsigned int",
+		"ulong=unsigned long",
 
-   filter "configurations:Release*"
-      defines "NDEBUG"
-      optimize "On"
+		"RC_COMPANY_NAME=\"CLEO\"",
+		"RC_FILE_DESCRIPTION=\"https://cleo.li\"",
+		"RC_INTERNAL_NAME=\"%{prj.name}\"",
+		"RC_LEGAL_COPYRIGHT=\"MIT License\"",
+		"RC_ORIGINAL_FILENAME=\"%{prj.name}.asi\"",
+		"RC_PRODUCT_NAME=\"%{prj.name}\"",
+		"RC_UPDATE_URL=\"https://github.com/cleolibrary/III.VC.CLEO\"",
+	}
 
-project "III.CLEO"
-   defines { "CLEO_III" }
-   setpaths("Z:/WGTA/gta3sc_test/Grand Theft Auto III/", "gta3.exe", "")
-project "VC.CLEO"
-   defines { "CLEO_VC" }
-   setpaths("Z:/WGTA/gta3sc_test/Grand Theft Auto Vice City/", "gta-vc.exe", "")
+	pbcommands = { 
+		"setlocal EnableDelayedExpansion",
+		-- "set \"path=" .. (gamepath) .. "\"",
+		"set file=$(TargetPath)",
+		"FOR %%i IN (\"%file%\") DO (",
+		"set filename=%%~ni",
+		"set fileextension=%%~xi",
+		"set target=!path!!filename!!fileextension!",
+		"if exist \"!target!\" copy /y \"!file!\" \"!target!\"",
+		")"
+	}
 
-   
-   
-   
-   
-   
-workspace "CLEO_SDK"
-   configurations { "Release", "Debug", "Release_xp" }
-   platforms { "Win32" }
-   architecture "x32"
-   location "build"
-   objdir ("build/obj")
-   buildlog ("build/log/%{prj.name}.log")
-   
-   kind "SharedLib"
-   language "C++"
-   cdialect "C17"
-   cppdialect "C++latest"
-   targetdir "bin/CLEO/CLEO_PLUGINS"
-   targetextension ".cleo"
-   characterset ("MBCS")
-   staticruntime "On"
-   
-   defines { "_CRT_SECURE_NO_WARNINGS",  "_CRT_NON_CONFORMING_SWPRINTFS" }
-   defines { "rsc_CompanyName=\"CLEO\"" }
-   defines { "rsc_LegalCopyright=\"MIT License\""} 
-   defines { "rsc_InternalName=\"%{prj.name}\"", "rsc_ProductName=\"%{prj.name}\"", "rsc_OriginalFilename=\"%{prj.name}.asi\"" }
-   defines { "rsc_FileDescription=\"https://cleo.li\"" }
-   defines { "rsc_UpdateUrl=\"https://github.com/cleolibrary/III.VC.CLEO\"" }
-   
-   includedirs { "source/CLEO_SDK" }
-   libdirs { "bin" }
-   
-   filter "configurations:Release_xp"
-      toolset "v141_xp"
-      buildoptions { "/Zc:threadSafeInit-" }
-   
-   filter "configurations:Debug*"
-      defines "DEBUG"
-      symbols "On"
+	function setpaths (gamepath, exepath, scriptspath)
+		scriptspath = scriptspath or "scripts/"
+		if (gamepath) then
+			cmdcopy = { "set \"path=" .. gamepath .. scriptspath .. "\"" }
+			table.insert(cmdcopy, pbcommands)
+			postbuildcommands (cmdcopy)
+			debugdir (gamepath)
+			if (exepath) then
+				debugcommand (gamepath .. exepath)
+				dir, file = exepath:match'(.*/)(.*)'
+				debugdir (gamepath .. (dir or ""))
+			end
+		end
+		targetdir ("bin" .. scriptspath)
+	end
 
-   filter "configurations:Release*"
-      defines "NDEBUG"
-      optimize "On"
+	--[[ filter "configurations:Release_xp"
+		toolset "v141_xp"
+		buildoptions { "/Zc:threadSafeInit-" }
+	]]
 
+	filter "configurations:Debug"
+		defines "DEBUG"
+		symbols "On"
+		optimize "On"
 
-project "III.ClipboardControl"
-   defines { "CLEO_III" }
-   files { "source/CLEO_SDK/demo_plugins/ClipboardControl/*.h", "source/CLEO_SDK/demo_plugins/ClipboardControl/*.cpp" }
-   files { "Resources/*.rc" }
-project "III.FileSystemOperations"
-   defines { "CLEO_III" }
-   files { "source/CLEO_SDK/demo_plugins/FileSystemOperations/*.h", "source/CLEO_SDK/demo_plugins/FileSystemOperations/*.cpp" }
-   files { "Resources/*.rc" }
-project "III.IniFiles"
-   defines { "CLEO_III" }
-   files { "source/CLEO_SDK/demo_plugins/IniFiles/*.h", "source/CLEO_SDK/demo_plugins/IniFiles/*.cpp" }
-   files { "Resources/*.rc" }
-project "III.IntOperations"
-   defines { "CLEO_III" }
-   files { "source/CLEO_SDK/demo_plugins/IntOperations/*.h", "source/CLEO_SDK/demo_plugins/IntOperations/*.cpp" }
-   files { "Resources/*.rc" }
-project "III.MemoryModule"
-   defines { "CLEO_III" }
-   files { "source/CLEO_SDK/demo_plugins/MemoryModule/*.h", "source/CLEO_SDK/demo_plugins/MemoryModule/*.cpp", "source/CLEO_SDK/demo_plugins/MemoryModule/*.c" }
-   files { "Resources/*.rc" }
-project "VC.ClipboardControl"
-   defines { "CLEO_VC" }
-   files { "source/CLEO_SDK/demo_plugins/ClipboardControl/*.h", "source/CLEO_SDK/demo_plugins/ClipboardControl/*.cpp" }
-   files { "Resources/*.rc" }
-project "VC.FileSystemOperations"
-   defines { "CLEO_VC" }
-   files { "source/CLEO_SDK/demo_plugins/FileSystemOperations/*.h", "source/CLEO_SDK/demo_plugins/FileSystemOperations/*.cpp" }
-   files { "Resources/*.rc" }
-project "VC.IniFiles"
-   defines { "CLEO_VC" }
-   files { "source/CLEO_SDK/demo_plugins/IniFiles/*.h", "source/CLEO_SDK/demo_plugins/IniFiles/*.cpp" }
-   files { "Resources/*.rc" }
-project "VC.IntOperations"
-   defines { "CLEO_VC" }
-   files { "source/CLEO_SDK/demo_plugins/IntOperations/*.h", "source/CLEO_SDK/demo_plugins/IntOperations/*.cpp" }
-   files { "Resources/*.rc" }
-project "VC.MemoryModule"
-   defines { "CLEO_VC" }
-   files { "source/CLEO_SDK/demo_plugins/MemoryModule/*.h", "source/CLEO_SDK/demo_plugins/MemoryModule/*.cpp", "source/CLEO_SDK/demo_plugins/MemoryModule/*.c" }
-   files { "Resources/*.rc" }
+	filter "configurations:Release"
+		defines "NDEBUG"
+		symbols "Off"
+		optimize "Full"
+
+	project "CLEO"
+		targetdir "bin"
+		targetextension ".asi"
+
+		files {
+			"source/*.h",
+			"source/*.cpp",
+			"resources/*.rc"
+		}
+
+		-- includedirs { "external/injector/include" }
+
+		setpaths("Z:/WGTA/gta3sc_test/Grand Theft Auto III/", "gta3.exe", "")
+
+	project "ClipboardControl"
+		targetdir "bin/CLEO_PLUGINS"
+		targetextension ".cleo"
+
+		files {
+			"source/CLEO_SDK/ClipboardControl/*.h",
+			"source/CLEO_SDK/ClipboardControl/*.cpp",
+			"resources/*.rc"
+		}
+
+	project "FileSystemOperations"
+		targetdir "bin/CLEO_PLUGINS"
+		targetextension ".cleo"
+
+		files {
+			"source/CLEO_SDK/FileSystemOperations/*.h",
+			"source/CLEO_SDK/FileSystemOperations/*.cpp",
+			"resources/*.rc"
+		}
+
+	project "IniFiles"
+		targetdir "bin/CLEO_PLUGINS"
+		targetextension ".cleo"
+
+		files {
+			"source/CLEO_SDK/IniFiles/*.h",
+			"source/CLEO_SDK/IniFiles/*.cpp",
+			"resources/*.rc"
+		}
+
+	project "IntOperations"
+		targetdir "bin/CLEO_PLUGINS"
+		targetextension ".cleo"
+
+		files {
+			"source/CLEO_SDK/IntOperations/*.h",
+			"source/CLEO_SDK/IntOperations/*.cpp",
+			"resources/*.rc"
+		}
+
+	project "MemoryModule"
+		targetdir "bin/CLEO_PLUGINS"
+		targetextension ".cleo"
+
+		files {
+			"source/CLEO_SDK/MemoryModule/*.h",
+			"source/CLEO_SDK/MemoryModule/*.cpp",
+			"source/CLEO_SDK/MemoryModule/*.c",
+			"resources/*.rc"
+		}
