@@ -1,25 +1,39 @@
+#include <ifstream>
+#include <stdio.h>
+#include <Windows.h>
+
 #include "CustomScript.h"
 #include "Game.h"
-#include "OpcodesSystem.h"
-#include <Windows.h>
-#include <stdio.h>
-#include "ScriptManager.h"
 #include "Log.h"
+#include "OpcodesSystem.h"
+#include "ScriptManager.h"
 
-void CScript::Init()
+CScript::CScript(char* filepath)
 {
-	memset(this, 0, sizeof(CScript));
-	strcpy(this->m_acName, "noname");
-	this->m_bDeathArrestCheckEnabled = true;
-	this->m_pLocalArray = new tScriptVar[0xFF];
-}
+		memset(this, 0, sizeof(CScript));
 
-bool CScript::Loaded()
-{
-	if(this->m_Errors.m_bAllocationFailed || this->m_Errors.m_bEmptyFile || this->m_Errors.m_bEofReached
-		|| this->m_Errors.m_bFileNotFound || this->m_Errors.m_bFileSeekError || this->m_Errors.m_bInternalError)
-		return false;
-	return true;
+		std::ifstream file(filepath, std::ios_base::in || std::ios_base::binary)
+		if (!file)
+				throw std::invalid_argument("File not found.");
+
+		size_t filesize = file.seekg(0, std::ios::end).tellg();
+		if (!file || !filesize)
+				throw std::length_error("File is empty or corrupt.");
+
+		m_pCodeData = new char[filesize];
+		m_dwIp = m_dwBaseIp = (unsigned int)m_pCodeData - (unsigned int)game.Scripts.Space;
+
+		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
+		if (!file) {
+				delete[] m_pCodeData;
+				throw std::runtime_error("File is corrupt.");
+		}
+
+		strncpy(m_acName, &strrchr(filepath, '\\')[1], 7);
+		m_nScriptType = SCRIPT_TYPE_CUSTOM;
+		m_bDeathArrestCheckEnabled = true;
+		m_bMissionFlag = false;
+		m_pLocalArray = new tScriptVar[0xFF];
 }
 
 CScript::~CScript()
@@ -34,91 +48,6 @@ CScript::~CScript()
 	this->m_pScmFunction = nullptr;
 	delete[] this->m_pLocalArray;
 	this->m_pLocalArray = nullptr;
-}
-
-CScript::CScript(char *filepath)
-{
-	this->Init();
-	this->m_nScriptType = SCRIPT_TYPE_CUSTOM;
-	FILE *file = fopen(filepath, "rb");
-	if(!file)
-	{
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"File Not Found\"", filepath);
-		this->m_Errors.m_bFileNotFound = true;
-		return;
-	}
-	if(fseek(file, 0, SEEK_END))
-	{
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"File Seek Error\"", filepath);
-		fclose(file);
-		this->m_Errors.m_bFileSeekError = true;
-		return;
-	}
-	unsigned int filesize = ftell(file);
-	if(!filesize)
-	{
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"Empty File\"", filepath);
-		fclose(file);
-		this->m_Errors.m_bEmptyFile = true;
-		return;
-	}
-	if(fseek(file, 0, SEEK_SET))
-	{
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"File Seek Error\"", filepath);
-		fclose(file);
-		this->m_Errors.m_bFileSeekError = true;
-		return;
-	}
-	this->m_pCodeData = scriptMgr.AllocateMemoryForScript(filepath, filesize);
-	if(!this->m_pCodeData)
-	{
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"Allocation Failed\"", filepath);
-		fclose(file);
-		this->m_Errors.m_bAllocationFailed = true;
-		return;
-	}
-	this->m_dwBaseIp = (unsigned int)this->m_pCodeData - (unsigned int)game.Scripts.Space;
-	this->m_bMissionFlag = 0;
-	this->m_dwIp = this->m_dwBaseIp;
-	if(!fread(this->m_pCodeData, 1, filesize, file))
-	{
-		if(ferror(file))
-		{
-			LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"Internal Error\"", filepath);
-			scriptMgr.DeleteScriptMemory(filepath, this->m_pCodeData);
-			this->m_pCodeData = 0;
-			this->m_dwBaseIp = this->m_dwIp = 0;
-			this->m_Errors.m_bInternalError = true;
-			fclose(file);
-			return;
-		}
-		else if(feof(file))
-		{
-			LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"EOF Reached\"", filepath);
-			scriptMgr.DeleteScriptMemory(filepath, this->m_pCodeData);
-			this->m_pCodeData = 0;
-			this->m_dwBaseIp = this->m_dwIp = 0;
-			this->m_Errors.m_bEofReached = true;
-			fclose(file);
-			return;
-		}
-	}
-	if(fclose(file) == -1)
-	{
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Error(script loading): %s, \"Internal Error\"", filepath);
-		scriptMgr.DeleteScriptMemory(filepath, this->m_pCodeData);
-		this->m_pCodeData = 0;
-		this->m_dwBaseIp = this->m_dwIp = 0;
-		this->m_Errors.m_bInternalError = true;
-		fclose(file);
-		return;
-	}
-	strncpy(this->m_acName, &strrchr(filepath, '\\')[1], 8);
-	this->m_pPrevCustom = NULL;
-	this->m_pNextCustom = NULL;
-	memset(&this->m_Errors, 0, 4);
-	this->m_acName[7] = 0;
-	LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loaded script \"%s\" from \"%s\"", this->m_acName, filepath);
 }
 
 void CScript::ReadShortString(char *out)
