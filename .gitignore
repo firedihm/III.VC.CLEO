@@ -14,8 +14,8 @@
 [Rr]eleases/
 x64/
 x86/
-build/
-bld/
+[Bb]uild/
+[Bb]ld/
 [Bb]in/
 [Oo]bj/
 III/
@@ -66,6 +66,7 @@ dlldata.c
 _Chutzpah*
 
 # Visual C++ cache files
+.vs/
 ipch/
 *.aps
 *.ncb

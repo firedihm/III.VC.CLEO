@@ -1,3 +1,17 @@
+## 2.2.0
+
+- Codebase overhaul.
+- Fixed CRunningScript's definition.
+- Fixed compound bitwise operators. ([#34](https://github.com/cleolibrary/III.VC.CLEO/issues/34))
+- SPAWN_VEHICLE_BY_CHEATING can now spawn any vehicle id.
+- Added some CLEO5 opcodes.
+- CLEO function calls can now be properly evaluated in conditional statements.
+- Scripts now keep track of dynamically allocated objects.
+- Support for persistent scripts (.csp): loaded once on CLEO start, unloaded only on CLEO termination.
+- CLEO now also manages generic .scm scripts...
+- ...so script start/terminate opcodes have been unified (e.g. START_NEW_SCRIPT and START_CUSTOM_SCRIPT are now interchangeable).
+- Removed C-style exports for now...
+
 ## 2.1.1
 
 - Added support for chinese text in fxt files. ([#16](https://github.com/cleolibrary/III.VC.CLEO/issues/16)) ([#18](https://github.com/cleolibrary/III.VC.CLEO/issues/18))
