@@ -8,10 +8,12 @@
 #include "OpcodesSystem.h"
 #include "ScriptManager.h"
 
-CScript::CScript(char* filepath)
+CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(0), m_dwIp(0), m_aGosubAddr(0), m_nCurrentGosub(0), m_bIsCustom(true), m_bIsPersistent(false),
+								   m_aLVars(0), m_bIsActive(false), m_bCondResult(false), m_bIsMission(false), m_bAwake(false), m_dwWakeTime(0), m_wIfOp(0),
+								   m_bNotFlag(false), m_bDeathArrestCheckEnabled(true), m_bWastedOrBusted(false), m_bMissionFlag(false), _pad(0),
+								   m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), _padd(0),
+								   m_pCodeData(nullptr), m_dwBaseIp(0), m_pScmFunction(nullptr), m_pNextCustom(nullptr), m_pPrevCustom(nullptr), m_pLocalArray(nullptr)
 {
-		memset(this, 0, sizeof(CScript));
-
 		std::ifstream file(filepath, std::ios_base::in || std::ios_base::binary)
 		if (!file)
 				throw std::invalid_argument("File not found.");
@@ -21,7 +23,7 @@ CScript::CScript(char* filepath)
 				throw std::length_error("File is empty or corrupt.");
 
 		m_pCodeData = new char[filesize];
-		m_dwIp = m_dwBaseIp = (unsigned int)m_pCodeData - (unsigned int)game.Scripts.Space;
+		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.Space;
 
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 		if (!file) {
@@ -29,85 +31,76 @@ CScript::CScript(char* filepath)
 				throw std::runtime_error("File is corrupt.");
 		}
 
-		strncpy(m_acName, &strrchr(filepath, '\\')[1], 7);
-		m_nScriptType = SCRIPT_TYPE_CUSTOM;
-		m_bDeathArrestCheckEnabled = true;
-		m_bMissionFlag = false;
+		strncpy(m_acName, &strrchr(filepath, '\\')[1], KEY_LENGTH_IN_SCRIPT - 1); // keep '\0' from initializer
 		m_pLocalArray = new tScriptVar[0xFF];
 }
 
 CScript::~CScript()
 {
-	ScmFunction *scmf = this->m_pScmFunction;
-	while(scmf)
-	{
-		ScmFunction *prev = scmf->prev;
-		delete scmf;
-		scmf = prev;
-	}
-	this->m_pScmFunction = nullptr;
-	delete[] this->m_pLocalArray;
-	this->m_pLocalArray = nullptr;
+		ScmFunction* scmf = m_pScmFunction;
+		while(scmf) {
+				ScmFunction* prev = scmf->prev;
+				delete scmf;
+				scmf = prev;
+		}
+
+		delete[] m_pLocalArray;
 }
 
-void CScript::ReadShortString(char *out)
+void CScript::ReadShortString(char* out)
 {
-	strncpy(out, &game.Scripts.Space[this->m_dwIp], 7);
-	out[7] = '\0';
-	this->m_dwIp += 8;
+		strncpy(out, &game.Scripts.Space[m_dwIp], KEY_LENGTH_IN_SCRIPT);
+		m_dwIp += KEY_LENGTH_IN_SCRIPT;
 }
 
-void CScript::AddToCustomList(CScript **list)
+void CScript::AddToCustomList(CScript** list)
 {
-	this->m_pNextCustom = *list;
-	this->m_pPrevCustom = 0;
-	if(*list)
-		(*list)->m_pPrevCustom = this;
-	*list = this;
+		//push_front()
+		CScript* list_head = *list;
+		m_pNextCustom = list_head;
+		m_pPrevCustom = nullptr;
+
+		if (list_head)
+				list_head->m_pPrevCustom = this;
+		list_head = this;
 }
 
-void CScript::RemoveFromCustomList(CScript **list)
+void CScript::RemoveFromCustomList(CScript** list)
 {
-	if(this->m_pPrevCustom)
-		this->m_pPrevCustom->m_pNextCustom = this->m_pNextCustom;
-	else
-		*list = this->m_pNextCustom;
-	if(this->m_pNextCustom)
-		this->m_pNextCustom->m_pPrevCustom = this->m_pPrevCustom;
+		if (m_pPrevCustom)
+				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
+		else
+				*list = m_pNextCustom;
+		if (m_pNextCustom)
+				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
 }
 
 void CScript::JumpTo(int address)
 {
-	if(address >= 0)
-		this->m_dwIp = address;
-	else
-	{
-		if(this->m_nScriptType == SCRIPT_TYPE_CUSTOM)
-			this->m_dwIp = this->m_dwBaseIp - address;
-		else
-		{
-#if CLEO_VC
-			this->m_dwIp = 0x370E8 - address;
-#else
-			this->m_dwIp = 0x20000 - address;
-#endif
+		// negated address is a hack that lets us tell custom and mission scripts from regular ones
+		if (address >= 0)
+				m_dwIp = address;
+		else {
+				if (m_bIsCustom)
+						m_dwIp = m_dwBaseIp + (-address);
+				else { // mission script; loaded straight after main script space
+					#if CLEO_VC
+						m_dwIp = 0x370E8 + (-address);
+					#else
+						m_dwIp = 0x20000 + (-address);
+					#endif
+				}
 		}
-	}
 }
 
-eParamType CScript::GetNextParamType()
+void CScript::Collect(uint numParams)
 {
-	return ((tParamType *)&game.Scripts.Space[this->m_dwIp])->type;
+		Collect(&m_dwIp, numParams);
 }
 
-void CScript::Collect(unsigned int numParams)
+void CScript::Collect(uint *pIp, uint numParams)
 {
-	this->Collect(&this->m_dwIp, numParams);
-}
-
-void CScript::Collect(unsigned int *pIp, unsigned int numParams)
-{
-	for(unsigned int i = 0; i < numParams; i++)
+	for(uint i = 0; i < numParams; i++)
 	{
 		tParamType *paramType = (tParamType *)&game.Scripts.Space[*pIp];
 		*pIp += 1;
@@ -205,21 +198,6 @@ int CScript::CollectNextWithoutIncreasingPC(unsigned int ip)
 	default:
 		return -1;
 	}
-}
-
-void CScript::Store(unsigned int numParams)
-{
-	game.Scripts.StoreParameters(this, &this->m_dwIp, numParams);
-}
-
-void CScript::UpdateCompareFlag(bool result)
-{
-	game.Scripts.UpdateCompareFlag(this, result);
-}
-
-void *CScript::GetPointerToScriptVariable()
-{
-	return game.Scripts.GetPointerToScriptVariable(this, &this->m_dwIp, 1);
 }
 
 eOpcodeResult CScript::ProcessOneCommand()
