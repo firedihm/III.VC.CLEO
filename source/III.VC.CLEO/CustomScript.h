@@ -93,8 +93,7 @@ class CScript
 		void RemoveFromCustomList(CScript** list);
 
 	// exports
-	CLEOAPI void Collect(uint numParams);
-
+	CLEOAPI void Collect(uint numParams) { Collect(&m_dwIp, numParams); }
 	CLEOAPI void Collect(uint* pIp, unsigned int numParams);
 
 	CLEOAPI int CollectNextWithoutIncreasingPC(uint ip);
