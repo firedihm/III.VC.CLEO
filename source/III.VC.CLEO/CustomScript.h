@@ -40,8 +40,8 @@ enum eParamType : unsigned char
 
 struct tParamType
 {
-	eParamType type : 7; // eParamType
-	bool processed : 1; // did we process long string already
+	eParamType type : 7;
+	bool processed : 1; // strings are compiled as (size byte + char arr); we convert them to c-string at runtime
 };
 
 class CScript
@@ -54,7 +54,7 @@ class CScript
 		/* 0x14 */ uint m_aGosubAddr[6];
 		/* 0x2C */ ushort m_nCurrentGosub;
 		/* 0x2E */ bool m_bIsCustom;
-		/* 0x2F */ bool m_bIsPersistent;
+		/* 0x2F */ char _pad;
 		/* 0x30 */ tScriptVar m_aLVars[18];
 	#if CLEO_VC
 		/* 0x78 */ bool m_bIsActive; 
@@ -72,7 +72,8 @@ class CScript
 		/* 0x83 */ bool m_bDeathArrestCheckEnabled;
 		/* 0x84 */ bool m_bWastedOrBusted;
 		/* 0x85 */ bool m_bMissionFlag;
-		/* 0x86 */ short _pad;
+		/* 0x86 */ bool m_bIsPersistent;
+		/* 0x87 */ bool m_bToBeReloaded;
 
 		/* Custom data */
 		/* 0x88 */ uint m_nLastPedSearchIndex;
