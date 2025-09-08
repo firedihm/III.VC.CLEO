@@ -8,9 +8,9 @@
 #include "OpcodesSystem.h"
 #include "ScriptManager.h"
 
-CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(0), m_dwIp(0), m_aGosubAddr(0), m_nCurrentGosub(0), m_bIsCustom(true), m_bIsPersistent(false),
+CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(0), m_dwIp(0), m_aGosubAddr(0), m_nCurrentGosub(0), m_bIsCustom(true), _pad(0),
 								   m_aLVars(0), m_bIsActive(false), m_bCondResult(false), m_bIsMission(false), m_bAwake(false), m_dwWakeTime(0), m_wIfOp(0),
-								   m_bNotFlag(false), m_bDeathArrestCheckEnabled(true), m_bWastedOrBusted(false), m_bMissionFlag(false), _pad(0),
+								   m_bNotFlag(false), m_bDeathArrestCheckEnabled(true), m_bWastedOrBusted(false), m_bMissionFlag(false), m_bIsPersistent(false), m_bToBeReloaded(false),
 								   m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), _padd(0),
 								   m_pCodeData(nullptr), m_dwBaseIp(0), m_pScmFunction(nullptr), m_pNextCustom(nullptr), m_pPrevCustom(nullptr), m_pLocalArray(nullptr)
 {
@@ -93,9 +93,9 @@ void CScript::JumpTo(int address)
 		}
 }
 
-void CScript::Collect(uint* pIp, uint numParams)
+void CScript::Collect(uint* pIp, short numParams)
 {
-		for (uint i = 0; i < numParams; i++) {
+		for (short i = 0; i < numParams; i++) {
 				tParamType* paramType = (tParamType*)&game.Scripts.Space[*pIp];
 				*pIp += 1;
 
@@ -109,7 +109,7 @@ void CScript::Collect(uint* pIp, uint numParams)
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_LVAR:
-						game.Scripts.Params[i].nVar = this->m_aLVars[*(ushort*)&game.Scripts.Space[*pIp]].nVar;
+						game.Scripts.Params[i].nVar = m_aLVars[*(ushort*)&game.Scripts.Space[*pIp]].nVar;
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_INT8:
@@ -133,7 +133,7 @@ void CScript::Collect(uint* pIp, uint numParams)
 					case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
 								uchar length = *(uchar*)&game.Scripts.Space[*pIp];
-								*std::copy_n(&game.Scripts.Space[*pIp + 1], length, &game.Scripts.Space[*pIp]) = 0;
+								*std::copy_n(&game.Scripts.Space[*pIp + 1], length, &game.Scripts.Space[*pIp]) = '\0';
 								paramType->processed = true;
 						}
 
@@ -149,46 +149,40 @@ void CScript::Collect(uint* pIp, uint numParams)
 		}
 }
 
-int CScript::CollectNextWithoutIncreasingPC(unsigned int ip)
+int CScript::CollectNextWithoutIncreasingPC(uint ip)
 {
-	tParamType *paramType = (tParamType *)&game.Scripts.Space[ip];
-	ip += 1;
+		tParamType* paramType = (tParamType*)&game.Scripts.Space[ip];
+		ip += 1;
 
-	switch (paramType->type)
-	{
-	case PARAM_TYPE_FLOAT:
-#if CLEO_VC
-		return *(int *)&game.Scripts.Space[ip];
-#else
-		{
-		auto fParam = ((float)(*(short *)&game.Scripts.Space[ip]) / 16.0f);
-		return static_cast<int>(*(float*)&fParam);
+		switch (paramType->type) {
+			case PARAM_TYPE_INT32:
+				return *(int*)&game.Scripts.Space[ip];
+			case PARAM_TYPE_GVAR:
+				return *(int*)&game.Scripts.Space[*(ushort*)&game.Scripts.Space[ip]];
+			case PARAM_TYPE_LVAR:
+				return m_aLVars[*(ushort*)&game.Scripts.Space[ip]].nVar;
+			case PARAM_TYPE_INT8:
+				return *(char*)&game.Scripts.Space[ip];
+			case PARAM_TYPE_INT16:
+				return *(short*)&game.Scripts.Space[ip];
+			case PARAM_TYPE_FLOAT:
+			#if CLEO_VC
+				return *(int*)&game.Scripts.Space[ip];
+			#else
+				float fParam = ((float)(*(short*)&game.Scripts.Space[ip]) / 16.0f);
+				return static_cast<int>(fParam);
+			#endif
+			case PARAM_TYPE_STRING:
+				if (!paramType->processed) {
+						uchar length = *(uchar*)&game.Scripts.Space[ip];
+						*std::copy_n(&game.Scripts.Space[ip + 1], length, &game.Scripts.Space[ip]) = 0;
+						paramType->processed = true;
+				}
+
+				return (int)&game.Scripts.Space[ip];
+			default:
+				return -1;
 		}
-#endif
-	case PARAM_TYPE_INT32:
-		return *(int *)&game.Scripts.Space[ip];
-	case PARAM_TYPE_GVAR:
-		return *(int *)&game.Scripts.Space[*(unsigned short *)&game.Scripts.Space[ip]];
-	case PARAM_TYPE_LVAR:
-		return this->m_aLVars[*(unsigned short *)&game.Scripts.Space[ip]].nVar;
-	case PARAM_TYPE_INT8:
-		return *(char *)&game.Scripts.Space[ip];
-	case PARAM_TYPE_INT16:
-		return *(short *)&game.Scripts.Space[ip];
-	case PARAM_TYPE_STRING:
-		if (!paramType->processed)
-		{
-			unsigned char length = *(unsigned char *)&game.Scripts.Space[ip];
-			*std::copy_n(&game.Scripts.Space[ip + 1], length, &game.Scripts.Space[ip]) = 0;
-			paramType->processed = true;
-		}
-
-		return (int)&game.Scripts.Space[ip];
-		break;
-
-	default:
-		return -1;
-	}
 }
 
 eOpcodeResult CScript::ProcessOneCommand()
