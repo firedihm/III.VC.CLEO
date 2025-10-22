@@ -10,38 +10,38 @@
 
 enum eOpcodeResult : char
 {
-	OR_CONTINUE = 0,
-	OR_TERMINATE = 1,
-	OR_UNDEFINED = -1
+		OR_CONTINUE = 0,
+		OR_TERMINATE = 1,
+		OR_UNDEFINED = -1
 };
 
 typedef unsigned long DWORD;
 
 union tScriptVar
 {
-	int nVar;
-	float fVar;
-	char* cVar;
-	void* pVar;
-	DWORD dVar;
+		int nVar;
+		float fVar;
+		char* cVar;
+		void* pVar;
+		DWORD dVar;
 };
 
-enum eParamType : unsigned char
+enum eParamType : uchar
 {
-	PARAM_TYPE_END_OF_PARAMS = 0,
-	PARAM_TYPE_INT32 = 1,
-	PARAM_TYPE_GVAR = 2,
-	PARAM_TYPE_LVAR = 3,
-	PARAM_TYPE_INT8 = 4,
-	PARAM_TYPE_INT16 = 5,
-	PARAM_TYPE_FLOAT = 6,
-	PARAM_TYPE_STRING = 14
+		PARAM_TYPE_END_OF_PARAMS = 0,
+		PARAM_TYPE_INT32 = 1,
+		PARAM_TYPE_GVAR = 2,
+		PARAM_TYPE_LVAR = 3,
+		PARAM_TYPE_INT8 = 4,
+		PARAM_TYPE_INT16 = 5,
+		PARAM_TYPE_FLOAT = 6,
+		PARAM_TYPE_STRING = 14
 };
 
 struct tParamType
 {
-	eParamType type : 7;
-	bool processed : 1; // strings are compiled as (size byte + char arr); we convert them to c-string at runtime
+		eParamType type : 7;
+		bool processed : 1; // strings are compiled as (size byte + char arr); we convert them to c-string at runtime
 };
 
 class CScript
@@ -92,26 +92,19 @@ class CScript
 
 		void AddToCustomList(CScript** list);
 		void RemoveFromCustomList(CScript** list);
+		eOpcodeResult ProcessOneCommand();
 
-	// exports
-	CLEOAPI void Collect(uint numParams) { Collect(&m_dwIp, numParams); }
-	CLEOAPI void Collect(uint* pIp, unsigned int numParams);
+		// exports
+		CLEOAPI eParamType GetNextParamType() { return ((tParamType*)&game.Scripts.Space[m_dwIp])->type; }
+		CLEOAPI void* GetPointerToScriptVariable() { return game.Scripts.GetPointerToScriptVariable(this, &m_dwIp, 1); }
+		CLEOAPI void UpdateCompareFlag(bool result) { game.Scripts.UpdateCompareFlag(this, result); }
+		CLEOAPI void ReadShortString(char* out);
+		CLEOAPI void JumpTo(int address);
 
-	CLEOAPI int CollectNextWithoutIncreasingPC(uint ip);
-
-	CLEOAPI eParamType GetNextParamType() { return ((tParamType*)&game.Scripts.Space[m_dwIp])->type; }
-
-	CLEOAPI void Store(uint numParams) { game.Scripts.StoreParameters(this, &m_dwIp, numParams); }
-
-	CLEOAPI void ReadShortString(char* out);
-
-	CLEOAPI void UpdateCompareFlag(bool result) { game.Scripts.UpdateCompareFlag(this, result); }
-
-	CLEOAPI void* GetPointerToScriptVariable() { return game.Scripts.GetPointerToScriptVariable(this, &m_dwIp, 1); }
-
-	CLEOAPI void JumpTo(int address);
-
-	eOpcodeResult ProcessOneCommand();
+		CLEOAPI void Collect(uint numParams) { Collect(&m_dwIp, numParams); }
+		CLEOAPI void Collect(uint* pIp, uint numParams);
+		CLEOAPI int CollectNextWithoutIncreasingPC(uint ip);
+		CLEOAPI void Store(uint numParams) { game.Scripts.StoreParameters(this, &m_dwIp, numParams); }
 };
 
 static_assert(sizeof(tScriptVar) == 0x04, "tScriptVar size mismatch");
