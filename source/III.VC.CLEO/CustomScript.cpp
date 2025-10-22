@@ -47,12 +47,6 @@ CScript::~CScript()
 		delete[] m_pLocalArray;
 }
 
-void CScript::ReadShortString(char* out)
-{
-		strncpy(out, &game.Scripts.Space[m_dwIp], KEY_LENGTH_IN_SCRIPT);
-		m_dwIp += KEY_LENGTH_IN_SCRIPT;
-}
-
 void CScript::AddToCustomList(CScript** list)
 {
 		//push_front()
@@ -73,6 +67,37 @@ void CScript::RemoveFromCustomList(CScript** list)
 				*list = m_pNextCustom;
 		if (m_pNextCustom)
 				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
+}
+
+eOpcodeResult CScript::ProcessOneCommand()
+{
+		// highest bit of opcode denotes notFlag: reversing conditional result
+		ushort op = *(ushort*)&game.Scripts.Space[m_dwIp];
+		m_bNotFlag = (op & 0x8000) ? true : false;
+		op &= 0x7FFF;
+		m_dwIp += 2;
+
+		if (Opcodes::functions[op]) { // call opcode registered as custom
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", m_acName, op);
+				eOpcodeResult result = Opcodes::functions[op](this);
+				*game.Scripts.pNumOpcodesExecuted += 1;
+				return result;
+		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
+				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", m_acName, op);
+				Error("Incorrect opcode ID: %04X", op);
+				return OR_UNDEFINED;
+		} else { // call default opcode
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", m_acName, op);
+				eOpcodeResult result = game.Scripts.OpcodeHandlers[op / 100](this, op);
+				*game.Scripts.pNumOpcodesExecuted += 1;
+				return result;
+		}
+}
+
+void CScript::ReadShortString(char* out)
+{
+		strncpy(out, &game.Scripts.Space[m_dwIp], KEY_LENGTH_IN_SCRIPT);
+		m_dwIp += KEY_LENGTH_IN_SCRIPT;
 }
 
 void CScript::JumpTo(int address)
@@ -182,30 +207,5 @@ int CScript::CollectNextWithoutIncreasingPC(uint ip)
 				return (int)&game.Scripts.Space[ip];
 			default:
 				return -1;
-		}
-}
-
-eOpcodeResult CScript::ProcessOneCommand()
-{
-		// highest bit of opcode denotes notFlag: reversing conditional result
-		ushort op = *(ushort*)&game.Scripts.Space[m_dwIp];
-		m_bNotFlag = (op & 0x8000) ? true : false;
-		op &= 0x7FFF;
-		m_dwIp += 2;
-
-		if (Opcodes::functions[op]) { // call opcode registered as custom
-				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", m_acName, op);
-				eOpcodeResult result = Opcodes::functions[op](this);
-				*game.Scripts.pNumOpcodesExecuted += 1;
-				return result;
-		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
-				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", m_acName, op);
-				Error("Incorrect opcode ID: %04X", op);
-				return OR_UNDEFINED;
-		} else { // call default opcode
-				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", m_acName, op);
-				eOpcodeResult result = game.Scripts.OpcodeHandlers[op / 100](this, op);
-				*game.Scripts.pNumOpcodesExecuted += 1;
-				return result;
 		}
 }
