@@ -4,8 +4,6 @@
 #define CLEOAPI __declspec(dllexport)
 #endif
 
-#include "ScmFunction.h"
-
 #define KEY_LENGTH_IN_SCRIPT (8)
 
 enum eOpcodeResult : char
@@ -43,6 +41,8 @@ struct tParamType
 		eParamType type : 7;
 		bool processed : 1; // strings are compiled as (size byte + char arr); we convert them to c-string at runtime
 };
+
+class ScmFunction;
 
 class CScript
 {
@@ -95,16 +95,16 @@ class CScript
 		eOpcodeResult ProcessOneCommand();
 
 		// exports
-		CLEOAPI eParamType GetNextParamType() { return ((tParamType*)&game.Scripts.Space[m_dwIp])->type; }
-		CLEOAPI void* GetPointerToScriptVariable() { return game.Scripts.GetPointerToScriptVariable(this, &m_dwIp, 1); }
-		CLEOAPI void UpdateCompareFlag(bool result) { game.Scripts.UpdateCompareFlag(this, result); }
+		CLEOAPI eParamType GetNextParamType();
+		CLEOAPI void* GetPointerToScriptVariable();
+		CLEOAPI void UpdateCompareFlag(bool result);
 		CLEOAPI void ReadShortString(char* out);
 		CLEOAPI void JumpTo(int address);
 
-		CLEOAPI void Collect(uint numParams) { Collect(&m_dwIp, numParams); }
+		CLEOAPI void Collect(uint numParams);
 		CLEOAPI void Collect(uint* pIp, uint numParams);
 		CLEOAPI int CollectNextWithoutIncreasingPC(uint ip);
-		CLEOAPI void Store(uint numParams) { game.Scripts.StoreParameters(this, &m_dwIp, numParams); }
+		CLEOAPI void Store(uint numParams);
 };
 
 static_assert(sizeof(tScriptVar) == 0x04, "tScriptVar size mismatch");
