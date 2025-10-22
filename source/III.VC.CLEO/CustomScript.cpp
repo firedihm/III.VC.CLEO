@@ -1,12 +1,11 @@
-#include <ifstream>
-#include <stdio.h>
-#include <Windows.h>
-
 #include "CustomScript.h"
 #include "Game.h"
 #include "Log.h"
 #include "OpcodesSystem.h"
 #include "ScriptManager.h"
+
+#include <cstring>
+#include <ifstream>
 
 CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(0), m_dwIp(0), m_aGosubAddr(0), m_nCurrentGosub(0), m_bIsCustom(true), _pad(0),
 								   m_aLVars(0), m_bIsActive(false), m_bCondResult(false), m_bIsMission(false), m_bAwake(false), m_dwWakeTime(0), m_wIfOp(0),
@@ -31,7 +30,7 @@ CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(
 				throw std::runtime_error("File is corrupt.");
 		}
 
-		strncpy(m_acName, &strrchr(filepath, '\\')[1], KEY_LENGTH_IN_SCRIPT - 1); // keep '\0' from initializer
+		std::strncpy(m_acName, &std::strrchr(filepath, '\\')[1], KEY_LENGTH_IN_SCRIPT - 1); // keep '\0' from initializer
 		m_pLocalArray = new tScriptVar[0xFF];
 }
 
@@ -47,7 +46,8 @@ CScript::~CScript()
 		delete[] m_pLocalArray;
 }
 
-void CScript::AddToCustomList(CScript** list)
+void
+CScript::AddToCustomList(CScript** list)
 {
 		//push_front()
 		CScript* list_head = *list;
@@ -59,7 +59,8 @@ void CScript::AddToCustomList(CScript** list)
 		list_head = this;
 }
 
-void CScript::RemoveFromCustomList(CScript** list)
+void
+CScript::RemoveFromCustomList(CScript** list)
 {
 		if (m_pPrevCustom)
 				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
@@ -69,7 +70,8 @@ void CScript::RemoveFromCustomList(CScript** list)
 				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
 }
 
-eOpcodeResult CScript::ProcessOneCommand()
+eOpcodeResult
+CScript::ProcessOneCommand()
 {
 		// highest bit of opcode denotes notFlag: reversing conditional result
 		ushort op = *(ushort*)&game.Scripts.Space[m_dwIp];
@@ -94,13 +96,33 @@ eOpcodeResult CScript::ProcessOneCommand()
 		}
 }
 
-void CScript::ReadShortString(char* out)
+eParamType
+CScript::GetNextParamType()
 {
-		strncpy(out, &game.Scripts.Space[m_dwIp], KEY_LENGTH_IN_SCRIPT);
+		return ((tParamType*)&game.Scripts.Space[m_dwIp])->type;
+}
+
+void*
+CScript::GetPointerToScriptVariable()
+{
+		return game.Scripts.GetPointerToScriptVariable(this, &m_dwIp, 1);
+}
+
+void
+CScript::UpdateCompareFlag(bool result)
+{
+		game.Scripts.UpdateCompareFlag(this, result);
+}
+
+void
+CScript::ReadShortString(char* out)
+{
+		std::strncpy(out, &game.Scripts.Space[m_dwIp], KEY_LENGTH_IN_SCRIPT);
 		m_dwIp += KEY_LENGTH_IN_SCRIPT;
 }
 
-void CScript::JumpTo(int address)
+void
+CScript::JumpTo(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		if (address >= 0)
@@ -118,7 +140,14 @@ void CScript::JumpTo(int address)
 		}
 }
 
-void CScript::Collect(uint* pIp, short numParams)
+void
+CScript::Collect(uint numParams)
+{
+		Collect(&m_dwIp, numParams);
+}
+
+void
+CScript::Collect(uint* pIp, short numParams)
 {
 		for (short i = 0; i < numParams; i++) {
 				tParamType* paramType = (tParamType*)&game.Scripts.Space[*pIp];
@@ -158,12 +187,13 @@ void CScript::Collect(uint* pIp, short numParams)
 					case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
 								uchar length = *(uchar*)&game.Scripts.Space[*pIp];
-								*std::copy_n(&game.Scripts.Space[*pIp + 1], length, &game.Scripts.Space[*pIp]) = '\0';
+								std::memcpy(&game.Scripts.Space[*pIp + 1], &game.Scripts.Space[*pIp], length);
+								*((char*)&game.Scripts.Space[*pIp] + length) = '\0';
 								paramType->processed = true;
 						}
 
 						game.Scripts.Params[i].cVar = &game.Scripts.Space[*pIp];
-						*pIp += (strlen(&game.Scripts.Space[*pIp]) + 1);
+						*pIp += std::strlen(&game.Scripts.Space[*pIp]) + 1;
 						break;
 					default:
 						*pIp -= 1;
@@ -174,7 +204,8 @@ void CScript::Collect(uint* pIp, short numParams)
 		}
 }
 
-int CScript::CollectNextWithoutIncreasingPC(uint ip)
+int
+CScript::CollectNextWithoutIncreasingPC(uint ip)
 {
 		tParamType* paramType = (tParamType*)&game.Scripts.Space[ip];
 		ip += 1;
@@ -200,12 +231,19 @@ int CScript::CollectNextWithoutIncreasingPC(uint ip)
 			case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
 						uchar length = *(uchar*)&game.Scripts.Space[ip];
-						*std::copy_n(&game.Scripts.Space[ip + 1], length, &game.Scripts.Space[ip]) = '\0';
+						std::memcpy(&game.Scripts.Space[ip + 1], &game.Scripts.Space[ip], length);
+						*((char*)&game.Scripts.Space[ip] + length) = '\0';
 						paramType->processed = true;
 				}
 
-				return (int)&game.Scripts.Space[ip];
+				return (int)&game.Scripts.Space[ip]; // pointer to string
 			default:
 				return -1;
 		}
+}
+
+void
+CScript::Store(uint numParams)
+{
+		game.Scripts.StoreParameters(this, &m_dwIp, numParams);
 }
