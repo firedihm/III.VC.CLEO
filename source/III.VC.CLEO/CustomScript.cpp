@@ -2,7 +2,6 @@
 #include "Game.h"
 #include "Log.h"
 #include "OpcodesSystem.h"
-#include "ScmFunction.h"
 #include "ScriptManager.h"
 
 #include <cstring>
