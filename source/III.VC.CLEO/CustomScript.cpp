@@ -49,7 +49,7 @@ CScript::~CScript()
 void
 CScript::AddToCustomList(CScript** list)
 {
-		//push_front()
+		// push_front()
 		CScript* list_head = *list;
 		m_pNextCustom = list_head;
 		m_pPrevCustom = nullptr;
@@ -64,7 +64,7 @@ CScript::RemoveFromCustomList(CScript** list)
 {
 		if (m_pPrevCustom)
 				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
-		else
+		else // head of a list
 				*list = m_pNextCustom;
 		if (m_pNextCustom)
 				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
@@ -94,6 +94,31 @@ CScript::ProcessOneCommand()
 				*game.Scripts.pNumOpcodesExecuted += 1;
 				return result;
 		}
+}
+
+void
+CScript::PushStackFrame()
+{
+		// push_front()
+		StackFrame* frame = new StackFrame();
+		frame->prev = m_pStackFrameHead;
+		m_pStackFrameHead = frame;
+
+		std::memcpy(frame->vars, m_aLVars, sizeof(frame->vars));
+
+		frame->retAddr = m_dwIp;
+}
+
+void
+CScript::PopStackFrame()
+{
+		m_dwIp = m_pStackFrameHead->retAddr;
+
+		std::memcpy(m_aLVars, m_pStackFrameHead->vars, sizeof(m_aLVars));
+
+		StackFrame* prev = m_pStackFrameHead->prev;
+		delete m_pStackFrameHead;
+		m_pStackFrameHead = prev;
 }
 
 eParamType
