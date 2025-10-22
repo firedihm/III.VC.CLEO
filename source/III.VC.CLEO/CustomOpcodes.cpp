@@ -1002,35 +1002,47 @@ eOpcodeResult CustomOpcodes::MATH_LOG(CScript *script)
 
 eOpcodeResult CustomOpcodes::CALL_SCM_FUNCTION(CScript *script)
 {
-	script->m_pScmFunction = new ScmFunction(script);
-	script->Collect(2);
-	int addr = game.Scripts.Params[0].nVar;
-	unsigned int paramCount = game.Scripts.Params[1].nVar;
-	if(paramCount > 0)
+		script->Collect(2);
+		int addr = game.Scripts.Params[0].nVar;
+		uint paramCount = game.Scripts.Params[1].nVar;
+
 		script->Collect(paramCount);
-	memset(script->m_aLVars, 0, 64);
-	if(paramCount > 0)
-		memcpy(script->m_aLVars, game.Scripts.Params, paramCount * 4);
-	script->m_pScmFunction->retAddr = script->m_dwIp;
-	script->JumpTo(addr);
-	return OR_CONTINUE;
+
+		/*
+			We didn't actually read all params this opcode provides just yet: after we read values that caller 
+			passes to callee with script->Collect(), there are indexes of vars where callee's retvals should be stored. 
+			We will continue reading them after returning from callee.
+		*/
+		script->PushStackFrame();
+		script->JumpTo(addr);
+
+		std::memset(script->m_aLVars, 0, sizeof(script->m_aLVars));
+		std::memcpy(script->m_aLVars, game.Scripts.Params, paramCount * sizeof(tScriptVar));
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::SCM_FUNCTION_RET(CScript *script)
 {
-	script->Collect(1);
-	unsigned int paramCount = game.Scripts.Params[0].nVar;
-	if(paramCount > 0)
+		script->Collect(1);
+		uint paramCount = game.Scripts.Params[0].nVar;
+
+		// collect callee's retvals
 		script->Collect(paramCount);
-	memcpy(script->m_aLVars, script->m_pScmFunction->vars, 64);
-	script->m_dwIp = script->m_pScmFunction->retAddr;
-	if(paramCount > 0)
+
+		// return to caller
+		script->PopStackFrame();
+
+		// continue reading indexes of vars to store callee's retvals
 		script->Store(paramCount);
-	script->m_dwIp++;
-	ScmFunction *prev = script->m_pScmFunction->prev;
-	delete script->m_pScmFunction;
-	script->m_pScmFunction = prev;
-	return OR_CONTINUE;
+
+		/*
+			Variable-param-count opcodes like 0AB1: CLEO_CALL end with PARAM_TYPE_END_OF_PARAMS: that's 
+			because we actually get paramCount from callee. We skip it manually here.
+		*/
+		script->m_dwIp += 1;
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::GET_LABEL_OFFSET(CScript *script)
