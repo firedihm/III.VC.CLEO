@@ -175,7 +175,7 @@ int CScript::CollectNextWithoutIncreasingPC(uint ip)
 			case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
 						uchar length = *(uchar*)&game.Scripts.Space[ip];
-						*std::copy_n(&game.Scripts.Space[ip + 1], length, &game.Scripts.Space[ip]) = 0;
+						*std::copy_n(&game.Scripts.Space[ip + 1], length, &game.Scripts.Space[ip]) = '\0';
 						paramType->processed = true;
 				}
 
@@ -187,28 +187,25 @@ int CScript::CollectNextWithoutIncreasingPC(uint ip)
 
 eOpcodeResult CScript::ProcessOneCommand()
 {
-	*game.Scripts.pNumOpcodesExecuted += 1;
-	unsigned short id = *(unsigned short *)&game.Scripts.Space[this->m_dwIp] & 0x7FFF;
-	if(*(unsigned short *)&game.Scripts.Space[this->m_dwIp] & 0x8000)
-		this->m_bNotFlag = true;
-	else
-		this->m_bNotFlag = false;
-	this->m_dwIp += 2;
-	// check for custom opcodes here
-	if(Opcodes::functions[id])
-	{
-		// call custom opcode
-		LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", this->m_acName, id);
-		return Opcodes::functions[id](this);
-	}
-	else if(id >= CUSTOM_OPCODE_START_ID)
-	{
-		LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", this->m_acName, id);
-		Error("Incorrect opcode ID: %04X", id);
-		return OR_UNDEFINED;
-	}
-	// call default opcode
-	LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", this->m_acName, id);
-	eOpcodeResult result = game.Scripts.OpcodeHandlers[id / 100](this, id);
-	return result;
+		// highest bit of opcode denotes notFlag: reversing conditional result
+		ushort op = *(ushort*)&game.Scripts.Space[m_dwIp];
+		m_bNotFlag = (op & 0x8000) ? true : false;
+		op &= 0x7FFF;
+		m_dwIp += 2;
+
+		if (Opcodes::functions[op]) { // call opcode registered as custom
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", m_acName, op);
+				eOpcodeResult result = Opcodes::functions[op](this);
+				*game.Scripts.pNumOpcodesExecuted += 1;
+				return result;
+		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
+				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", m_acName, op);
+				Error("Incorrect opcode ID: %04X", op);
+				return OR_UNDEFINED;
+		} else { // call default opcode
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", m_acName, op);
+				eOpcodeResult result = game.Scripts.OpcodeHandlers[op / 100](this, op);
+				*game.Scripts.pNumOpcodesExecuted += 1;
+				return result;
+		}
 }
