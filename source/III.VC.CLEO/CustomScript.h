@@ -5,6 +5,9 @@
 #endif
 
 #define KEY_LENGTH_IN_SCRIPT (8)
+#define MAX_STACK_DEPTH (6)
+#define NUM_LOCAL_VARS (16)
+#define NUM_TIMERS (2)
 
 enum eOpcodeResult : char
 {
@@ -13,15 +16,13 @@ enum eOpcodeResult : char
 		OR_UNDEFINED = -1
 };
 
-typedef unsigned long DWORD;
-
 union tScriptVar
 {
 		int nVar;
 		float fVar;
 		char* cVar;
 		void* pVar;
-		DWORD dVar;
+		ulong dVar; // DWORD
 };
 
 enum eParamType : uchar
@@ -42,8 +43,6 @@ struct tParamType
 		bool processed : 1; // strings are compiled as (size byte + char arr); we convert them to c-string at runtime
 };
 
-class ScmFunction;
-
 class CScript
 {
 	public:
@@ -51,11 +50,12 @@ class CScript
 		/* 0x04 */ CScript* m_pPrev;
 		/* 0x08 */ char m_acName[KEY_LENGTH_IN_SCRIPT];
 		/* 0x10 */ uint m_dwIp;
-		/* 0x14 */ uint m_aGosubAddr[6];
+		/* 0x14 */ uint m_aGosubAddr[MAX_STACK_DEPTH];
 		/* 0x2C */ ushort m_nCurrentGosub;
 		/* 0x2E */ bool m_bIsCustom;
 		/* 0x2F */ char _pad;
-		/* 0x30 */ tScriptVar m_aLVars[18];
+		/* 0x30 */ tScriptVar m_aLVars[NUM_LOCAL_VARS];
+		/* 0x70 */ tScriptVar m_aTimers[NUM_TIMERS];
 	#if CLEO_VC
 		/* 0x78 */ bool m_bIsActive; 
 		/* 0x79 */ bool m_bCondResult; 
@@ -82,7 +82,7 @@ class CScript
 		/* 0x94 */ uint _padd;
 		/* 0x98 */ char* m_pCodeData;
 		/* 0x9C */ uint m_dwBaseIp;
-		/* 0xA0 */ ScmFunction* m_pScmFunction;
+		/* 0xA0 */ StackFrame* m_pStackFrameHead;
 		/* 0xA4 */ CScript* m_pNextCustom;
 		/* 0xA8 */ CScript* m_pPrevCustom;
 		/* 0xAC */ tScriptVar* m_pLocalArray;
@@ -93,6 +93,10 @@ class CScript
 		void AddToCustomList(CScript** list);
 		void RemoveFromCustomList(CScript** list);
 		eOpcodeResult ProcessOneCommand();
+
+		// called by 0AB1: CLEO_CALL and 0AB2: CLEO_RETURN respectively
+		void PushStackFrame();
+		void PopStackFrame();
 
 		// exports
 		CLEOAPI eParamType GetNextParamType();
@@ -105,7 +109,13 @@ class CScript
 		CLEOAPI void Collect(uint* pIp, uint numParams);
 		CLEOAPI int CollectNextWithoutIncreasingPC(uint ip);
 		CLEOAPI void Store(uint numParams);
+
+	private:
+		struct StackFrame {
+				StackFrame* prev;
+				tScriptVar vars[NUM_LOCAL_VARS];
+				int retAddr;
+		};
 };
 
-static_assert(sizeof(tScriptVar) == 0x04, "tScriptVar size mismatch");
 static_assert(sizeof(CScript) == 0xB0, "CScript size mismatch");
