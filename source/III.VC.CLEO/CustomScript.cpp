@@ -116,6 +116,7 @@ CScript::PopStackFrame()
 
 		std::memcpy(m_aLVars, m_pStackFrameHead->vars, sizeof(m_aLVars));
 
+		// pop_front()
 		StackFrame* prev = m_pStackFrameHead->prev;
 		delete m_pStackFrameHead;
 		m_pStackFrameHead = prev;
