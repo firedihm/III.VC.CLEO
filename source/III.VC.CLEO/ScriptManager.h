@@ -1,18 +1,16 @@
 #pragma once
 
 #include "CustomScript.h"
+
 #include <list>
 
 class ScriptManager
 {
 public:
 	CScript gameScripts[128];
-
-	std::list<char *> scriptMemory;
-
-	CScript *pCusomScripts;
-
-	unsigned int numLoadedCustomScripts;
+	std::list<char*> scriptMemory;
+	CScript* pCusomScripts;
+	uint numLoadedCustomScripts;
 
 	ScriptManager();
 
