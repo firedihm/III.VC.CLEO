@@ -82,7 +82,7 @@ class CScript
 		/* 0x94 */ uint _padd;
 		/* 0x98 */ char* m_pCodeData;
 		/* 0x9C */ uint m_dwBaseIp;
-		/* 0xA0 */ StackFrame* m_pStackFrameHead;
+		/* 0xA0 */ StackFrame* m_pCleoCallStack;
 		/* 0xA4 */ CScript* m_pNextCustom;
 		/* 0xA8 */ CScript* m_pPrevCustom;
 		/* 0xAC */ tScriptVar* m_pLocalArray;
