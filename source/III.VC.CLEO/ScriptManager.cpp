@@ -1,15 +1,12 @@
-#include "ScriptManager.h"
-#include <Windows.h>
-#include "Log.h"
 #include "Game.h"
+#include "Log.h"
+#include "ScriptManager.h"
+
+#include <filesystem>
 
 ScriptManager scriptMgr;
 
-ScriptManager::ScriptManager()
-{
-	this->pCusomScripts = NULL;
-	this->numLoadedCustomScripts = 0;
-}
+ScriptManager::ScriptManager() : gameScripts(), scriptMemory(), pCusomScripts(nullptr), numLoadedCustomScripts(0) {}
 
 void ScriptManager::LoadScripts()
 {
