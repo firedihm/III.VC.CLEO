@@ -36,11 +36,11 @@ CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(
 
 CScript::~CScript()
 {
-		ScmFunction* scmf = m_pScmFunction;
-		while(scmf) {
-				ScmFunction* prev = scmf->prev;
-				delete scmf;
-				scmf = prev;
+		StackFrame* frame = m_pCleoCallStack;
+		while(frame) {
+				StackFrame* prev = frame->prev;
+				delete frame;
+				frame = prev;
 		}
 
 		delete[] m_pLocalArray;
