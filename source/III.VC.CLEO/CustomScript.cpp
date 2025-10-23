@@ -11,7 +11,7 @@ CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(
 								   m_aLVars(0), m_bIsActive(false), m_bCondResult(false), m_bIsMission(false), m_bAwake(false), m_dwWakeTime(0), m_wIfOp(0),
 								   m_bNotFlag(false), m_bDeathArrestCheckEnabled(true), m_bWastedOrBusted(false), m_bMissionFlag(false), m_bIsPersistent(false), m_bToBeReloaded(false),
 								   m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), _padd(0),
-								   m_pCodeData(nullptr), m_dwBaseIp(0), m_pScmFunction(nullptr), m_pNextCustom(nullptr), m_pPrevCustom(nullptr), m_pLocalArray(nullptr)
+								   m_pCodeData(nullptr), m_dwBaseIp(0), m_pCleoCallStack(nullptr), m_pNextCustom(nullptr), m_pPrevCustom(nullptr), m_pLocalArray(nullptr)
 {
 		std::ifstream file(filepath, std::ios_base::in || std::ios_base::binary)
 		if (!file)
