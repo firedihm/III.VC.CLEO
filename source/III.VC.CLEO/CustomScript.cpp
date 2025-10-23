@@ -37,7 +37,7 @@ CScript::CScript(char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_acName(
 CScript::~CScript()
 {
 		StackFrame* frame = m_pCleoCallStack;
-		while(frame) {
+		while (frame) {
 				StackFrame* prev = frame->prev;
 				delete frame;
 				frame = prev;
@@ -50,13 +50,13 @@ void
 CScript::AddToCustomList(CScript** list)
 {
 		// push_front()
-		CScript* list_head = *list;
-		m_pNextCustom = list_head;
+		CScript* first = *list;
+		m_pNextCustom = first;
 		m_pPrevCustom = nullptr;
 
-		if (list_head)
-				list_head->m_pPrevCustom = this;
-		list_head = this;
+		if (first)
+				first->m_pPrevCustom = this;
+		first = this;
 }
 
 void
@@ -64,7 +64,7 @@ CScript::RemoveFromCustomList(CScript** list)
 {
 		if (m_pPrevCustom)
 				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
-		else // head of a list
+		else
 				*list = m_pNextCustom;
 		if (m_pNextCustom)
 				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
