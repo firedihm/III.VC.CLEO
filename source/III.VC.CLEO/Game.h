@@ -133,6 +133,7 @@ class GtaGame
 public:
 	
 	eGameVersion Version;
+	char* pRootPath;
 
 	GtaGame();
 
