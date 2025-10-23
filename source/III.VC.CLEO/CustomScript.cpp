@@ -101,8 +101,8 @@ CScript::PushStackFrame()
 {
 		// push_front()
 		StackFrame* frame = new StackFrame();
-		frame->prev = m_pStackFrameHead;
-		m_pStackFrameHead = frame;
+		frame->prev = m_pCleoCallStack;
+		m_pCleoCallStack = frame;
 
 		std::memcpy(frame->vars, m_aLVars, sizeof(frame->vars));
 
@@ -112,14 +112,14 @@ CScript::PushStackFrame()
 void
 CScript::PopStackFrame()
 {
-		m_dwIp = m_pStackFrameHead->retAddr;
+		m_dwIp = m_pCleoCallStack->retAddr;
 
-		std::memcpy(m_aLVars, m_pStackFrameHead->vars, sizeof(m_aLVars));
+		std::memcpy(m_aLVars, m_pCleoCallStack->vars, sizeof(m_aLVars));
 
 		// pop_front()
-		StackFrame* prev = m_pStackFrameHead->prev;
-		delete m_pStackFrameHead;
-		m_pStackFrameHead = prev;
+		StackFrame* prev = m_pCleoCallStack->prev;
+		delete m_pCleoCallStack;
+		m_pCleoCallStack = prev;
 }
 
 eParamType
