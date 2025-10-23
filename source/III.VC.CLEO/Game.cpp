@@ -6,6 +6,23 @@
 #include "CleoVersion.h"
 #include "CleoPlugins.h"
 
+#ifdef _WIN32
+	#include <Windows.h>
+
+	#define MAX_FILEPATH MAX_PATH
+	#define DIRECTORY_SEPARATOR '\\'
+	#define GET_EXE_PATH(buf) GetModuleFileNameA(NULL, buf, MAX_PATH)
+#else
+	#include <linux/limits.h>
+	#include <linux/unistd.h>
+
+	#define MAX_FILEPATH PATH_MAX
+	#define DIRECTORY_SEPARATOR '/'
+	#define GET_EXE_PATH(buf) readlink("/proc/self/exe", buf, PATH_MAX)
+#endif
+
+#include <cstring>
+
 GtaGame game;
 
 #define GAME_VERSION_ID (*(unsigned int *)0x61C11C)
@@ -35,7 +52,20 @@ DWORD WINAPI SteamHandler(LPVOID)
 GtaGame::GtaGame()
 {
 	this->InitialiseGameVersion();
-	
+
+	char path_buf[MAX_FILEPATH];
+
+	auto result = GET_EXE_PATH(path_buf);
+	if (result = -1 || result = 0) // -1 is error for linux, 0 is for windows; this can be done better...
+			throw std::runtime_error("Couldn't find game's root directory.");
+
+	// cut off executable file's name: find rightmost separator and treat it as new string's terminator
+	char* new_end = std::strrchr(path_buf, DIRECTORY_SEPARATOR);
+	*new_end = '\0';
+
+	pRootPath = new char[new_end - &path_buf + 1]; // add 1 for '\0'
+	std::strcpy(pRootPath, path_buf);
+
 	if (game.GetGameVersion() == GAME_VSTEAMENC)
 	{
 		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&SteamHandler, NULL, 0, NULL);
