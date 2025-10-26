@@ -1,142 +1,101 @@
+#include "CustomScript.h"
 #include "Game.h"
 #include "Log.h"
 #include "ScriptManager.h"
 
 #include <filesystem>
 
+namespace fs = std::filesystem;
+
 ScriptManager scriptMgr;
 
 ScriptManager::ScriptManager() : gameScripts(), scriptMemory(), pCusomScripts(nullptr), numLoadedCustomScripts(0) {}
 
-void ScriptManager::LoadScripts()
+void
+ScriptManager::LoadScripts()
 {
-	WIN32_FIND_DATA FindFileData;
-	memset(&FindFileData, 0, sizeof(WIN32_FIND_DATA));
-	HANDLE hFind = FindFirstFile("cleo\\*.cs", &FindFileData);
-	if(hFind != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if(!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			{
-				char filename[MAX_PATH];
-				strcpy(filename, "cleo\\");
-				strcat(filename, FindFileData.cFileName);
-				CScript *newScript = new CScript(filename);
-				if(newScript)
-				{
-					if(newScript->Loaded())
-					{
-						newScript->AddToCustomList(&this->pCusomScripts);
-						game.Scripts.AddScriptToList(newScript, game.Scripts.pActiveScriptsList);
-						newScript->m_bIsActive = true;
-						numLoadedCustomScripts++;
-					}
-					else
-					{
-						delete newScript;
-						LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\"", filename);
-					}
+		fs::path dir(game.pRootPath);
+		dir /= "CLEO";
+
+		for (const auto& entry : fs::directory_iterator(dir)) {
+				if (entry.is_regular_file() && entry.path().extension().string() == ".cs") {
+						try {
+								CScript* script = new CScript(entry.path().c_str());
+
+								game.Scripts.AddScriptToList(script, game.Scripts.pActiveScriptsList);
+								script->AddToCustomList(&pCusomScripts);
+								script->m_bIsActive = true;
+								numLoadedCustomScripts++;
+						} catch (const char* e) {
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), e);
+						} catch (const std::bad_alloc& e) {
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), e.what());
+						} catch (...) {
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), "Unhandled exception");
+						}
 				}
-			}
 		}
-		while(FindNextFile(hFind, &FindFileData));
-		FindClose(hFind);
-	}
 }
 
-void ScriptManager::UnloadScripts()
+void
+ScriptManager::UnloadScripts()
 {
-	CScript *script = this->pCusomScripts;
-	while(script)
-	{
-		game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
-		scriptMgr.numLoadedCustomScripts--;
-		CScript *next = script->m_pNextCustom;
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom script \"%s\"", script->m_acName);
-		delete script;
-		script = next;
-	}
-	this->pCusomScripts = NULL;
-	this->ReleaseScriptsMemory();
-}
+		CScript* script = pCusomScripts;
+		while (script) {
+				game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
+				numLoadedCustomScripts--;
 
-char *ScriptManager::AllocateMemoryForScript(char *scriptName, unsigned int size)
-{
-	char *data = new char[size];
-	if(data)
-	{
-		this->scriptMemory.push_back(data);
-		LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Allocated memory for script: \"%s\", %d", scriptName, size);
-	}
-	else
-	{
-		LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate memory for script: \"%s\", %d", scriptName, size);
-	}
-	return data;
-}
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom script \"%s\"", script->m_acName);
 
-void ScriptManager::DeleteScriptMemory(char *scriptName, char *data)
-{
-	for(auto i = this->scriptMemory.begin(); i != this->scriptMemory.end(); i++)
-	{
-		if((*i) == data)
-		{
-			this->scriptMemory.erase(i);
-			delete[] data;
-			LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Deleted script memory: \"%s\", %d", scriptName, data);
-			return;
+				CScript* next = script->m_pNextCustom;
+				delete script;
+				script = next;
 		}
-	}
-	LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Trying to delete script memory, script not found: \"%s\", %d", scriptName, data);
+		pCusomScripts = nullptr;
 }
 
-void ScriptManager::ReleaseScriptsMemory()
+void
+ScriptManager::EnableAllScripts()
 {
-	for(auto i = this->scriptMemory.begin(); i != this->scriptMemory.end(); i++)
-		delete[] (*i);
-	this->scriptMemory.clear();
-	LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Released all scripts allocated memory");
+		CScript* script = pCusomScripts;
+		while (script) {
+				game.Scripts.AddScriptToList(script, game.Scripts.pActiveScriptsList);
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", script->m_acName);
+				script = script->m_pNextCustom;
+		}
 }
 
-void ScriptManager::DisableAllScripts()
+void
+ScriptManager::DisableAllScripts()
 {
-	CScript *script = this->pCusomScripts;
-	while(script)
-	{
-		game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", script->m_acName);
-		script = script->m_pNextCustom;
-	}
+		CScript* script = pCusomScripts;
+		while (script) {
+				game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", script->m_acName);
+				script = script->m_pNextCustom;
+		}
 }
 
-void ScriptManager::EnableAllScripts()
+void
+ScriptManager::InitialiseScript(CScript* script)
 {
-	CScript *script = this->pCusomScripts;
-	while(script)
-	{
-		game.Scripts.AddScriptToList(script, game.Scripts.pActiveScriptsList);
-		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", script->m_acName);
-		script = script->m_pNextCustom;
-	}
+		script->Init();
 }
 
-void ScriptManager::InitialiseScript(CScript *script)
+eOpcodeResult
+ScriptManager::ProcessScriptCommand(CScript* script)
 {
-	script->Init();
+		return script->ProcessOneCommand();
 }
 
-eOpcodeResult ScriptManager::ProcessScriptCommand(CScript *script)
+void
+ScriptManager::CollectScriptParameters(CScript* script, int, uint* pIp, uint numParams)
 {
-	return script->ProcessOneCommand();
+		script->Collect(pIp, numParams);
 }
 
-void ScriptManager::CollectScriptParameters(CScript *script, int, unsigned int *pIp, unsigned int numParams)
+int
+ScriptManager::CollectScriptNextParameterWithoutIncreasingPC(CScript* script, int, uint ip)
 {
-	script->Collect(pIp, numParams);
-}
-
-int ScriptManager::CollectScriptNextParameterWithoutIncreasingPC(CScript *script, int, unsigned int ip)
-{
-	return script->CollectNextWithoutIncreasingPC(ip);
+		return script->CollectNextWithoutIncreasingPC(ip);
 }
