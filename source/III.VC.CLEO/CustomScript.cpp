@@ -14,21 +14,15 @@ CScript::CScript(const char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_a
 								   m_pCodeData(nullptr), m_dwBaseIp(0), m_pCleoCallStack(nullptr), m_pNextCustom(nullptr), m_pPrevCustom(nullptr), m_pLocalArray(nullptr)
 {
 		std::ifstream file(filepath, std::ios_base::in || std::ios_base::binary)
-		if (!file)
-				throw std::invalid_argument("File not found.");
 
 		size_t filesize = file.seekg(0, std::ios::end).tellg();
 		if (!file || !filesize)
 				throw std::length_error("File is empty or corrupt.");
 
 		m_pCodeData = new char[filesize];
-		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.Space;
+		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
 
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
-		if (!file) {
-				delete[] m_pCodeData;
-				throw std::runtime_error("File is corrupt.");
-		}
 
 		std::strncpy(m_acName, &std::strrchr(filepath, '\\')[1], KEY_LENGTH_IN_SCRIPT - 1); // keep '\0' from initializer
 		m_pLocalArray = new tScriptVar[0xFF];
@@ -171,54 +165,54 @@ void
 CScript::Collect(uint* pIp, short numParams)
 {
 		for (short i = 0; i < numParams; i++) {
-				tParamType* paramType = (tParamType*)&game.Scripts.Space[*pIp];
+				tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[*pIp];
 				*pIp += 1;
 
 				switch (paramType->type) {
 					case PARAM_TYPE_INT32:
-						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.Space[*pIp];
+						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 4;
 						break;
 					case PARAM_TYPE_GVAR:
-						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.Space[*(ushort*)&game.Scripts.Space[*pIp]];
+						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[*pIp]];
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_LVAR:
-						game.Scripts.Params[i].nVar = m_aLVars[*(ushort*)&game.Scripts.Space[*pIp]].nVar;
+						game.Scripts.Params[i].nVar = m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[*pIp]].nVar;
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_INT8:
-						game.Scripts.Params[i].nVar = *(char*)&game.Scripts.Space[*pIp];
+						game.Scripts.Params[i].nVar = *(char*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 1;
 						break;
 					case PARAM_TYPE_INT16:
-						game.Scripts.Params[i].nVar = *(short*)&game.Scripts.Space[*pIp];
+						game.Scripts.Params[i].nVar = *(short*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_FLOAT:
 					#if CLEO_VC
-						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.Space[*pIp];
+						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 4;
 						break;
 					#else
-						game.Scripts.Params[i].fVar = (float)(*(short*)&game.Scripts.Space[*pIp]) / 16.0f;
+						game.Scripts.Params[i].fVar = (float)(*(short*)&game.Scripts.pScriptSpace[*pIp]) / 16.0f;
 						*pIp += 2;
 						break;
 					#endif
 					case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
-								uchar length = *(uchar*)&game.Scripts.Space[*pIp];
-								std::memcpy(&game.Scripts.Space[*pIp + 1], &game.Scripts.Space[*pIp], length);
-								*((char*)&game.Scripts.Space[*pIp] + length) = '\0';
+								uchar length = *(uchar*)&game.Scripts.pScriptSpace[*pIp];
+								std::memcpy(&game.Scripts.pScriptSpace[*pIp + 1], &game.Scripts.pScriptSpace[*pIp], length);
+								*((char*)&game.Scripts.pScriptSpace[*pIp] + length) = '\0';
 								paramType->processed = true;
 						}
 
-						game.Scripts.Params[i].cVar = &game.Scripts.Space[*pIp];
-						*pIp += std::strlen(&game.Scripts.Space[*pIp]) + 1;
+						game.Scripts.Params[i].cVar = &game.Scripts.pScriptSpace[*pIp];
+						*pIp += std::strlen(&game.Scripts.pScriptSpace[*pIp]) + 1;
 						break;
 					default:
 						*pIp -= 1;
-						game.Scripts.Params[i].cVar = &game.Scripts.Space[*pIp];
+						game.Scripts.Params[i].cVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += KEY_LENGTH_IN_SCRIPT;
 						break;
 				}
@@ -228,36 +222,36 @@ CScript::Collect(uint* pIp, short numParams)
 int
 CScript::CollectNextWithoutIncreasingPC(uint ip)
 {
-		tParamType* paramType = (tParamType*)&game.Scripts.Space[ip];
+		tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[ip];
 		ip += 1;
 
 		switch (paramType->type) {
 			case PARAM_TYPE_INT32:
-				return *(int*)&game.Scripts.Space[ip];
+				return *(int*)&game.Scripts.pScriptSpace[ip];
 			case PARAM_TYPE_GVAR:
-				return *(int*)&game.Scripts.Space[*(ushort*)&game.Scripts.Space[ip]];
+				return *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[ip]];
 			case PARAM_TYPE_LVAR:
-				return m_aLVars[*(ushort*)&game.Scripts.Space[ip]].nVar;
+				return m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[ip]].nVar;
 			case PARAM_TYPE_INT8:
-				return *(char*)&game.Scripts.Space[ip];
+				return *(char*)&game.Scripts.pScriptSpace[ip];
 			case PARAM_TYPE_INT16:
-				return *(short*)&game.Scripts.Space[ip];
+				return *(short*)&game.Scripts.pScriptSpace[ip];
 			case PARAM_TYPE_FLOAT:
 			#if CLEO_VC
-				return *(int*)&game.Scripts.Space[ip];
+				return *(int*)&game.Scripts.pScriptSpace[ip];
 			#else
-				float fParam = ((float)(*(short*)&game.Scripts.Space[ip]) / 16.0f);
+				float fParam = ((float)(*(short*)&game.Scripts.pScriptSpace[ip]) / 16.0f);
 				return static_cast<int>(fParam);
 			#endif
 			case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
-						uchar length = *(uchar*)&game.Scripts.Space[ip];
-						std::memcpy(&game.Scripts.Space[ip + 1], &game.Scripts.Space[ip], length);
-						*((char*)&game.Scripts.Space[ip] + length) = '\0';
+						uchar length = *(uchar*)&game.Scripts.pScriptSpace[ip];
+						std::memcpy(&game.Scripts.pScriptSpace[ip + 1], &game.Scripts.pScriptSpace[ip], length);
+						*((char*)&game.Scripts.pScriptSpace[ip] + length) = '\0';
 						paramType->processed = true;
 				}
 
-				return (int)&game.Scripts.Space[ip]; // pointer to string
+				return (int)&game.Scripts.pScriptSpace[ip]; // pointer to string
 			default:
 				return -1;
 		}
