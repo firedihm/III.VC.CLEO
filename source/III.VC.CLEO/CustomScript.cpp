@@ -17,7 +17,7 @@ CScript::CScript(const char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_a
 
 		size_t filesize = file.seekg(0, std::ios::end).tellg();
 		if (!file || !filesize)
-				throw std::length_error("File is empty or corrupt.");
+				throw "File is empty or corrupt.";
 
 		m_pCodeData = new char[filesize];
 		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
