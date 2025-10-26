@@ -5,9 +5,9 @@
 #endif
 
 #define KEY_LENGTH_IN_SCRIPT 8
-#define MAX_STACK_DEPTH      6
-#define NUM_LOCAL_VARS       16
-#define NUM_TIMERS           2
+#define MAX_STACK_DEPTH 6
+#define NUM_LOCAL_VARS 16
+#define NUM_TIMERS 2
 
 enum eOpcodeResult : char
 {
