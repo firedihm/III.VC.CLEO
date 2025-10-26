@@ -2,39 +2,38 @@
 
 #include "CustomScript.h"
 
-#include <list>
+#ifdef CLEO_VC
+	#define SIZE_MAIN_SCRIPT = 225512,
+	#define SIZE_MISSION_SCRIPT = 35000,
+	#define SIZE_SCRIPT_SPACE = SIZE_MAIN_SCRIPT + SIZE_MISSION_SCRIPT
+#else
+	#define SIZE_MAIN_SCRIPT = 128 * 1024,
+	#define SIZE_MISSION_SCRIPT = 32 * 1024,
+	#define SIZE_SCRIPT_SPACE = SIZE_MAIN_SCRIPT + SIZE_MISSION_SCRIPT
+#endif
+
+#define MAX_NUM_SCRIPTS 128
 
 class ScriptManager
 {
-public:
-	CScript gameScripts[128];
-	std::list<char*> scriptMemory;
-	CScript* pCusomScripts;
-	uint numLoadedCustomScripts;
+	public:
+		CScript gameScripts[MAX_NUM_SCRIPTS];
+		CScript* pCusomScripts;
+		uint numLoadedCustomScripts;
 
-	ScriptManager();
+		ScriptManager();
 
-	char *AllocateMemoryForScript(char *scriptName, unsigned int size);
+		void LoadScripts();
+		void UnloadScripts();
 
-	void DeleteScriptMemory(char *scriptName, char *data);
+		void EnableAllScripts();
+		void DisableAllScripts();
 
-	void ReleaseScriptsMemory();
-
-	void LoadScripts();
-
-	void UnloadScripts();
-
-	void DisableAllScripts();
-
-	void EnableAllScripts();
-
-	static void __fastcall InitialiseScript(CScript *script);
-
-	static eOpcodeResult __fastcall ProcessScriptCommand(CScript *script);
-
-	static void __fastcall CollectScriptParameters(CScript *script, int, unsigned int *pIp, unsigned int numParams);
-
-	static int __fastcall CollectScriptNextParameterWithoutIncreasingPC(CScript *script, int, unsigned int ip);
+		// hooks; rather redundant 
+		static void __fastcall InitialiseScript(CScript* script);
+		static eOpcodeResult __fastcall ProcessScriptCommand(CScript* script);
+		static void __fastcall CollectScriptParameters(CScript* script, int, uint* pIp, uint numParams);
+		static int __fastcall CollectScriptNextParameterWithoutIncreasingPC(CScript* script, int, uint ip);
 };
 
 extern ScriptManager scriptMgr;
