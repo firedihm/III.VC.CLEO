@@ -156,13 +156,8 @@ CScript::JumpTo(int address)
 		else {
 				if (m_bIsCustom)
 						m_dwIp = m_dwBaseIp + (-address);
-				else { // mission script; loaded straight after main script space
-					#if CLEO_VC
-						m_dwIp = 0x370E8 + (-address);
-					#else
-						m_dwIp = 0x20000 + (-address);
-					#endif
-				}
+				else // mission script; loaded straight after main script space
+						m_dwIp = SIZE_MAIN_SCRIPT + (-address);
 		}
 }
 
