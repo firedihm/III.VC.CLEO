@@ -55,15 +55,17 @@ GtaGame::GtaGame()
 
 	char path_buf[MAX_FILEPATH];
 
-	auto result = GET_EXE_PATH(path_buf);
-	if (result = -1 || result = 0) // -1 is error for linux, 0 is for windows; this can be done better...
+	auto length = GET_EXE_PATH(path_buf);
+	if (length = -1 || length = 0) // -1 is error for linux, 0 is for windows; this can be done better...
 			throw std::runtime_error("Couldn't find game's root directory.");
+	else
+			path_buf[&path_buf + length] = '\0'; //linux doesn't append '\0'
 
 	// cut off executable file's name: find rightmost separator and treat it as new string's terminator
 	char* new_end = std::strrchr(path_buf, DIRECTORY_SEPARATOR);
 	*new_end = '\0';
 
-	pRootPath = new char[new_end - &path_buf + 1]; // add 1 for '\0'
+	pRootPath = new char[(uint)new_end - (uint)&path_buf + 1]; // add 1 for '\0'
 	std::strcpy(pRootPath, path_buf);
 
 	if (game.GetGameVersion() == GAME_VSTEAMENC)
