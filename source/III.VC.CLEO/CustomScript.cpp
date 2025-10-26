@@ -156,7 +156,7 @@ CScript::JumpTo(int address)
 		else {
 				if (m_bIsCustom)
 						m_dwIp = m_dwBaseIp + (-address);
-				else // mission script; loaded straight after main script space
+				else // mission script
 						m_dwIp = SIZE_MAIN_SCRIPT + (-address);
 		}
 }
