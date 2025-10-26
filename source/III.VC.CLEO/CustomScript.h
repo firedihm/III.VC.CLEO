@@ -87,7 +87,7 @@ class CScript
 		/* 0xA8 */ CScript* m_pPrevCustom;
 		/* 0xAC */ tScriptVar* m_pLocalArray;
 
-		CScript(char* filepath);
+		CScript(const char* filepath);
 		~CScript();
 
 		void AddToCustomList(CScript** list);
