@@ -1,16 +1,18 @@
 #pragma once
+
 #include "CustomScript.h"
 #include "OpcodesSystem.h"
-#include <set>
+
 #include <algorithm>
+#include <set>
 
 enum eGameVersion
 {
-	GAME_UNKNOWN,
-	GAME_V1_0,
-	GAME_V1_1,
-	GAME_VSTEAM,
-	GAME_VSTEAMENC
+		GAME_UNKNOWN,
+		GAME_V1_0,
+		GAME_V1_1,
+		GAME_VSTEAM,
+		GAME_VSTEAMENC
 };
 
 // returned by 0DD5: get_platform opcode
@@ -127,17 +129,16 @@ struct CTextDrawer
 
 class GtaGame
 {
-	void InitialiseGameVersion();
 	static bool IsChineseVersion();
 
 public:
+
+	const char* pRootPath;
+	const eGameVersion Version;
 	
-	eGameVersion Version;
-	char* pRootPath;
 
 	GtaGame();
 
-	eGameVersion GetGameVersion();
 
 	void InitAndPatch();
 
