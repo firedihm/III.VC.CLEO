@@ -1,20 +1,20 @@
-#include "Game.h"
-#include "CPatch.h"
-#include "ScriptManager.h"
-#include "Log.h"
-#include "Fxt.h"
-#include "CleoVersion.h"
 #include "CleoPlugins.h"
+#include "CleoVersion.h"
+#include "CPatch.h"
+#include "Fxt.h"
+#include "Game.h"
+#include "Log.h"
+#include "ScriptManager.h"
 
 #ifdef _WIN32
-	#include <Windows.h>
+	#include <windows.h>
 
 	#define MAX_FILEPATH MAX_PATH
 	#define DIRECTORY_SEPARATOR '\\'
 	#define GET_EXE_PATH(buf) GetModuleFileNameA(NULL, buf, MAX_PATH)
 #else
-	#include <linux/limits.h>
-	#include <linux/unistd.h>
+	#include <limits.h>
+	#include <unistd.h>
 
 	#define MAX_FILEPATH PATH_MAX
 	#define DIRECTORY_SEPARATOR '/'
@@ -22,99 +22,75 @@
 #endif
 
 #include <cstring>
+#include <thread>
 
 GtaGame game;
 
-#define GAME_VERSION_ID (*(unsigned int *)0x61C11C)
+char*
+CopyGameRootPath()
+{
+		char path_buf[MAX_FILEPATH];
 
-#define GAME_ID_GTAVC_1_0 0x74FF5064
-#define GAME_ID_GTAVC_1_1 0x00408DC0
-#define GAME_ID_GTAVC_STEAM 0x00004824
-#define GAME_ID_GTAVC_STEAMENC 0x24E58287
+		ssize_t length = GET_EXE_PATH(path_buf);
+		if (length <= 0 || length == MAX_FILEPATH) // -1 is error for linux, 0 is for windows
+				throw "Couldn't find game's root directory";
+		else
+				path_buf[&path_buf + length] = '\0';
 
-#define GAME_ID_GTA3_1_0 0x598B80
-#define GAME_ID_GTA3_1_1 0x598E40
-#define GAME_ID_GTA3_STEAM 0x646E6957
-#define GAME_ID_GTA3_STEAMENC 0x0FFFFFF
+		// cut off executable file's name: find rightmost separator and treat it as new string's terminator
+		char* new_end = std::strrchr(path_buf, DIRECTORY_SEPARATOR);
+		*new_end = '\0';
 
-DWORD WINAPI SteamHandler(LPVOID)
+		char* path = new char[(uint)new_end - (uint)&path_buf + 1]; // add 1 for '\0'
+		std::strncpy(path, path_buf, MAX_FILEPATH);
+		return path;
+}
+
+eGameVersion
+DetermineGameVersion()
+{
+		switch (*(uint*)0x61C11C) {
+			case 0x74FF5064:
+				return GAME_V1_0;
+			case 0x00408DC0:
+				return GAME_V1_1;
+			case 0x00004824:
+				return GAME_VSTEAM;
+			case 0x24E58287:
+				return GAME_VSTEAMENC;
+			case 0x00598B80:
+				return GAME_V1_0;
+			case 0x00598E40:
+				return GAME_V1_1;
+			case 0x646E6957:
+				return GAME_VSTEAM;
+			case 0x00FFFFFF:
+				return GAME_VSTEAMENC;
+			default:
+				return GAME_UNKNOWN;
+		}
+}
+
+void SteamHandler()
 {
 	while (true)
 	{
-		Sleep(0);
-		if (game.GetGameVersion() == GAME_VSTEAM) break;
+		Sleep(0); // yield
+		if (Version == GAME_VSTEAM) break;
 	}
-	game.Version = GAME_VSTEAM;
-	game.InitAndPatch();
+	Version = GAME_VSTEAM;
+	InitAndPatch();
 	return 0;
 }
 
-GtaGame::GtaGame()
+GtaGame::GtaGame() : pRootPath(CopyGameRootPath()), Version(DetermineGameVersion())
 {
-	this->InitialiseGameVersion();
+		if (Version == GAME_VSTEAMENC)
+				std::thread handler(SteamHandler);
+				CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&SteamHandler, NULL, 0, NULL);
+		else
+				InitAndPatch();
 
-	char path_buf[MAX_FILEPATH];
-
-	auto length = GET_EXE_PATH(path_buf);
-	if (length = -1 || length = 0) // -1 is error for linux, 0 is for windows; this can be done better...
-			throw std::runtime_error("Couldn't find game's root directory.");
-	else
-			path_buf[&path_buf + length] = '\0'; //linux doesn't append '\0'
-
-	// cut off executable file's name: find rightmost separator and treat it as new string's terminator
-	char* new_end = std::strrchr(path_buf, DIRECTORY_SEPARATOR);
-	*new_end = '\0';
-
-	pRootPath = new char[(uint)new_end - (uint)&path_buf + 1]; // add 1 for '\0'
-	std::strcpy(pRootPath, path_buf);
-
-	if (game.GetGameVersion() == GAME_VSTEAMENC)
-	{
-		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)&SteamHandler, NULL, 0, NULL);
-	}
-	else
-	{
-		this->InitAndPatch();
-	}
-}
-
-void GtaGame::InitialiseGameVersion()
-{
-	switch (GAME_VERSION_ID)
-	{
-	case GAME_ID_GTAVC_1_0:
-		this->Version = GAME_V1_0;
-		break;
-	case GAME_ID_GTAVC_1_1:
-		this->Version = GAME_V1_1;
-		break;
-	case GAME_ID_GTAVC_STEAM:
-		this->Version = GAME_VSTEAM;
-		break;
-	case GAME_ID_GTAVC_STEAMENC:
-		this->Version = GAME_VSTEAMENC;
-		break;
-	case GAME_ID_GTA3_1_0:
-		this->Version = GAME_V1_0;
-		break;
-	case GAME_ID_GTA3_1_1:
-		this->Version = GAME_V1_1;
-		break;
-	case GAME_ID_GTA3_STEAM:
-		this->Version = GAME_VSTEAM;
-		break;
-	case GAME_ID_GTA3_STEAMENC:
-		this->Version = GAME_VSTEAMENC;
-		break;
-	default:
-		this->Version = GAME_UNKNOWN;
-		break;
-	}
-}
-
-eGameVersion GtaGame::GetGameVersion()
-{
-	return this->Version;
 }
 
 bool GtaGame::IsChineseVersion()
