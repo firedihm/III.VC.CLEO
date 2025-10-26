@@ -118,4 +118,5 @@ class CScript
 		};
 };
 
+static_assert(offsetof(CScript, m_aTimers) == offsetof(CScript, m_aLVars) + sizeof(CScript::m_aLVars), "CScript::m_aTimers must follow CScript::m_aLVars")
 static_assert(sizeof(CScript) == 0xB0, "CScript size mismatch");
