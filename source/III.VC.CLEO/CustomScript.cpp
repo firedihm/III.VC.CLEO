@@ -21,7 +21,6 @@ CScript::CScript(const char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_a
 
 		m_pCodeData = new char[filesize];
 		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
-
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 
 		std::strncpy(m_acName, &std::strrchr(filepath, '\\')[1], KEY_LENGTH_IN_SCRIPT - 1); // keep '\0' from initializer
