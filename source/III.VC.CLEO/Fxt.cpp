@@ -10,7 +10,7 @@ CustomTextEntry::CustomTextEntry(char *key, char *text)
 {
 	size_t len = strlen(text);
 	this->m_pText = new wchar16_t[len + 1];
-	if (game.bIsChinese)
+	if (GtaGame::IsChinese())
 	{
 		CustomText::Utf8ToUtf16(text, this->m_pText, len, len + 1);
 	}
