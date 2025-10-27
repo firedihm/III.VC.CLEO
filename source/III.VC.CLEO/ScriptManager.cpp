@@ -14,7 +14,7 @@ ScriptManager::ScriptManager() : gameScripts(), scriptMemory(), pCusomScripts(nu
 void
 ScriptManager::LoadScripts()
 {
-		fs::path dir(game.pRootPath);
+		fs::path dir(game.szRootPath);
 		dir /= "CLEO";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
