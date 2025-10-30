@@ -4,8 +4,12 @@
 
 enum eMemoryAddress
 {
-        MA_SCRIPTS_ARRAY,
-        MA_SIZEOF_CRUNNINGSCRIPT,
+        // Scripts 
+        MA_SCRIPTS_ARRAY_0,
+        MA_SCRIPTS_ARRAY_1,
+        MA_SCRIPTS_ARRAY_2,
+        MA_SIZEOF_CRUNNINGSCRIPT_0,
+        MA_SIZEOF_CRUNNINGSCRIPT_1,
         CA_INIT_SCRIPT,
         CA_PROCESS_ONE_COMMAND,
         CA_COLLECT_PARAMETERS,
@@ -36,6 +40,7 @@ enum eMemoryAddress
         MA_NUM_OPCODES_EXECUTED,
         MA_USED_OBJECT_ARRAY,
 
+        // Text
         MA_GET_TEXT,
         CA_GET_TEXT,
         MA_CTEXT,
@@ -47,9 +52,11 @@ enum eMemoryAddress
         MA_TEXT_LOW_PRIORITY,
         MA_TEXT_HIGH_PRIORITY,
 
+        // Screen
         MA_SCREEN_WIDTH,
         MA_SCREEN_HEIGHT,
 
+        // Font
         MA_ASCII_TO_UNICODE,
         MA_PRINT_STRING,
         MA_SET_FONT_STYLE,
@@ -59,6 +66,7 @@ enum eMemoryAddress
         MA_SET_DROP_SHADOW_POSITION,
         MA_SET_PROP_ON,
 
+        // Pools
         MA_PED_POOL,
         MA_VEHICLE_POOL,
         MA_OBJECT_POOL,
@@ -70,10 +78,11 @@ enum eMemoryAddress
         MA_VEHICLE_POOL_GET_HANDLE,
         MA_OBJECT_POOL_GET_HANDLE,
 
+        // Events
         MA_INIT_SCRIPTS,
-        CA_INIT_SCRIPTS_0,
-        CA_INIT_SCRIPTS_1,
-        CA_INIT_SCRIPTS_2,
+        CA_INIT_SCRIPTS_ON_LOAD,
+        CA_INIT_SCRIPTS_ON_START,
+        CA_INIT_SCRIPTS_ON_RELOAD,
         MA_SHUTDOWN_GAME,
         CA_SHUTDOWN_GAME,
         MA_GAME_SAVE_SCRIPTS,
@@ -81,6 +90,18 @@ enum eMemoryAddress
         MA_DRAW_IN_MENU,
         CA_DRAW_IN_MENU,
 
+        // Shadows
+        MA_STORE_SHADOW_TO_BE_RENDERED,
+        MA_RWTEXTURE_SHAD_CAR,
+        MA_RWTEXTURE_SHAD_PED,
+        MA_RWTEXTURE_SHAD_HELI,
+        MA_RWTEXTURE_SHAD_BIKE,
+        MA_RWTEXTURE_SHAD_RCBARON,
+        MA_RWTEXTURE_SHAD_EXP,
+        MA_RWTEXTURE_HEADLIGHT,
+        MA_RWTEXTURE_BLOODPOOL_64,
+
+        // Misc
         MA_VEHICLE_MODEL_INFO,
         MA_ACTIVE_PAD_STATE,
         MA_MODEL_FOR_WEAPON,
@@ -96,7 +117,10 @@ enum eMemoryAddress
         NUM_MA
 };
 
-// as long as Game.cpp is the only block including this header, keeping the lookup table here should be okay
-uintptr_t LookUpTable[NUM_GV][NUM_MA] = {
+class GameAddressLUT
+{
+        const eGameVersion Target;
 
+        explicit GameAddressLUT(eGameVersion target);
+        uintptr_t operator[](eMemoryAddress index);
 };
