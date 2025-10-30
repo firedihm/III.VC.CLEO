@@ -8,10 +8,14 @@
 
 enum eGameVersion
 {
-		GAME_V1_0,
-		GAME_V1_1,
-		GAME_VSTEAM,
-		GAME_VSTEAMENC,
+		GAME_GTAVC_V1_0,
+		GAME_GTAVC_V1_1,
+		GAME_GTAVC_VSTEAM,
+		GAME_GTAVC_VSTEAMENC, // encrypted
+		GAME_GTA3_V1_0,
+		GAME_GTA3_V1_1,
+		GAME_GTA3_VSTEAM,
+		GAME_GTA3_VSTEAMENC, // encrypted
 		NUM_GV
 };
 
@@ -104,11 +108,7 @@ class GtaGame
 				char* pScriptSpace;
 				tScriptVar* pScriptParams;
 				ushort* pNumOpcodesExecuted;
-			#if CLEO_VC
-				OpcodeHandler OpcodeHandlers[15];
-			#else
-				OpcodeHandler OpcodeHandlers[12];
-			#endif
+				OpcodeHandler OpcodeHandlers[15]; // 15 in VC, 12 in III
 				CScript** pActiveScriptsList;
 				tUsedObject* pUsedObjectArray;
 				void (__thiscall *pfAddScriptToList)(CScript*, CScript**);
@@ -162,7 +162,7 @@ class GtaGame
 				int (__thiscall *pfVehiclePoolGetHandle)(GamePool* pool, void* vehicle);
 				int (__thiscall *pfObjectPoolGetHandle)(GamePool* pool, void* object);
 		} Pools;
-	
+
 		struct tEvents {
 				void (__cdecl *pfInitScripts_OnGameSaveLoad)();
 				void (__cdecl *pfInitScripts_OnGameInit)();
@@ -199,7 +199,7 @@ class GtaGame
 				int (__cdecl *pfModelForWeapon)(int eWeaponType);
 				char* (__cdecl *pfGetUserDirectory)();
 			#if CLEO_VC
-				void (__cdecl *pfSpawnCar)(unsigned int);
+				void (__cdecl *pfSpawnCar)(uint);
 			#else
 				void (__cdecl *pfSpawnCar)();
 			#endif
@@ -212,12 +212,12 @@ class GtaGame
 		GtaGame();
 		~GtaGame();
 
-		// lazy init, as it checks for loaded modules; can be moved to Fxt...
+		void Patch();
+
+		// lazy init, as it checks for loaded modules
 		static bool IsChinese();
 
 	private:
-		void Patch();
-
 		// hooks
 		static void InitScripts_OnGameInit();
 		static void InitScripts_OnGameReinit();
