@@ -49,6 +49,9 @@ uintptr_t LookUpTable[NUM_MA][NUM_GV] = {
         {0x583F40, 0x583F60, 0x583D70, 0x583D70, /*    */ 0x529F60, 0x529D30, 0x52A130, 0x52A130}, // MA_STYLED_TEXT
         {0x584410, 0x584430, 0x584240, 0x584240, /*    */ 0x529900, 0x529B40, 0x529AD0, 0x529AD0}, // MA_TEXT_LOW_PRIORITY
         {0x584300, 0x584320, 0x584130, 0x584130, /*    */ 0x529A10, 0x529C50, 0x529BE0, 0x529BE0}, // MA_TEXT_HIGH_PRIORITY
+        {0x584DA2, 0x584DC2, 0x584BD2, 0x584BD2, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_VC_ASM_0
+        {0x584DA6, 0x584DC6, 0x584BD6, 0x584BD6, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_VC_ASM_1
+        {0x584DAA, 0x584DCA, 0x584BDA, 0x584BDA, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_VC_ASM_2
 
         // Screen
         {0x9B48E4, 0x9B48EC, 0x9B38EC, 0x9B38EC, /*    */ 0x8F436C, 0x8F4420, 0x904560, 0x904560}, // MA_SCREEN_WIDTH
