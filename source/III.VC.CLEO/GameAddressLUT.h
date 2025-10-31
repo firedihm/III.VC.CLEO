@@ -51,6 +51,9 @@ enum eMemoryAddress
         MA_STYLED_TEXT,
         MA_TEXT_LOW_PRIORITY,
         MA_TEXT_HIGH_PRIORITY,
+        MA_VC_ASM_0,
+        MA_VC_ASM_1,
+        MA_VC_ASM_2,
 
         // Screen
         MA_SCREEN_WIDTH,
