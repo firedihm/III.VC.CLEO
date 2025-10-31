@@ -34,18 +34,18 @@ CopyGameRootPath()
 {
 		char path_buf[MAX_FILEPATH];
 
-		ssize_t length = GET_EXE_PATH(path_buf);
+		ssize_t length = GET_EXE_PATH(&path_buf);
 		if (length <= 0 || length == MAX_FILEPATH) // -1 is error for linux, 0 is for windows
 				throw "Couldn't find game's root directory";
 		else
 				path_buf[&path_buf + length] = '\0';
 
 		// cut off executable file's name: find rightmost separator and treat it as string's new terminator
-		char* new_end = std::strrchr(path_buf, DIRECTORY_SEPARATOR);
+		char* new_end = std::strrchr(&path_buf, DIRECTORY_SEPARATOR);
 		*new_end = '\0';
 
-		char* path = new char[(uint)new_end - (uint)&path_buf + 1]; // add 1 for '\0'
-		std::strncpy(path, path_buf, MAX_FILEPATH);
+		char* path = new char[new_end - &path_buf + 1]; // add 1 for '\0'
+		std::strncpy(path, &path_buf, MAX_FILEPATH);
 		return path;
 }
 
@@ -79,16 +79,15 @@ SteamHandler()
 {
 		do
 				std::this_thread::yield();
-		while (game.Version != GAME_GTAVC_VSTEAM || game.Version != GAME_GTA3_VSTEAM)
+		while (DetermineGameVersion() != GAME_GTAVC_VSTEAM || DetermineGameVersion() != GAME_GTA3_VSTEAM)
 
-		game.Version = GAME_VSTEAM;
 		game.Patch();
 }
 
 GtaGame::GtaGame() : szRootPath(CopyGameRootPath()), Version(DetermineGameVersion())
 {
 		if (Version == GAME_GTAVC_VSTEAMENC || Version == GAME_GTA3_VSTEAMENC) {
-				std::thread handler(SteamHandler);
+				std::thread handler(SteamHandler); // wait for .exe to decrypt
 				handler.detach();
 		} else
 				Patch();
@@ -111,102 +110,18 @@ GtaGame::Patch()
 	{
 	case GAME_V1_0:
 		// Scripts
-		CPatch::SetPointer(0x4504E4, scriptMgr.gameScripts);
-		CPatch::SetPointer(0x450508, scriptMgr.gameScripts);
 		CPatch::SetPointer(0x45050E, (DWORD*)(scriptMgr.gameScripts)+1);
-		CPatch::SetInt(0x450527 + 2, sizeof(CScript));
-		CPatch::SetInt(0x45052D + 2, sizeof(CScript));
-		CPatch::RedirectJump(0x450CF0, ScriptManager::InitialiseScript);
-		CPatch::RedirectJump(0x44FBE0, ScriptManager::ProcessScriptCommand); 
-		CPatch::RedirectJump(0x451010, ScriptManager::CollectScriptParameters);
-		CPatch::RedirectJump(0x450EF0, ScriptManager::CollectScriptNextParameterWithoutIncreasingPC);
-
-		// Text
-		Text.pfGetText = (wchar_t *(__thiscall *)(int, char *))0x584DA2;
-		CPatch::SetInt(0x584DA2, 0xD98B5553); //push ebx push ebp mov ebx,ecx
-		CPatch::SetInt(0x584DA6, 0xE940EC83); //sub esp,40 
-		CPatch::SetInt(0x584DAA, 0x00000189); //jmp 584F37
-		CPatch::RedirectJump(0x584F30, CustomText::GetText);
-		Text.CText = 0x94B220;
-		Text.textDrawers = (CTextDrawer *)0x7F0EA0;
-		Text.currentTextDrawer = (unsigned short *)0xA10A48;
-		Text.cheatString = (char *)0xA10942;
-		Text.TextBox = (void(__cdecl *)(const wchar_t *text, bool flag1, bool infinite, bool flag2))0x55BFC0;
-		Text.StyledText = (void(__cdecl *)(const wchar_t *text, unsigned time, unsigned style))0x583F40;
-		Text.TextLowPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x584410;
-		Text.TextHighPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x584300;
 
 		Misc.pfSpawnCar = (void(__cdecl *)(unsigned int modelID)) 0x4AE8F0;
 		break;
-	case GAME_V1_1:
-		// Scripts
-		CPatch::SetPointer(0x4504E4, scriptMgr.gameScripts);
-		CPatch::SetPointer(0x450508, scriptMgr.gameScripts);
-		CPatch::SetPointer(0x45050E, (DWORD*)(scriptMgr.gameScripts) + 1);
-		CPatch::SetInt(0x450527 + 2, sizeof(CScript));
-		CPatch::SetInt(0x45052D + 2, sizeof(CScript));
-		CPatch::RedirectJump(0x450CF0, ScriptManager::InitialiseScript);
-		CPatch::RedirectJump(0x44FBE0, ScriptManager::ProcessScriptCommand);
-		CPatch::RedirectJump(0x451010, ScriptManager::CollectScriptParameters);
-		CPatch::RedirectJump(0x450EF0, ScriptManager::CollectScriptNextParameterWithoutIncreasingPC);
-
-		// Text
-		Text.pfGetText = (wchar_t *(__thiscall *)(int, char *))0x584DC2;
-		CPatch::SetInt(0x584DC2, 0xD98B5553); //push ebx push ebp mov ebx,ecx
-		CPatch::SetInt(0x584DC6, 0xE940EC83); //sub esp,40 
-		CPatch::SetInt(0x584DCA, 0x00000189); //jmp 584F37
-		CPatch::RedirectJump(0x584F50, CustomText::GetText);
-		Text.CText = 0x94B228;
-		Text.textDrawers = (CTextDrawer *)0x7F0EA8;
-		Text.currentTextDrawer = (unsigned short *)0xA10A50;
-		Text.cheatString = (char *)(0xA10942 + 0x8);
-		Text.TextBox = (void(__cdecl *)(const wchar_t *text, bool flag1, bool infinite, bool flag2))0x55BFE0;
-		Text.StyledText = (void(__cdecl *)(const wchar_t *text, unsigned time, unsigned style))0x583F60;
-		Text.TextLowPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x584430;
-		Text.TextHighPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x584320;
-
-		Misc.pfSpawnCar = (void(__cdecl *)(unsigned int modelID)) 0x4AE7D0;
-		break;
-	case GAME_VSTEAM:
-		// Scripts
-		CPatch::SetPointer(0x4503F4, scriptMgr.gameScripts);
-		CPatch::SetPointer(0x450418, scriptMgr.gameScripts);
-		CPatch::SetPointer(0x45041E, (DWORD*)(scriptMgr.gameScripts) + 1);
-		CPatch::SetInt(0x450437 + 2, sizeof(CScript));
-		CPatch::SetInt(0x45043D + 2, sizeof(CScript));
-		CPatch::RedirectJump(0x450C00, ScriptManager::InitialiseScript);
-		CPatch::RedirectJump(0x44FAF0, ScriptManager::ProcessScriptCommand);
-		CPatch::RedirectJump(0x450F20, ScriptManager::CollectScriptParameters);
-		CPatch::RedirectJump(0x450E00, ScriptManager::CollectScriptNextParameterWithoutIncreasingPC);
-
-		// Text
-		Text.pfGetText = (wchar_t *(__thiscall *)(int, char *))0x584BD2;
-		CPatch::SetInt(0x584BD2, 0xD98B5553); //push ebx push ebp mov ebx,ecx
-		CPatch::SetInt(0x584BD6, 0xE940EC83); //sub esp,40 
-		CPatch::SetInt(0x584BDA, 0x00000189); //jmp 584F37
-		CPatch::RedirectJump(0x584D60, CustomText::GetText);
-		Text.CText = 0x94A228;
-		Text.textDrawers = (CTextDrawer *)0x7EFEA8;
-		Text.currentTextDrawer = (unsigned short *)0xA0FA50;
-		Text.cheatString = (char *)0xA0F94A;
-		Text.TextBox = (void(__cdecl *)(const wchar_t *text, bool flag1, bool infinite, bool flag2))0x55BEB0;
-		Text.StyledText = (void(__cdecl *)(const wchar_t *text, unsigned time, unsigned style))0x583D70;
-		Text.TextLowPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x584240;
-		Text.TextHighPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x584130;
-
-		Misc.pfSpawnCar = (void(__cdecl *)(unsigned int modelID)) 0x4AE7C0;
-		break;
-	default:
-		break;
-	}
 #else
-	switch (Version)
-	{
-	case GAME_V1_0:
 		GameAddressLUT lut(Version);
 
 		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
+		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_1], scriptMgr.aScriptsArray);
+		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_2], scriptMgr.aScriptsArray + 1);
 		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(CScript));
+		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(CScript));
 		CPatch::RedirectJump(lut[CA_INIT_SCRIPT], ScriptManager::InitialiseScript);
 		CPatch::RedirectJump(lut[CA_PROCESS_ONE_COMMAND], ScriptManager::ProcessScriptCommand);
 		CPatch::RedirectJump(lut[CA_COLLECT_PARAMETERS], ScriptManager::CollectScriptParameters);
@@ -237,16 +152,21 @@ GtaGame::Patch()
 		Scripts.pNumOpcodesExecuted = (ushort*)lut[MA_NUM_OPCODES_EXECUTED];
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
-		Text.pfGetText = (wchar_t* (__thiscall *)(int, char*))0x52BFB0;
-		CPatch::RedirectJump(0x52C5A0, CustomText::GetText);
-		Text.CText = 0x941520;
-		Text.textDrawers = (CTextDrawer*)0x70EA68;
-		Text.currentTextDrawer = (ushort*)0x95CC88;
-		Text.cheatString = (char*)0x885B90;
-		Text.TextBox = (void (__cdecl *)(const wchar_t* text, bool flag1))0x5051E0;
-		Text.StyledText = (void (__cdecl *)(const wchar_t* text, unsigned time, unsigned style))0x529F60;
-		Text.TextLowPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))0x529900;
-		Text.TextHighPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))0x529A10;
+		Text.pfGetText = (wchar_t* (__thiscall *)(int, char*))lut[MA_GET_TEXT];
+		CPatch::RedirectJump(lut[CA_GET_TEXT], CustomText::GetText);
+		Text.CText = lut[MA_CTEXT];
+		Text.textDrawers = (CTextDrawer*)lut[MA_TEXT_DRAWERS];
+		Text.currentTextDrawer = (ushort*)lut[MA_CURRENT_TEXT_DRAWER];
+		Text.cheatString = (char*)lut[MA_CHEAT_STRING];
+		Text.TextBox = (void (__cdecl *)(const wchar_t* text, bool flag1))lut[MA_TEXT_BOX];
+		Text.StyledText = (void (__cdecl *)(const wchar_t* text, unsigned time, unsigned style))lut[MA_STYLED_TEXT];
+		Text.TextLowPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))lut[MA_TEXT_LOW_PRIORITY];
+		Text.TextHighPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))lut[MA_TEXT_HIGH_PRIORITY];
+		if (Version >= GAME_GTAVC_V1_0 || Version <= GAME_GTAVC_VSTEAMENC) {
+				CPatch::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
+				CPatch::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
+				CPatch::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
+		}
 
 		Screen.Width = (int*)lut[MA_SCREEN_WIDTH];
 		Screen.Height = (int*)lut[MA_SCREEN_HEIGHT];
@@ -305,39 +225,6 @@ GtaGame::Patch()
 		Misc.pfSpawnCar = (void (__cdecl *)())lut[MA_SPAWN_CAR];
 		Misc.pfCAnimManagerBlendAnimation = (int (__cdecl *)(int pRpClump, int dwAnimGroupId, int dwAnimId, float fSpeed))lut[MA_BLEND_ANIMATION];
 		Misc.pfIsBoatModel = (bool (__cdecl *)(int mID))lut[MA_IS_BOAT_MODEL];
-		break;
-	case GAME_V1_1:
-
-		// Text
-		Text.pfGetText = (wchar_t *(__thiscall *)(int, char *))0x52C1F0;
-		CPatch::RedirectJump(0x52C7E0, CustomText::GetText);
-		Text.CText = 0x9416D8;
-		Text.textDrawers = (CTextDrawer *)0x70EA68;
-		Text.currentTextDrawer = (unsigned short *)0x95CE40;
-		Text.cheatString = (char *)0x885B40;
-		Text.TextBox = (void(__cdecl *)(const wchar_t *text, bool flag1))0x5052C0;
-		Text.StyledText = (void(__cdecl *)(const wchar_t *text, unsigned time, unsigned style))0x529D30;
-		Text.TextLowPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x529B40;
-		Text.TextHighPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x529C50;
-		break;
-	case GAME_VSTEAM:
-
-		// Text
-		Text.pfGetText = (wchar_t *(__thiscall *)(int, char *))0x52C180;
-		CPatch::RedirectJump(0x52C770, CustomText::GetText);
-		Text.CText = 0x951818;
-		Text.textDrawers = (CTextDrawer *)0x71EBA8;
-		Text.currentTextDrawer = (unsigned short *)0x96CF80;
-		Text.cheatString = (char *)0x895C80;
-		Text.TextBox = (void(__cdecl *)(const wchar_t *text, bool flag1))0x505250;
-		Text.StyledText = (void(__cdecl *)(const wchar_t *text, unsigned time, unsigned style))0x52A130;
-		Text.TextLowPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x529AD0;
-		Text.TextHighPriority = (void(__cdecl *)(const wchar_t *text, unsigned time, bool flag1, bool flag2))0x529BE0;
-		break;
-	default:
-		break;
-	}
-#endif
 }
 
 bool
@@ -348,76 +235,100 @@ GtaGame::IsChinese()
 		return china;
 }
 
-void GtaGame::InitScripts_OnGameInit()
+void
+GtaGame::InitScripts_OnGameInit()
 {
-	LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Init--");
-	scriptMgr.UnloadScripts();
-	CustomText::Unload();
-	game.Events.pfInitScripts_OnGameInit();
-	scriptMgr.LoadScripts();
-	CustomText::Load();
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Init--");
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		Events.pfInitScripts_OnGameInit();
+
+		scriptMgr.LoadScripts();
+		CustomText::Load();
 }
 
-void GtaGame::InitScripts_OnGameReinit()
+void
+GtaGame::InitScripts_OnGameReinit()
 {
-	LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Re-Init--");
-	scriptMgr.UnloadScripts();
-	CustomText::Unload();
-	game.Events.pfInitScripts_OnGameReinit();
-	scriptMgr.LoadScripts();
-	CustomText::Load();
-	std::for_each(game.Misc.openedFiles->begin(), game.Misc.openedFiles->end(), fclose);
-	game.Misc.openedFiles->clear();
-	std::for_each(game.Misc.allocatedMemory->begin(), game.Misc.allocatedMemory->end(), free);
-	game.Misc.allocatedMemory->clear();
-	std::for_each(game.Misc.openedHandles->begin(), game.Misc.openedHandles->end(), CloseHandle);
-	game.Misc.openedHandles->clear();
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Re-Init--");
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		Events.pfInitScripts_OnGameReinit();
+
+		scriptMgr.LoadScripts();
+		CustomText::Load();
+
+		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
+		Misc.openedFiles->clear();
+		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
+		Misc.allocatedMemory->clear();
+		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
+		Misc.openedHandles->clear();
 }
 
-void GtaGame::InitScripts_OnGameSaveLoad()
+void
+GtaGame::InitScripts_OnGameSaveLoad()
 {
-	LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Load Save--");
-	scriptMgr.UnloadScripts();
-	CustomText::Unload();
-	game.Events.pfInitScripts_OnGameSaveLoad();
-	scriptMgr.LoadScripts();
-	CustomText::Load();
-	std::for_each(game.Misc.openedFiles->begin(), game.Misc.openedFiles->end(), fclose);
-	game.Misc.openedFiles->clear();
-	std::for_each(game.Misc.allocatedMemory->begin(), game.Misc.allocatedMemory->end(), free);
-	game.Misc.allocatedMemory->clear();
-	std::for_each(game.Misc.openedHandles->begin(), game.Misc.openedHandles->end(), CloseHandle);
-	game.Misc.openedHandles->clear();
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Load Save--");
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		Events.pfInitScripts_OnGameSaveLoad();
+
+		scriptMgr.LoadScripts();
+		CustomText::Load();
+
+		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
+		Misc.openedFiles->clear();
+		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
+		Misc.allocatedMemory->clear();
+		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
+		Misc.openedHandles->clear();
 }
 
-void GtaGame::OnGameSaveScripts(int a, int b)
+void
+GtaGame::OnGameSaveScripts(int a, int b)
 {
-	LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Save Scripts--");
-	scriptMgr.DisableAllScripts();
-	game.Events.pfGameSaveScripts(a, b);
-	scriptMgr.EnableAllScripts();
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Save Scripts--");
+
+		scriptMgr.DisableAllScripts();
+
+		Events.pfGameSaveScripts(a, b);
+
+		scriptMgr.EnableAllScripts();
 }
 
-void GtaGame::OnShutdownGame()
+void
+GtaGame::OnShutdownGame()
 {
-	LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Shutdown--");
-	game.Events.pfShutdownGame();
-	scriptMgr.UnloadScripts();
-	CustomText::Unload();
-	std::for_each(game.Misc.openedFiles->begin(), game.Misc.openedFiles->end(), fclose);
-	game.Misc.openedFiles->clear();
-	std::for_each(game.Misc.allocatedMemory->begin(), game.Misc.allocatedMemory->end(), free);
-	game.Misc.allocatedMemory->clear();
-	std::for_each(game.Misc.openedHandles->begin(), game.Misc.openedHandles->end(), CloseHandle);
-	game.Misc.openedHandles->clear();
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Shutdown--");
+
+		Events.pfShutdownGame();
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		std::for_each(Misc.openedFiles->begin(),.Misc.openedFiles->end(), fclose);
+		Misc.openedFiles->clear();
+		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
+		Misc.allocatedMemory->clear();
+		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
+		Misc.openedHandles->clear();
 }
 
-float ScreenCoord(float a)
+float
+ScreenCoord(float a)
 {
-	return a*(((float)(*game.Screen.Height))/900.f);
+		return a*(((float)(*Screen.Height))/900.f);
 }
 
-void GtaGame::OnMenuDrawing(float x, float y, wchar_t *text)
+void
+GtaGame::OnMenuDrawing(float x, float y, wchar_t *text)
 {
 	game.Events.pfDrawInMenu(x, y, text);
 #if CLEO_VC
