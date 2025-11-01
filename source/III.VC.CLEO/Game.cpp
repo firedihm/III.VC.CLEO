@@ -79,7 +79,7 @@ SteamHandler()
 {
 		do
 				std::this_thread::yield();
-		while (DetermineGameVersion() != GAME_GTAVC_VSTEAM || DetermineGameVersion() != GAME_GTA3_VSTEAM)
+		while (DetermineGameVersion() != GAME_GTAVC_VSTEAM && DetermineGameVersion() != GAME_GTA3_VSTEAM)
 
 		game.Patch();
 }
