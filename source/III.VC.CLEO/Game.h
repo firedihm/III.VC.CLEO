@@ -198,11 +198,7 @@ class GtaGame
 				// functions
 				int (__cdecl *pfModelForWeapon)(int eWeaponType);
 				char* (__cdecl *pfGetUserDirectory)();
-			#if CLEO_VC
-				void (__cdecl *pfSpawnCar)(uint);
-			#else
-				void (__cdecl *pfSpawnCar)();
-			#endif
+				void (__cdecl *pfSpawnCar)(int model); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
 				void (__cdecl *Multiply3x3)(CVector* out, uintptr_t* m, CVector* in);
 				void (__cdecl *RwV3dTransformPoints)(CVector*, CVector const*, int, uintptr_t const*);
 				bool (__cdecl *pfIsBoatModel)(int mID);
