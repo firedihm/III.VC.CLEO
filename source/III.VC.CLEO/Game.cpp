@@ -119,7 +119,7 @@ GtaGame::Patch()
 
 		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
 		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_1], scriptMgr.aScriptsArray);
-		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_2], scriptMgr.aScriptsArray + 1);
+		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_2], (uintptr_t)scriptMgr.aScriptsArray + 4);
 		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(CScript));
 		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(CScript));
 		CPatch::RedirectJump(lut[CA_INIT_SCRIPT], ScriptManager::InitialiseScript);
