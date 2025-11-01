@@ -222,7 +222,7 @@ GtaGame::Patch()
 		Misc.Multiply3x3 = (void (__cdecl *)(CVector* out, uintptr_t* m, CVector* in))lut[MA_MULTIPLY_3X3];
 		Misc.RwV3dTransformPoints = (void (__cdecl *)(CVector*, CVector const*, int, uintptr_t const*))lut[MA_RW3D_TRANSFORM_POINTS];
 		Misc.pfGetUserDirectory = (char* (__cdecl *)())lut[MA_GET_USER_DIRECTORY];
-		Misc.pfSpawnCar = (void (__cdecl *)())lut[MA_SPAWN_CAR];
+		Misc.pfSpawnCar = (void (__cdecl *)(int model))lut[MA_SPAWN_CAR];
 		Misc.pfCAnimManagerBlendAnimation = (int (__cdecl *)(int pRpClump, int dwAnimGroupId, int dwAnimId, float fSpeed))lut[MA_BLEND_ANIMATION];
 		Misc.pfIsBoatModel = (bool (__cdecl *)(int mID))lut[MA_IS_BOAT_MODEL];
 }
