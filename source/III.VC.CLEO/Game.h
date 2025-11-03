@@ -186,16 +186,12 @@ class GtaGame
 		} Shadows;
 
 		struct tMisc {
-				// variables
-				std::set<FILE*>* openedFiles;
 				std::set<void*>* allocatedMemory;
 				std::set<HANDLE>* openedHandles;
 				uintptr_t stVehicleModelInfo;
 				uintptr_t activePadState;
 				uintptr_t cameraWidescreen;
 				uintptr_t currentWeather;
-
-				// functions
 				int (__cdecl *pfModelForWeapon)(int eWeaponType);
 				char* (__cdecl *pfGetUserDirectory)();
 				void (__cdecl *pfSpawnCar)(int model); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
