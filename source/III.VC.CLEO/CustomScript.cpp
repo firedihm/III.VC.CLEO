@@ -157,11 +157,11 @@ CScript::JumpTo(int address)
 void
 CScript::Collect(uint numParams)
 {
-		Collect(&m_dwIp, numParams);
+		CollectParameters(&m_dwIp, numParams);
 }
 
 void
-CScript::Collect(uint* pIp, short numParams)
+CScript::CollectParameters(uint* pIp, short numParams)
 {
 		for (short i = 0; i < numParams; i++) {
 				tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[*pIp];
@@ -219,7 +219,7 @@ CScript::Collect(uint* pIp, short numParams)
 }
 
 int
-CScript::CollectNextWithoutIncreasingPC(uint ip)
+CScript::CollectNextParameterWithoutIncreasingPC(uint ip)
 {
 		tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[ip];
 		ip += 1;
@@ -250,7 +250,7 @@ CScript::CollectNextWithoutIncreasingPC(uint ip)
 						paramType->processed = true;
 				}
 
-				return (int)&game.Scripts.pScriptSpace[ip]; // pointer to string
+				return (int)&game.Scripts.pScriptSpace[ip]; // string address
 			default:
 				return -1;
 		}
