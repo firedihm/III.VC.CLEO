@@ -106,8 +106,8 @@ class CScript
 		CLEOAPI void JumpTo(int address);
 
 		CLEOAPI void Collect(uint numParams);
-		CLEOAPI void Collect(uint* pIp, uint numParams);
-		CLEOAPI int CollectNextWithoutIncreasingPC(uint ip);
+		CLEOAPI void CollectParameters(uint* pIp, uint numParams);
+		CLEOAPI int CollectNextParameterWithoutIncreasingPC(uint ip);
 		CLEOAPI void Store(uint numParams);
 
 	private:
