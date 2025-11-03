@@ -29,11 +29,10 @@ class ScriptManager
 		void EnableAllScripts();
 		void DisableAllScripts();
 
-		// hooks; rather redundant 
-		static void __fastcall InitialiseScript(CScript* script);
-		static eOpcodeResult __fastcall ProcessScriptCommand(CScript* script);
-		static void __fastcall CollectScriptParameters(CScript* script, int, uint* pIp, uint numParams);
-		static int __fastcall CollectScriptNextParameterWithoutIncreasingPC(CScript* script, int, uint ip);
+		static void SaveMemoryAddress(const void* memory);
+		static void DeleteMemoryAddress(const void* memory);
+		static void SaveFileStream(const void* file);
+		static void DeleteFileStream(const void* file);
 };
 
 extern ScriptManager scriptMgr;
