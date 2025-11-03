@@ -3,9 +3,14 @@
 #include "Log.h"
 #include "ScriptManager.h"
 
+#include <cstdio>
 #include <filesystem>
+#include <set>
 
 namespace fs = std::filesystem;
+
+std::set<const void*> AllocatedMemory;
+std::set<const FILE*> FileStreams;
 
 ScriptManager scriptMgr;
 
@@ -77,25 +82,25 @@ ScriptManager::DisableAllScripts()
 }
 
 void
-ScriptManager::InitialiseScript(CScript* script)
+ScriptManager::SaveMemoryAddress(const void* memory)
 {
-		script->Init();
-}
-
-eOpcodeResult
-ScriptManager::ProcessScriptCommand(CScript* script)
-{
-		return script->ProcessOneCommand();
+		AllocatedMemory.insert(memory);
 }
 
 void
-ScriptManager::CollectScriptParameters(CScript* script, int, uint* pIp, uint numParams)
+ScriptManager::DeleteMemoryAddress(const void* memory)
 {
-		script->Collect(pIp, numParams);
+		AllocatedMemory.erase(memory);
 }
 
-int
-ScriptManager::CollectScriptNextParameterWithoutIncreasingPC(CScript* script, int, uint ip)
+void
+ScriptManager::SaveFileStream(const void* file)
 {
-		return script->CollectNextWithoutIncreasingPC(ip);
+		FileStreams.insert((const FILE*)file);
+}
+
+void
+ScriptManager::DeleteFileStream(const void* file)
+{
+		FileStreams.erase((const FILE*)file);
 }
