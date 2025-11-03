@@ -7,6 +7,8 @@
 #include "Fxt.h"
 #include "CleoVersion.h"
 #include <direct.h>
+#include <cstdio>
+#include <cstring>
 
 #pragma warning(disable: 6031)
 #pragma warning(disable: 28182)
@@ -1000,11 +1002,12 @@ eOpcodeResult CustomOpcodes::MATH_LOG(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_SCM_FUNCTION(CScript *script)
+eOpcodeResult
+CustomOpcodes::CALL_SCM_FUNCTION(CScript* script)
 {
 		script->Collect(2);
 		int addr = game.Scripts.Params[0].nVar;
-		uint paramCount = game.Scripts.Params[1].nVar;
+		int paramCount = game.Scripts.Params[1].nVar;
 
 		script->Collect(paramCount);
 
@@ -1022,10 +1025,11 @@ eOpcodeResult CustomOpcodes::CALL_SCM_FUNCTION(CScript *script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::SCM_FUNCTION_RET(CScript *script)
+eOpcodeResult
+CustomOpcodes::SCM_FUNCTION_RET(CScript* script)
 {
 		script->Collect(1);
-		uint paramCount = game.Scripts.Params[0].nVar;
+		int paramCount = game.Scripts.Params[0].nVar;
 
 		// collect callee's retvals
 		script->Collect(paramCount);
@@ -1558,44 +1562,44 @@ eOpcodeResult CustomOpcodes::OPCODE_0A99(CScript *script)
 	return OR_CONTINUE;
 }
 
-
 //0A9A=3,%3d% = openfile %1s% mode %2d% ; IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0A9A(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A9A(CScript* script)
 {
-	script->Collect(1);
-	const char *fname = game.Scripts.Params[0].cVar;
-	auto paramType = script->GetNextParamType();
-	script->Collect(1);
-	char mode[0x10];
+		script->Collect(1);
+		const char* filename = game.Scripts.Params[0].cVar;
 
-	if (paramType != PARAM_TYPE_STRING)
-	{
-		union
-		{
-			unsigned uParam;
-			char strParam[4];
-		}param;
-		param.uParam = game.Scripts.Params[0].nVar;
-		strcpy(mode, param.strParam);
-	}
-	else
-		strcpy(mode, game.Scripts.Params[0].cVar);
+		eParamType paramType = script->GetNextParamType();
+		script->Collect(1);
 
-	auto file = fopen(fname, mode);
-	game.Scripts.Params[0].pVar = file;
-	script->UpdateCompareFlag(file != nullptr);
-	if (file) game.Misc.openedFiles->insert(file);
-	script->Store(1);
-	return OR_CONTINUE;
+		char mode[0x10];
+		if (paramType != PARAM_TYPE_STRING) {
+				int param = game.Scripts.Params[0].nVar;
+				std::strncpy(&mode, (char*)&param, sizeof(int));
+		} else
+				std::strcpy(&mode, game.Scripts.Params[0].cVar);
+
+		FILE* file = std::fopen(filename, &mode);
+		game.Scripts.Params[0].pVar = file;
+		script->Store(1);
+		script->UpdateCompareFlag(file != nullptr);
+
+		if (file)
+				ScriptManager::SaveFileStream(file);
+		else
+				LOG(LOG_PRIORITY_DEFAULT, "Failed to open file %s", filename);
+
+		return OR_CONTINUE;
 }
 
 //0A9B=1,closefile %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0A9B(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A9B(CScript* script)
 {
-	script->Collect(1);
-	fclose((FILE *)game.Scripts.Params[0].pVar);
-	game.Misc.openedFiles->erase((FILE *)game.Scripts.Params[0].pVar);
-	return OR_CONTINUE;
+		script->Collect(1);
+		std::fclose((FILE*)game.Scripts.Params[0].pVar);
+		ScriptManager::DeleteFileStream(game.Scripts.Params[0].pVar);
+		return OR_CONTINUE;
 }
 
 //0A9C=2,%2d% = file %1d% size
