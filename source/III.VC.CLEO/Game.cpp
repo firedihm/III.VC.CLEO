@@ -101,20 +101,9 @@ GtaGame::~GtaGame()
 void
 GtaGame::Patch()
 {
-	Misc.openedFiles = new std::set<FILE *>;
 	Misc.allocatedMemory = new std::set<void *>;
 	Misc.openedHandles = new std::set<HANDLE>;
 
-#if CLEO_VC
-	switch(Version)
-	{
-	case GAME_V1_0:
-		// Scripts
-		CPatch::SetPointer(0x45050E, (DWORD*)(scriptMgr.gameScripts)+1);
-
-		Misc.pfSpawnCar = (void(__cdecl *)(unsigned int modelID)) 0x4AE8F0;
-		break;
-#else
 		GameAddressLUT lut(Version);
 
 		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
@@ -122,10 +111,10 @@ GtaGame::Patch()
 		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_2], (uintptr_t)scriptMgr.aScriptsArray + 4);
 		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(CScript));
 		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(CScript));
-		CPatch::RedirectJump(lut[CA_INIT_SCRIPT], ScriptManager::InitialiseScript);
-		CPatch::RedirectJump(lut[CA_PROCESS_ONE_COMMAND], ScriptManager::ProcessScriptCommand);
-		CPatch::RedirectJump(lut[CA_COLLECT_PARAMETERS], ScriptManager::CollectScriptParameters);
-		CPatch::RedirectJump(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], ScriptManager::CollectScriptNextParameterWithoutIncreasingPC);
+		CPatch::RedirectJump(lut[CA_INIT_SCRIPT], CScript::Init);
+		CPatch::RedirectJump(lut[CA_PROCESS_ONE_COMMAND], CScript::ProcessOneCommand);
+		CPatch::RedirectJump(lut[CA_COLLECT_PARAMETERS], CScript::CollectParameters);
+		CPatch::RedirectJump(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], CScript::CollectNextParameterWithoutIncreasingPC);
 		Scripts.pfAddScriptToList = (void (__thiscall *)(CScript*, CScript**))lut[MA_ADD_SCRIPT_TO_LIST];
 		Scripts.pfRemoveScriptFromList = (void (__thiscall *)(CScript*, CScript**))lut[MA_REMOVE_SCRIPT_FROM_LIST];
 		Scripts.pfStoreParameters = (void (__thiscall *)(CScript*, uint*, uint))lut[MA_STORE_PARAMETERS];
