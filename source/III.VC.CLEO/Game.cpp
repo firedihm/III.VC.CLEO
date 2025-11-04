@@ -101,9 +101,6 @@ GtaGame::~GtaGame()
 void
 GtaGame::Patch()
 {
-	Misc.allocatedMemory = new std::set<void *>;
-	Misc.openedHandles = new std::set<HANDLE>;
-
 		GameAddressLUT lut(Version);
 
 		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
