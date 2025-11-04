@@ -186,8 +186,6 @@ class GtaGame
 		} Shadows;
 
 		struct tMisc {
-				std::set<void*>* allocatedMemory;
-				std::set<HANDLE>* openedHandles;
 				uintptr_t stVehicleModelInfo;
 				uintptr_t activePadState;
 				uintptr_t cameraWidescreen;
