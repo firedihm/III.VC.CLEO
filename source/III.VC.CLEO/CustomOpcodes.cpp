@@ -6,12 +6,12 @@
 #include "Log.h"
 #include "Fxt.h"
 #include "CleoVersion.h"
-#include <direct.h>
 #include <cstdio>
+#include <cstdlib>
 #include <cstring>
+#include <filesystem>
 
-#pragma warning(disable: 6031)
-#pragma warning(disable: 28182)
+namespace fs = std::filesystem;
 
 int format(CScript *script, char *str, size_t len, const char *format);
 
@@ -1019,8 +1019,8 @@ CustomOpcodes::CALL_SCM_FUNCTION(CScript* script)
 		script->PushStackFrame();
 		script->JumpTo(addr);
 
-		std::memset(script->m_aLVars, 0, sizeof(script->m_aLVars));
-		std::memcpy(script->m_aLVars, game.Scripts.Params, paramCount * sizeof(tScriptVar));
+		std::memset(&script->m_aLVars, 0, sizeof(script->m_aLVars));
+		std::memcpy(&script->m_aLVars, &game.Scripts.Params, paramCount * sizeof(tScriptVar));
 
 		return OR_CONTINUE;
 }
@@ -1567,11 +1567,17 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9A(CScript* script)
 {
 		script->Collect(1);
-		const char* filename = game.Scripts.Params[0].cVar;
+		fs::path filename(game.Scripts.Params[0].cVar);
+		if (!filename.is_absolute()) {
+				fs::path root(game.szRootPath);
+				root /= filename;
+				root.swap(filename);
+		}
 
 		eParamType paramType = script->GetNextParamType();
 		script->Collect(1);
 
+		// what is this?
 		char mode[0x10];
 		if (paramType != PARAM_TYPE_STRING) {
 				int param = game.Scripts.Params[0].nVar;
@@ -1579,7 +1585,7 @@ CustomOpcodes::OPCODE_0A9A(CScript* script)
 		} else
 				std::strcpy(&mode, game.Scripts.Params[0].cVar);
 
-		FILE* file = std::fopen(filename, &mode);
+		FILE* file = std::fopen(filename.c_str(), &mode);
 		game.Scripts.Params[0].pVar = file;
 		script->Store(1);
 		script->UpdateCompareFlag(file != nullptr);
@@ -1587,7 +1593,7 @@ CustomOpcodes::OPCODE_0A9A(CScript* script)
 		if (file)
 				ScriptManager::SaveFileStream(file);
 		else
-				LOG(LOG_PRIORITY_DEFAULT, "Failed to open file %s", filename);
+				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", filename.c_str());
 
 		return OR_CONTINUE;
 }
@@ -1852,32 +1858,33 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(CScript* script)
 //0AC6=2,%2d% = label %1p% offset //dup
 //0AC7=2,%2d% = var %1d% offset //dup
 
-
 //0AC8=2,%2d% = allocate_memory_size %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0AC8(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AC8(CScript* script)
 {
-	script->Collect(1);
-	unsigned size = game.Scripts.Params[0].nVar;
-	void *mem = calloc(size, sizeof(char));
-	if (mem)
-	{
-		game.Misc.allocatedMemory->insert(mem);
+		script->Collect(1);
+		void* mem = std::calloc(game.Scripts.Params[0].nVar, sizeof(char));
 		game.Scripts.Params[0].pVar = mem;
-		script->UpdateCompareFlag(true);
-	}
-	else script->UpdateCompareFlag(false);
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Store(1);
+		script->UpdateCompareFlag(mem != nullptr);
+
+		if (mem)
+				ScriptManager::SaveMemoryAddress(mem);
+		else
+				LOGL(LOG_PRIORITY_DEFAULT, "Failed to allocate memory");
+
+		return OR_CONTINUE;
 };
 
 //0AC9=1,free_allocated_memory %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0AC9(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AC9(CScript* script)
 {
-	script->Collect(1);
-	void *mem = game.Scripts.Params[0].pVar;
-	free(mem);
-	game.Misc.allocatedMemory->erase(mem);
-	return OR_CONTINUE;
+		script->Collect(1);
+		void* mem = game.Scripts.Params[0].pVar;
+		std::free(mem);
+		ScriptManager::DeleteMemoryAddress(mem);
+		return OR_CONTINUE;
 };
 
 //0ACA=1,show_text_box %1s%
@@ -2313,7 +2320,8 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AE5(CScript *script)
 }
 
 //0AE6=3,%2d% = find_first_file %1d% get_filename_to %3d% ; IF and SET
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AE6(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AE6(CScript* script)
 {
 	script->Collect(1);
 	WIN32_FIND_DATAA ffd;
