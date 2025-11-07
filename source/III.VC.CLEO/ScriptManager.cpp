@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 std::set<const void*> AllocatedMemory;
 std::set<const FILE*> FileStreams;
-std::set<const fs::directory_iterator*> FileHandles;
+std::set<const fs::directory_iterator*> FileSearchHandles;
 
 ScriptManager scriptMgr;
 
@@ -97,25 +97,25 @@ ScriptManager::DeleteMemoryAddress(const void* memory)
 }
 
 void
-ScriptManager::SaveFileStream(const void* file)
+ScriptManager::SaveFileStream(const FILE* stream)
 {
-		FileStreams.insert((const FILE*)file);
+		FileStreams.insert(stream);
 }
 
 void
-ScriptManager::DeleteFileStream(const void* file)
+ScriptManager::DeleteFileStream(const FILE* stream)
 {
-		FileStreams.erase((const FILE*)file);
+		FileStreams.erase(stream);
 }
 
 void
-ScriptManager::SaveFileHandle(const void* handle)
+ScriptManager::SaveFileSearchHandle(const fs::directory_iterator* handle)
 {
-		FileHandles.insert((const fs::directory_iterator*)handle);
+		FileSearchHandles.insert(handle);
 }
 
 void
-ScriptManager::DeleteFileHandle(const void* handle)
+ScriptManager::DeleteFileSearchHandle(const fs::directory_iterator* handle)
 {
-		FileHandles.erase((const fs::directory_iterator*)handle);
+		FileSearchHandles.erase(handle);
 }
