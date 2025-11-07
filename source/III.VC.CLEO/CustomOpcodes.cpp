@@ -1567,11 +1567,11 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9A(CScript* script)
 {
 		script->Collect(1);
-		fs::path filename(game.Scripts.Params[0].cVar);
-		if (!filename.is_absolute()) {
+		fs::path filepath(game.Scripts.Params[0].cVar);
+		if (!filepath.is_absolute()) {
 				fs::path root(game.szRootPath);
-				root /= filename;
-				root.swap(filename);
+				root /= filepath;
+				root.swap(filepath);
 		}
 
 		eParamType paramType = script->GetNextParamType();
@@ -1585,7 +1585,7 @@ CustomOpcodes::OPCODE_0A9A(CScript* script)
 		} else
 				std::strcpy(&mode, game.Scripts.Params[0].cVar);
 
-		FILE* file = std::fopen(filename.c_str(), &mode);
+		FILE* file = std::fopen(filepath.c_str(), &mode);
 		game.Scripts.Params[0].pVar = file;
 		script->Store(1);
 		script->UpdateCompareFlag(file != nullptr);
@@ -1593,7 +1593,7 @@ CustomOpcodes::OPCODE_0A9A(CScript* script)
 		if (file)
 				ScriptManager::SaveFileStream(file);
 		else
-				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", filename.c_str());
+				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", filepath.c_str());
 
 		return OR_CONTINUE;
 }
@@ -2303,73 +2303,91 @@ eOpcodeResult CustomOpcodes::OPCODE_0AE0(CScript *script)
 //0AE3=6,%6d% = random_object_near_point %1d% %2d% %3d% in_radius %4d% find_next %5h% //IF and SET //dup
 
 //0AE4=1,  directory_exists %1d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AE4(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AE4(CScript* script)
 {
-	script->Collect(1);
-	auto fAttr = GetFileAttributes(game.Scripts.Params[0].cVar);
-	script->UpdateCompareFlag((fAttr != INVALID_FILE_ATTRIBUTES) && (fAttr & FILE_ATTRIBUTE_DIRECTORY));
-	return OR_CONTINUE;
+		script->Collect(1);
+		fs::path dir(game.Scripts.Params[0].cVar);
+		if (!dir.is_absolute()) {
+				fs::path root(game.szRootPath);
+				root /= dir;
+				root.swap(dir);
+		}
+
+		script->UpdateCompareFlag(fs::is_directory(dir));
+		return OR_CONTINUE;
 }
 
 //0AE5=1,create_directory %1d% ; IF and SET
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AE5(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AE5(CScript* script)
 {
-	script->Collect(1);
-	script->UpdateCompareFlag(CreateDirectory(game.Scripts.Params[0].cVar, NULL) != 0);
-	return OR_CONTINUE;
+		script->Collect(1);
+		fs::path dir(game.Scripts.Params[0].cVar);
+		if (!dir.is_absolute()) {
+				fs::path root(game.szRootPath);
+				root /= dir;
+				root.swap(dir);
+		}
+
+		script->UpdateCompareFlag(fs::create_directory(dir));
+		return OR_CONTINUE;
 }
 
 //0AE6=3,%2d% = find_first_file %1d% get_filename_to %3d% ; IF and SET
 eOpcodeResult
 CustomOpcodes::OPCODE_0AE6(CScript* script)
 {
-	script->Collect(1);
-	WIN32_FIND_DATAA ffd;
-	memset(&ffd, 0, sizeof(ffd));
-	HANDLE handle = FindFirstFile(game.Scripts.Params[0].cVar, &ffd);
-	game.Scripts.Params[0].pVar = handle;
-	script->Store(1);
-	game.Misc.openedHandles->insert(handle);
-	script->Collect(1);
-	if (handle != INVALID_HANDLE_VALUE)
-	{
-		strcpy(game.Scripts.Params[0].cVar, ffd.cFileName);
-		script->UpdateCompareFlag(true);
-	}
-	else
-	{
-		script->UpdateCompareFlag(false);
-	}
-	return OR_CONTINUE;
+		script->Collect(1);
+		fs::path filepath(game.Scripts.Params[0].cVar);
+		if (!filepath.is_absolute()) {
+				fs::path root(game.szRootPath);
+				root /= filepath;
+				root.swap(filepath);
+		}
+
+		fs::directory_iterator* handle = new fs::directory_iterator(filepath);
+		bool result = (*handle != end(*handle)) ? true : false;
+		game.Scripts.Params[0].pVar = handle;
+		script->Store(1);
+		script->UpdateCompareFlag(result);
+
+		script->Collect(1);
+		const char* src = result ? (*handle)->path().filename().c_str() : "";
+		std::strcpy(game.Scripts.Params[0].cVar, src);
+
+		if (result)
+				ScriptManager::SaveFileSearchHandle(handle);
+
+		return OR_CONTINUE;
 }
 
 //0AE7=2,%2d% = find_next_file %1d% ; IF and SET
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AE7(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AE7(CScript* script)
 {
-	script->Collect(2);
-	WIN32_FIND_DATAA ffd;
-	memset(&ffd, 0, sizeof(ffd));
-	HANDLE handle = (HANDLE)game.Scripts.Params[0].pVar;
-	if (FindNextFile(handle, &ffd))
-	{
-		strcpy(game.Scripts.Params[1].cVar, ffd.cFileName);
-		script->UpdateCompareFlag(true);
-	}
-	else
-	{
-		script->UpdateCompareFlag(false);
-	}
-	return OR_CONTINUE;
+		script->Collect(2);
+		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.Params[0].pVar;
+
+		(*handle)++;
+		bool result = (*handle != end(*handle)) ? true : false;
+		script->UpdateCompareFlag(result);
+
+		const char* src = result ? (*handle)->path().filename().c_str() : "";
+		std::strcpy(game.Scripts.Params[1].cVar, src);
+
+		return OR_CONTINUE;
 }
 
 //0AE8=1,find_close %1d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AE8(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0AE8(CScript* script)
 {
-	script->Collect(1);
-	HANDLE handle = (HANDLE)game.Scripts.Params[0].pVar;
-	FindClose(handle);
-	game.Misc.openedHandles->erase(handle);
-	return OR_CONTINUE;
+		script->Collect(1);
+		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.Params[0].pVar;
+		delete handle;
+		ScriptManager::DeleteFileSearchHandle(handle);
+		return OR_CONTINUE;
 }
 
 //0AE9=1,pop_float %1d% //dup
