@@ -11,6 +11,7 @@ namespace fs = std::filesystem;
 
 std::set<const void*> AllocatedMemory;
 std::set<const FILE*> FileStreams;
+std::set<const fs::directory_iterator*> FileHandles;
 
 ScriptManager scriptMgr;
 
@@ -31,6 +32,8 @@ ScriptManager::LoadScripts()
 								script->AddToCustomList(&pCusomScripts);
 								script->m_bIsActive = true;
 								numLoadedCustomScripts++;
+
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Loaded custom script \"%s\"", &script->m_acName);
 						} catch (const char* e) {
 								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), e);
 						} catch (const std::bad_alloc& e) {
@@ -50,7 +53,7 @@ ScriptManager::UnloadScripts()
 				game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
 				numLoadedCustomScripts--;
 
-				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom script \"%s\"", script->m_acName);
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloaded custom script \"%s\"", &script->m_acName);
 
 				CScript* next = script->m_pNextCustom;
 				delete script;
@@ -65,7 +68,7 @@ ScriptManager::EnableAllScripts()
 		CScript* script = pCusomScripts;
 		while (script) {
 				game.Scripts.AddScriptToList(script, game.Scripts.pActiveScriptsList);
-				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", script->m_acName);
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", &script->m_acName);
 				script = script->m_pNextCustom;
 		}
 }
@@ -76,7 +79,7 @@ ScriptManager::DisableAllScripts()
 		CScript* script = pCusomScripts;
 		while (script) {
 				game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
-				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", script->m_acName);
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", &script->m_acName);
 				script = script->m_pNextCustom;
 		}
 }
@@ -103,4 +106,16 @@ void
 ScriptManager::DeleteFileStream(const void* file)
 {
 		FileStreams.erase((const FILE*)file);
+}
+
+void
+ScriptManager::SaveFileHandle(const void* handle)
+{
+		FileHandles.insert((const fs::directory_iterator*)handle);
+}
+
+void
+ScriptManager::DeleteFileHandle(const void* handle)
+{
+		FileHandles.erase((const fs::directory_iterator*)handle);
 }
