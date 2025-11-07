@@ -1547,54 +1547,34 @@ eOpcodeResult CustomOpcodes::OPCODE_0A91(CScript *script)
 //0A98=2,%2d% = object %1d% struct //dup
 
 //0A99=1,chdir %1buserdir/rootdir%
-eOpcodeResult CustomOpcodes::OPCODE_0A99(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A99(CScript* script)
 {
-	auto paramType = script->GetNextParamType();
-	script->Collect(1);
-	if (paramType != PARAM_TYPE_STRING)
-	{
-		_chdir(game.Scripts.Params[0].nVar ? game.Misc.pfGetUserDirectory() : "");
-	}
-	else
-	{
-		_chdir(game.Scripts.Params[0].cVar);
-	}
-	return OR_CONTINUE;
+		eParamType param = script->GetNextParamType();
+		script->Collect(1);
+		if (param != PARAM_TYPE_STRING) {
+				_chdir(game.Scripts.Params[0].nVar ? game.Misc.pfGetUserDirectory() : "");
+		else
+				_chdir(game.Scripts.Params[0].cVar);
+
+		return OR_CONTINUE;
 }
 
 //0A9A=3,%3d% = openfile %1s% mode %2d% ; IF and SET
 eOpcodeResult
 CustomOpcodes::OPCODE_0A9A(CScript* script)
 {
-		script->Collect(1);
-		fs::path filepath(game.Scripts.Params[0].cVar);
-		if (!filepath.is_absolute()) {
-				fs::path root(game.szRootPath);
-				root /= filepath;
-				root.swap(filepath);
-		}
-
-		eParamType paramType = script->GetNextParamType();
-		script->Collect(1);
-
-		// what is this?
-		char mode[0x10];
-		if (paramType != PARAM_TYPE_STRING) {
-				int param = game.Scripts.Params[0].nVar;
-				std::strncpy(&mode, (char*)&param, sizeof(int));
-		} else
-				std::strcpy(&mode, game.Scripts.Params[0].cVar);
-
-		FILE* file = std::fopen(filepath.c_str(), &mode);
-		game.Scripts.Params[0].pVar = file;
-		script->Store(1);
+		script->Collect(2);
+		FILE* file = std::fopen(game.Scripts.Params[0].cVar, game.Scripts.Params[1].cVar);
 		script->UpdateCompareFlag(file != nullptr);
 
 		if (file)
 				ScriptManager::SaveFileStream(file);
 		else
-				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", filepath.c_str());
+				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", game.Scripts.Params[0].cVar);
 
+		game.Scripts.Params[0].pVar = file;
+		script->Store(1);
 		return OR_CONTINUE;
 }
 
@@ -1864,8 +1844,6 @@ CustomOpcodes::OPCODE_0AC8(CScript* script)
 {
 		script->Collect(1);
 		void* mem = std::calloc(game.Scripts.Params[0].nVar, sizeof(char));
-		game.Scripts.Params[0].pVar = mem;
-		script->Store(1);
 		script->UpdateCompareFlag(mem != nullptr);
 
 		if (mem)
@@ -1873,6 +1851,8 @@ CustomOpcodes::OPCODE_0AC8(CScript* script)
 		else
 				LOGL(LOG_PRIORITY_DEFAULT, "Failed to allocate memory");
 
+		game.Scripts.Params[0].pVar = mem;
+		script->Store(1);
 		return OR_CONTINUE;
 };
 
@@ -2307,14 +2287,7 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE4(CScript* script)
 {
 		script->Collect(1);
-		fs::path dir(game.Scripts.Params[0].cVar);
-		if (!dir.is_absolute()) {
-				fs::path root(game.szRootPath);
-				root /= dir;
-				root.swap(dir);
-		}
-
-		script->UpdateCompareFlag(fs::is_directory(dir));
+		script->UpdateCompareFlag(fs::is_directory(game.Scripts.Params[0].cVar));
 		return OR_CONTINUE;
 }
 
@@ -2323,14 +2296,7 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE5(CScript* script)
 {
 		script->Collect(1);
-		fs::path dir(game.Scripts.Params[0].cVar);
-		if (!dir.is_absolute()) {
-				fs::path root(game.szRootPath);
-				root /= dir;
-				root.swap(dir);
-		}
-
-		script->UpdateCompareFlag(fs::create_directory(dir));
+		script->UpdateCompareFlag(fs::create_directory(game.Scripts.Params[0].cVar));
 		return OR_CONTINUE;
 }
 
@@ -2339,25 +2305,20 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE6(CScript* script)
 {
 		script->Collect(1);
-		fs::path filepath(game.Scripts.Params[0].cVar);
-		if (!filepath.is_absolute()) {
-				fs::path root(game.szRootPath);
-				root /= filepath;
-				root.swap(filepath);
-		}
+		fs::directory_iterator* handle = new fs::directory_iterator(game.Scripts.Params[0].cVar);
 
-		fs::directory_iterator* handle = new fs::directory_iterator(filepath);
 		bool result = (*handle != end(*handle)) ? true : false;
+		script->UpdateCompareFlag(result);
+
+		if (result)
+				ScriptManager::SaveFileSearchHandle(handle);
+
 		game.Scripts.Params[0].pVar = handle;
 		script->Store(1);
-		script->UpdateCompareFlag(result);
 
 		script->Collect(1);
 		const char* src = result ? (*handle)->path().filename().c_str() : "";
 		std::strcpy(game.Scripts.Params[0].cVar, src);
-
-		if (result)
-				ScriptManager::SaveFileSearchHandle(handle);
 
 		return OR_CONTINUE;
 }
