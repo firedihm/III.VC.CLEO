@@ -1434,7 +1434,7 @@ eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(CScript *script)
 };
 
 //0673=4,play_animation on actor %1d% animgroup %2d% anim %3d% blendfactor %4f%
-eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(CScript* script)
+eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(CScript *script)
 {
 	script->Collect(4);
 	void* actor = game.Pools.pfPedPoolGetStruct(*game.Pools.pPedPool, game.Scripts.Params[0].nVar);
@@ -1550,12 +1550,10 @@ eOpcodeResult CustomOpcodes::OPCODE_0A91(CScript *script)
 eOpcodeResult
 CustomOpcodes::OPCODE_0A99(CScript* script)
 {
-		eParamType param = script->GetNextParamType();
 		script->Collect(1);
-		if (param != PARAM_TYPE_STRING) {
-				_chdir(game.Scripts.Params[0].nVar ? game.Misc.pfGetUserDirectory() : "");
-		else
-				_chdir(game.Scripts.Params[0].cVar);
+
+		fs::current_path(game.Scripts.Params[0].nVar == 0 ? game.szRootPath : 
+						 game.Scripts.Params[0].nVar == 1 ? game.Misc.pfGetUserDirectory() : game.Scripts.Params[0].cVar);
 
 		return OR_CONTINUE;
 }
@@ -1565,16 +1563,17 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9A(CScript* script)
 {
 		script->Collect(2);
-		FILE* file = std::fopen(game.Scripts.Params[0].cVar, game.Scripts.Params[1].cVar);
-		script->UpdateCompareFlag(file != nullptr);
 
+		FILE* file = std::fopen(game.Scripts.Params[0].cVar, game.Scripts.Params[1].cVar);
 		if (file)
 				ScriptManager::SaveFileStream(file);
 		else
 				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", game.Scripts.Params[0].cVar);
 
+		script->UpdateCompareFlag(file != nullptr);
 		game.Scripts.Params[0].pVar = file;
 		script->Store(1);
+
 		return OR_CONTINUE;
 }
 
@@ -1583,50 +1582,55 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9B(CScript* script)
 {
 		script->Collect(1);
-		std::fclose((FILE*)game.Scripts.Params[0].pVar);
-		ScriptManager::DeleteFileStream(game.Scripts.Params[0].pVar);
+		FILE* file = (FILE*)game.Scripts.Params[0].pVar;
+
+		std::fclose(file);
+		ScriptManager::DeleteFileStream(file);
+
 		return OR_CONTINUE;
 }
 
 //0A9C=2,%2d% = file %1d% size
-eOpcodeResult CustomOpcodes::OPCODE_0A9C(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A9C(CScript* script)
 {
-	script->Collect(1);
-	FILE *file;
-	file = (FILE *)game.Scripts.Params[0].pVar;
-	auto savedPos = ftell(file);
-	fseek(file, 0, SEEK_END);
-	game.Scripts.Params[0].nVar = static_cast<unsigned>(ftell(file));
-	fseek(file, savedPos, SEEK_SET);
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Collect(1);
+		FILE* file = (FILE*)game.Scripts.Params[0].pVar;
+
+		long savedPos = std::ftell(file);
+		std::fseek(file, 0, SEEK_END);
+		long size = std::ftell(file);
+		std::fseek(file, savedPos, SEEK_SET);
+
+		game.Scripts.Params[0].nVar = size;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0A9D=3,readfile %1d% size %2d% to %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0A9D(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A9D(CScript* script)
 {
-	script->Collect(3);
-	FILE *file;
-	file = (FILE *)game.Scripts.Params[0].pVar;
-	unsigned size = game.Scripts.Params[1].nVar;
-	void *buf;
-	buf = game.Scripts.Params[2].cVar;
-	fread(buf, size, 1, file);
-	return OR_CONTINUE;
+		script->Collect(3);
+		FILE* file = (FILE*)game.Scripts.Params[0].pVar;
+
+		std::fread(game.Scripts.Params[2].pVar, game.Scripts.Params[1].nVar, 1, file);
+
+		return OR_CONTINUE;
 }
 
 //0A9E=3,writefile %1d% size %2d% from %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0A9E(CScript *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A9E(CScript* script)
 {
-	script->Collect(3);
-	FILE *file;
-	file = (FILE *)game.Scripts.Params[0].pVar;
-	unsigned size = game.Scripts.Params[1].nVar;
-	const void *buf;
-	buf = game.Scripts.Params[2].cVar;
-	fwrite(buf, size, 1, file);
-	fflush(file);
-	return OR_CONTINUE;
+		script->Collect(3);
+		FILE* file = (FILE*)game.Scripts.Params[0].pVar;
+
+		std::fwrite(game.Scripts.Params[2].pVar, game.Scripts.Params[1].nVar, 1, file);
+		std::fflush(file);
+
+		return OR_CONTINUE;
 }
 
 //0A9F=1,%1d% = current_thread_pointer //dup
@@ -1812,7 +1816,7 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABE(CScript *script)
 }
 
 //0ABF=2,set_vehicle %1d% engine_state_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(CScript* script)
+eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(CScript *script)
 {
 	script->Collect(2);
 	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game.Pools.pfVehiclePoolGetStruct(*game.Pools.pVehiclePool, game.Scripts.Params[0].nVar));
@@ -1843,16 +1847,17 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AC8(CScript* script)
 {
 		script->Collect(1);
-		void* mem = std::calloc(game.Scripts.Params[0].nVar, sizeof(char));
-		script->UpdateCompareFlag(mem != nullptr);
 
+		void* mem = std::calloc(1, game.Scripts.Params[0].nVar);
 		if (mem)
 				ScriptManager::SaveMemoryAddress(mem);
 		else
 				LOGL(LOG_PRIORITY_DEFAULT, "Failed to allocate memory");
 
+		script->UpdateCompareFlag(mem != nullptr);
 		game.Scripts.Params[0].pVar = mem;
 		script->Store(1);
+
 		return OR_CONTINUE;
 };
 
@@ -1862,8 +1867,10 @@ CustomOpcodes::OPCODE_0AC9(CScript* script)
 {
 		script->Collect(1);
 		void* mem = game.Scripts.Params[0].pVar;
+
 		std::free(mem);
 		ScriptManager::DeleteMemoryAddress(mem);
+
 		return OR_CONTINUE;
 };
 
@@ -2287,7 +2294,9 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE4(CScript* script)
 {
 		script->Collect(1);
+
 		script->UpdateCompareFlag(fs::is_directory(game.Scripts.Params[0].cVar));
+
 		return OR_CONTINUE;
 }
 
@@ -2296,7 +2305,9 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE5(CScript* script)
 {
 		script->Collect(1);
+
 		script->UpdateCompareFlag(fs::create_directory(game.Scripts.Params[0].cVar));
+
 		return OR_CONTINUE;
 }
 
@@ -2305,14 +2316,13 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE6(CScript* script)
 {
 		script->Collect(1);
+
 		fs::directory_iterator* handle = new fs::directory_iterator(game.Scripts.Params[0].cVar);
-
 		bool result = (*handle != end(*handle)) ? true : false;
-		script->UpdateCompareFlag(result);
-
 		if (result)
 				ScriptManager::SaveFileSearchHandle(handle);
 
+		script->UpdateCompareFlag(result);
 		game.Scripts.Params[0].pVar = handle;
 		script->Store(1);
 
@@ -2332,8 +2342,8 @@ CustomOpcodes::OPCODE_0AE7(CScript* script)
 
 		(*handle)++;
 		bool result = (*handle != end(*handle)) ? true : false;
-		script->UpdateCompareFlag(result);
 
+		script->UpdateCompareFlag(result);
 		const char* src = result ? (*handle)->path().filename().c_str() : "";
 		std::strcpy(game.Scripts.Params[1].cVar, src);
 
@@ -2346,8 +2356,10 @@ CustomOpcodes::OPCODE_0AE8(CScript* script)
 {
 		script->Collect(1);
 		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.Params[0].pVar;
+
 		delete handle;
 		ScriptManager::DeleteFileSearchHandle(handle);
+
 		return OR_CONTINUE;
 }
 
