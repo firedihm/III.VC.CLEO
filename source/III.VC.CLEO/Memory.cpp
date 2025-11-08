@@ -12,14 +12,14 @@ Write(char* dest, const char* src, size_t count)
                 return;
 
         ulong oldProtect;
-  		  VirtualProtect(dest, count, PAGE_EXECUTE_READWRITE, &oldProtect);
+  	VirtualProtect(dest, count, PAGE_EXECUTE_READWRITE, &oldProtect);
 
         if (src)
-  		          std::memcpy(dest, src, count);
+  		std::memcpy(dest, src, count);
         else
                 std::memset(dest, 0x90, count);
 
-  		  VirtualProtect(dest, count, oldProtect, &oldProtect);
+  	VirtualProtect(dest, count, oldProtect, &oldProtect);
 }
 
 void
@@ -62,12 +62,12 @@ void
 RedirectCall(char* dest, char* func)
 {
         SetChar(dest, 0xE8);
-    		SetInt(dest + 1, func - (dest + 5));
+    	SetInt(dest + 1, func - (dest + 5));
 }
 
 void
 RedirectJump(char* dest, char* func)
 {
-    		SetChar(dest, 0xE9);
-    		SetInt(dest + 1, func - (dest + 5));
+    	SetChar(dest, 0xE9);
+    	SetInt(dest + 1, func - (dest + 5));
 }
