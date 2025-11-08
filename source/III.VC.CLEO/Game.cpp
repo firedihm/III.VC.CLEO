@@ -1,9 +1,9 @@
 #include "CleoPlugins.h"
 #include "CleoVersion.h"
-#include "CPatch.h"
 #include "Fxt.h"
 #include "Game.h"
 #include "Log.h"
+#include "Memory.h"
 #include "ScriptManager.h"
 
 #ifdef _WIN32
@@ -103,15 +103,15 @@ GtaGame::Patch()
 {
 		GameAddressLUT lut(Version);
 
-		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
-		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_1], scriptMgr.aScriptsArray);
-		CPatch::SetPointer(lut[MA_SCRIPTS_ARRAY_2], (uintptr_t)scriptMgr.aScriptsArray + 4);
-		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(CScript));
-		CPatch::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(CScript));
-		CPatch::RedirectJump(lut[CA_INIT_SCRIPT], CScript::Init);
-		CPatch::RedirectJump(lut[CA_PROCESS_ONE_COMMAND], CScript::ProcessOneCommand);
-		CPatch::RedirectJump(lut[CA_COLLECT_PARAMETERS], CScript::CollectParameters);
-		CPatch::RedirectJump(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], CScript::CollectNextParameterWithoutIncreasingPC);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_1], scriptMgr.aScriptsArray);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_2], (uintptr_t)scriptMgr.aScriptsArray + 4);
+		memory::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(CScript));
+		memory::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(CScript));
+		memory::RedirectJump(lut[CA_INIT], CScript::Init);
+		memory::RedirectJump(lut[CA_PROCESS_ONE_COMMAND], CScript::ProcessOneCommand);
+		memory::RedirectJump(lut[CA_COLLECT_PARAMETERS], CScript::CollectParameters);
+		memory::RedirectJump(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], CScript::CollectNextParameterWithoutIncreasingPC);
 		Scripts.pfAddScriptToList = (void (__thiscall *)(CScript*, CScript**))lut[MA_ADD_SCRIPT_TO_LIST];
 		Scripts.pfRemoveScriptFromList = (void (__thiscall *)(CScript*, CScript**))lut[MA_REMOVE_SCRIPT_FROM_LIST];
 		Scripts.pfStoreParameters = (void (__thiscall *)(CScript*, uint*, uint))lut[MA_STORE_PARAMETERS];
@@ -139,7 +139,7 @@ GtaGame::Patch()
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
 		Text.pfGetText = (wchar_t* (__thiscall *)(int, char*))lut[MA_GET_TEXT];
-		CPatch::RedirectJump(lut[CA_GET_TEXT], CustomText::GetText);
+		memory::RedirectJump(lut[CA_GET_TEXT], CustomText::GetText);
 		Text.CText = lut[MA_CTEXT];
 		Text.textDrawers = (CTextDrawer*)lut[MA_TEXT_DRAWERS];
 		Text.currentTextDrawer = (ushort*)lut[MA_CURRENT_TEXT_DRAWER];
@@ -149,9 +149,9 @@ GtaGame::Patch()
 		Text.TextLowPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))lut[MA_TEXT_LOW_PRIORITY];
 		Text.TextHighPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))lut[MA_TEXT_HIGH_PRIORITY];
 		if (Version >= GAME_GTAVC_V1_0 || Version <= GAME_GTAVC_VSTEAMENC) {
-				CPatch::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
-				CPatch::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
-				CPatch::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
+				memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
+				memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
+				memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
 		}
 
 		Screen.Width = (int*)lut[MA_SCREEN_WIDTH];
@@ -177,18 +177,18 @@ GtaGame::Patch()
 		Pools.pfVehiclePoolGetHandle = (int (__thiscall *)(GamePool*, void*))lut[MA_VEHICLE_POOL_GET_HANDLE];
 		Pools.pfObjectPoolGetHandle = (int (__thiscall *)(GamePool*, void*))lut[MA_OBJECT_POOL_GET_HANDLE];
 
-		Events.pfInitScripts_OnGameSaveLoad = (void (__cdecl *)())CPatch::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_LOAD], lut[MA_INIT_SCRIPTS]);
-		CPatch::RedirectCall(lut[CA_INIT_SCRIPTS_ON_LOAD], GtaGame::InitScripts_OnGameSaveLoad);
-		Events.pfInitScripts_OnGameInit = (void (__cdecl *)())CPatch::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_START], lut[MA_INIT_SCRIPTS]);
-		CPatch::RedirectCall(lut[CA_INIT_SCRIPTS_ON_START], GtaGame::InitScripts_OnGameInit);
-		Events.pfInitScripts_OnGameReinit = (void (__cdecl *)())CPatch::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_RELOAD], lut[MA_INIT_SCRIPTS]);
-		CPatch::RedirectCall(lut[CA_INIT_SCRIPTS_ON_RELOAD], GtaGame::InitScripts_OnGameReinit);
-		Events.pfShutdownGame = (void (__cdecl *)())CPatch::MakeCallAddr(lut[CA_SHUTDOWN_GAME], lut[MA_SHUTDOWN_GAME]);
-		CPatch::RedirectCall(lut[CA_SHUTDOWN_GAME], GtaGame::OnShutdownGame);
-		Events.pfGameSaveScripts = (void (__cdecl *)(int, int))CPatch::MakeCallAddr(lut[CA_GAME_SAVE_SCRIPTS], lut[MA_GAME_SAVE_SCRIPTS]);
-		CPatch::RedirectCall(lut[CA_GAME_SAVE_SCRIPTS], GtaGame::OnGameSaveScripts);
-		Events.pfDrawInMenu = (void (__cdecl *)(float, float, wchar_t*))CPatch::MakeCallAddr(lut[CA_DRAW_IN_MENU], lut[MA_DRAW_IN_MENU]);
-		CPatch::RedirectCall(lut[CA_DRAW_IN_MENU], GtaGame::OnMenuDrawing);
+		Events.pfInitScripts_OnGameSaveLoad = (void (__cdecl *)())memory::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_LOAD], lut[MA_INIT_SCRIPTS]);
+		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_LOAD], GtaGame::InitScripts_OnGameSaveLoad);
+		Events.pfInitScripts_OnGameInit = (void (__cdecl *)())memory::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_START], lut[MA_INIT_SCRIPTS]);
+		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_START], GtaGame::InitScripts_OnGameInit);
+		Events.pfInitScripts_OnGameReinit = (void (__cdecl *)())memory::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_RELOAD], lut[MA_INIT_SCRIPTS]);
+		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_RELOAD], GtaGame::InitScripts_OnGameReinit);
+		Events.pfShutdownGame = (void (__cdecl *)())memory::MakeCallAddr(lut[CA_SHUTDOWN_GAME], lut[MA_SHUTDOWN_GAME]);
+		memory::RedirectCall(lut[CA_SHUTDOWN_GAME], GtaGame::OnShutdownGame);
+		Events.pfGameSaveScripts = (void (__cdecl *)(int, int))memory::MakeCallAddr(lut[CA_GAME_SAVE_SCRIPTS], lut[MA_GAME_SAVE_SCRIPTS]);
+		memory::RedirectCall(lut[CA_GAME_SAVE_SCRIPTS], GtaGame::OnGameSaveScripts);
+		Events.pfDrawInMenu = (void (__cdecl *)(float, float, wchar_t*))memory::MakeCallAddr(lut[CA_DRAW_IN_MENU], lut[MA_DRAW_IN_MENU]);
+		memory::RedirectCall(lut[CA_DRAW_IN_MENU], GtaGame::OnMenuDrawing);
 
 		Shadows.StoreShadowToBeRendered = (float(__cdecl *)(uchar, uintptr_t*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, uintptr_t*, bool))lut[MA_STORE_SHADOW_TO_BE_RENDERED];
 		Shadows.pRwTexture_shad_car = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_CAR];
