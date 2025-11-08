@@ -11,7 +11,7 @@ Write(char* dest, const char* src, size_t count)
         if (!dest)
                 return;
 
-        ulong oldProtect;
+        uint oldProtect;
         VirtualProtect(dest, count, PAGE_EXECUTE_READWRITE, &oldProtect);
 
         if (src)
