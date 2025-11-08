@@ -120,7 +120,7 @@ enum eMemoryAddress
         NUM_MA
 };
 
-class GameAddressLUT
+struct GameAddressLUT
 {
         const eGameVersion Target;
 
