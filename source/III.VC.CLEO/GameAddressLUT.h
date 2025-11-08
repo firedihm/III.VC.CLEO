@@ -125,5 +125,5 @@ class GameAddressLUT
         const eGameVersion Target;
 
         explicit GameAddressLUT(eGameVersion target);
-        uintptr_t operator[](eMemoryAddress index);
+        void* operator[](eMemoryAddress index);
 };
