@@ -1,7 +1,7 @@
 #include "Game.h"
 #include "GameAddressLUT.h"
 
-void* LookUpTable[NUM_MA][NUM_GV] = {
+char* LookUpTable[NUM_MA][NUM_GV] = {
         // Scripts
         {0x4504E4, 0x4504E4, 0x4503F4, 0x4503F4, /*    */ 0x438809, 0x438809, 0x438809, 0x438809}, // MA_SCRIPTS_ARRAY_0
         {0x450508, 0x450508, 0x450418, 0x450418, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SCRIPTS_ARRAY_1
@@ -118,7 +118,7 @@ void* LookUpTable[NUM_MA][NUM_GV] = {
 
 GameAddressLUT::GameAddressLUT(eGameVersion target) : Target(target) {}
 
-void*
+char*
 GameAddressLUT::operator[](eMemoryAddress index)
 {
         return LookUpTable[index][Target];
