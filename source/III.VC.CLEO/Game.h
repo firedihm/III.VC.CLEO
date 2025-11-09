@@ -95,7 +95,7 @@ class GtaGame
 		const eGameVersion Version;
 
 		struct tScripts {
-				char* pScriptSpace;
+				uchar* pScriptSpace;
 				tScriptVar* pScriptParams;
 				ushort* pNumOpcodesExecuted;
 				OpcodeHandler OpcodeHandlers[15]; // 15 in VC, 12 in III
@@ -140,7 +140,7 @@ class GtaGame
 				CPool** ppPedPool;
 				CPool** ppVehiclePool;
 				CPool** ppObjectPool;
-				void* pPlayers; // CPlayerInfo*
+				uchar* pPlayers; // CPlayerInfo*
 				void* (__thiscall *pfPedPoolGetAt)(CPool*, int);
 				void* (__thiscall *pfVehiclePoolGetAt)(CPool*, int);
 				void* (__thiscall *pfObjectPoolGetAt)(CPool*, int);
@@ -171,7 +171,7 @@ class GtaGame
 		} Shadows;
 
 		struct tMisc {
-				uintptr_t stVehicleModelInfo;
+				uchar* pVehicleModelStore;
 				uintptr_t activePadState;
 				uintptr_t cameraWidescreen;
 				uintptr_t currentWeather;
