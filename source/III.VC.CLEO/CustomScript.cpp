@@ -169,32 +169,32 @@ CScript::CollectParameters(uint* pIp, short numParams)
 
 				switch (paramType->type) {
 					case PARAM_TYPE_INT32:
-						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 4;
 						break;
 					case PARAM_TYPE_GVAR:
-						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[*pIp]];
+						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[*pIp]];
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_LVAR:
-						game.Scripts.Params[i].nVar = m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[*pIp]].nVar;
+						game.Scripts.pScriptParams[i].nVar = m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[*pIp]].nVar;
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_INT8:
-						game.Scripts.Params[i].nVar = *(char*)&game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].nVar = *(char*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 1;
 						break;
 					case PARAM_TYPE_INT16:
-						game.Scripts.Params[i].nVar = *(short*)&game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].nVar = *(short*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_FLOAT:
 					#if CLEO_VC
-						game.Scripts.Params[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 4;
 						break;
 					#else
-						game.Scripts.Params[i].fVar = (float)(*(short*)&game.Scripts.pScriptSpace[*pIp]) / 16.0f;
+						game.Scripts.pScriptParams[i].fVar = (float)(*(short*)&game.Scripts.pScriptSpace[*pIp]) / 16.0f;
 						*pIp += 2;
 						break;
 					#endif
@@ -206,12 +206,12 @@ CScript::CollectParameters(uint* pIp, short numParams)
 								paramType->processed = true;
 						}
 
-						game.Scripts.Params[i].cVar = &game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].cVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += std::strlen(&game.Scripts.pScriptSpace[*pIp]) + 1;
 						break;
 					default:
 						*pIp -= 1;
-						game.Scripts.Params[i].cVar = &game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].cVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += KEY_LENGTH_IN_SCRIPT;
 						break;
 				}
