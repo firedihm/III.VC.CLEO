@@ -1445,47 +1445,60 @@ eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(CScript *script)
 eOpcodeResult CustomOpcodes::DRAW_SHADOW(CScript *script)
 {
 	script->Collect(10);
-	int Type = 2;	
+	int type = 2;	
 	CVector pos;
 	pos.x = game.Scripts.Params[1].fVar;
 	pos.y = game.Scripts.Params[2].fVar;
 	pos.z = game.Scripts.Params[3].fVar;
-	//float Angle = game.Scripts.Params[4].fVar; // to do
-	float Size = game.Scripts.Params[5].fVar;
+	float angle = game.Scripts.Params[4].fVar;
+	float length = game.Scripts.Params[5].fVar;
 
 	switch (game.Scripts.Params[0].nVar)
 	{
-	case 1:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_car;
-		Type = 1;
-		break;
-	case 2:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_ped;
-		break;
-	case 3:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_exp;
-		break;
-	case 4:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_heli;
-		Type = 1;
-		break;
-	case 5:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_headlight;
-		break;
-	case 6:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_bloodpool_64;
-		break;
-	case 7:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_bike;
-		break;
-	case 8:
-		game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_rcbaron;
-		break;
-	default:
-		return OR_CONTINUE;
+		case 1:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_car;
+			type = 1;
+			break;
+		case 2:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_ped;
+			break;
+		case 3:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_exp;
+			break;
+		case 4:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_heli;
+			type = 1;
+			break;
+		case 5:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_headlight;
+			break;
+		case 6:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_bloodpool_64;
+			break;
+		case 7:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_bike;
+			break;
+		case 8:
+			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_rcbaron;
+			break;
+		default:
+			return OR_CONTINUE;
 	}
 
-	game.Shadows.StoreShadowToBeRendered(Type, *game.Shadows.pRwTexture, &pos, Size, 0.0, 0.0, -Size, game.Scripts.Params[6].nVar, game.Scripts.Params[7].nVar, game.Scripts.Params[8].nVar, game.Scripts.Params[9].nVar, 150.0f, true, 1.0f, nullptr, false);
+	float x, y;
+	if (angle != 0.0f) {
+			y = std::cos(angle) * length;
+			x = std::sin(angle) * length;
+	} else {
+			y = length;
+			x = 0.0f;
+	}
+	float frontX = -x;
+	float frontY = y;
+	float sideX = y;
+	float sideY = x;
+
+	game.Shadows.pfStoreShadowToBeRendered(type, *game.Shadows.pRwTexture, &pos, frontX, frontY, sideX, sideY, game.Scripts.Params[6].nVar, game.Scripts.Params[7].nVar, game.Scripts.Params[8].nVar, game.Scripts.Params[9].nVar, 150.0f, true, 1.0f, nullptr, false);
 	return OR_CONTINUE;
 }
 
