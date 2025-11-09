@@ -134,7 +134,7 @@ GtaGame::Patch()
 		Scripts.OpcodeHandlers[14] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_14];
 		Scripts.ppActiveScriptsList = (CScript**)lut[MA_ACTIVE_SCRIPTS];
 		Scripts.pScriptParams = (tScriptVar*)lut[MA_SCRIPT_PARAMS];
-		Scripts.pScriptSpace = (char*)lut[MA_SCRIPT_SPACE];
+		Scripts.pScriptSpace = lut[MA_SCRIPT_SPACE];
 		Scripts.pNumOpcodesExecuted = (ushort*)lut[MA_NUM_OPCODES_EXECUTED];
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
@@ -198,7 +198,7 @@ GtaGame::Patch()
 		Shadows.ppShadowHeadLightsTex = (void**)lut[MA_SHADOW_HEADLIGHTS_TEX];
 		Shadows.ppBloodPoolTex = (void**)lut[MA_BLOOD_POOL_TEX];
 
-		Misc.stVehicleModelInfo = lut[MA_VEHICLE_MODEL_INFO];
+		Misc.pVehicleModelStore = lut[MA_VEHICLE_MODEL_STORE];
 		Misc.activePadState = lut[MA_ACTIVE_PAD_STATE];
 		Misc.pfModelForWeapon = (int (__cdecl *)(int eWeaponType))lut[MA_MODEL_FOR_WEAPON];
 		Misc.cameraWidescreen = lut[MA_CAMERA_WIDESCREEN];
