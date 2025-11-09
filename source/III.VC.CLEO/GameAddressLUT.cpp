@@ -1,7 +1,7 @@
 #include "Game.h"
 #include "GameAddressLUT.h"
 
-char* LookUpTable[NUM_MA][NUM_GV] = {
+uchar* LookUpTable[NUM_MA][NUM_GV] = {
         // Scripts
         // VC 1.0  VC 1.1    VC STEAM  VC STEAM           III 1.0   III 1.1   III STEAM III STEAM
         {0x4504E4, 0x4504E4, 0x4503F4, 0x4503F4, /*    */ 0x438809, 0x438809, 0x438809, 0x438809}, // MA_SCRIPTS_ARRAY_0
@@ -111,7 +111,7 @@ char* LookUpTable[NUM_MA][NUM_GV] = {
 
         // Misc
         // VC 1.0  VC 1.1    VC STEAM  VC STEAM           III 1.0   III 1.1   III STEAM III STEAM
-        {0x752A8C, 0x752A8C, 0x751A8C, 0x751A8C, /*    */ 0x8E2DE4, 0x8E2E98, 0x8F2FD8, 0x8F2FD8}, // MA_VEHICLE_MODEL_INFO
+        {0x752A8C, 0x752A8C, 0x751A8C, 0x751A8C, /*    */ 0x8E2DE4, 0x8E2E98, 0x8F2FD8, 0x8F2FD8}, // MA_VEHICLE_MODEL_STORE
         {0x7DBCB0, 0x7DBCB8, 0x7DACB8, 0x7DACB8, /*    */ 0x6F0360, 0x6F0360, 0x7004A0, 0x7004A0}, // MA_ACTIVE_PAD_STATE
         {0x4418B0, 0x4418B0, 0x441820, 0x441820, /*    */ 0x430690, 0x430690, 0x430690, 0x430690}, // MA_MODEL_FOR_WEAPON
         {0x7E46F5, 0x7E46FD, 0x7E36FD, 0x7E36FD, /*    */ 0x6FAD68, 0x6FAD68, 0x70AEA8, 0x70AEA8}, // MA_CAMERA_WIDESCREEN
@@ -126,7 +126,7 @@ char* LookUpTable[NUM_MA][NUM_GV] = {
 
 GameAddressLUT::GameAddressLUT(eGameVersion target) : Target(target) {}
 
-char*
+uchar*
 GameAddressLUT::operator[](eMemoryAddress index)
 {
         return LookUpTable[index][Target];
