@@ -19,7 +19,7 @@ CScript::CScript(const char* filepath) : m_pNext(nullptr), m_pPrev(nullptr), m_a
 		if (!file || !filesize)
 				throw "File is empty or corrupt";
 
-		m_pCodeData = new char[filesize];
+		m_pCodeData = new uchar[filesize];
 		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 
@@ -67,7 +67,7 @@ eOpcodeResult
 CScript::ProcessOneCommand()
 {
 		// highest bit of opcode denotes notFlag: reversing conditional result
-		ushort op = *(ushort*)&game.Scripts.Space[m_dwIp];
+		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_dwIp];
 		m_bNotFlag = (op & 0x8000) ? true : false;
 		op &= 0x7FFF;
 		m_dwIp += 2;
@@ -118,25 +118,25 @@ CScript::PopStackFrame()
 eParamType
 CScript::GetNextParamType()
 {
-		return ((tParamType*)&game.Scripts.Space[m_dwIp])->type;
+		return ((tParamType*)&game.Scripts.pScriptSpace[m_dwIp])->type;
 }
 
 void*
 CScript::GetPointerToScriptVariable()
 {
-		return game.Scripts.GetPointerToScriptVariable(this, &m_dwIp, 1);
+		return game.Scripts.pfGetPointerToScriptVariable(this, &m_dwIp, 1);
 }
 
 void
 CScript::UpdateCompareFlag(bool result)
 {
-		game.Scripts.UpdateCompareFlag(this, result);
+		game.Scripts.pfUpdateCompareFlag(this, result);
 }
 
 void
 CScript::ReadShortString(char* out)
 {
-		std::strncpy(out, &game.Scripts.Space[m_dwIp], KEY_LENGTH_IN_SCRIPT);
+		std::strncpy(out, &game.Scripts.pScriptSpace[m_dwIp], KEY_LENGTH_IN_SCRIPT);
 		m_dwIp += KEY_LENGTH_IN_SCRIPT;
 }
 
@@ -149,7 +149,7 @@ CScript::JumpTo(int address)
 		else {
 				if (m_bIsCustom)
 						m_dwIp = m_dwBaseIp + (-address);
-				else // mission script
+				else
 						m_dwIp = SIZE_MAIN_SCRIPT + (-address);
 		}
 }
