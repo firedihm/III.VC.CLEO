@@ -3,9 +3,6 @@
 #include "CustomScript.h"
 #include "OpcodesSystem.h"
 
-#include <algorithm>
-#include <set>
-
 enum eGameVersion
 {
 		GAME_GTAVC_V1_0,
@@ -36,40 +33,33 @@ enum ePlatform
 
 struct CVector
 {
-	float x, y, z;
+		float x, y, z;
 };
 
 class CRGBA
 {
-	BYTE r, g, b, a;
+		uint8 r, g, b, a;
 };
 
-struct CTextDrawer
+struct CIntroTextLine
 {
-	DWORD LetterWidth;
-	DWORD LetterHeight;
-	CRGBA color;
-	BYTE widthAdjustment;
-	BYTE centered;
-	BYTE drawBox;
-	BYTE withBackground;
-	DWORD lineWidth;
-	DWORD lineHeight;
-	CRGBA backgroundBoxColor;
-	BYTE proportional;
-	BYTE field_1D;
-	BYTE alignment;
-	BYTE field_1F;
-	WORD fontStyle;
-	BYTE field_22;
-	BYTE field_23;
-	float x;
-	float y;
-#if CLEO_VC
-	WORD text[100];
-#else
-	WORD text[500];
-#endif
+		float m_fScaleX;
+		float m_fScaleY;
+		CRGBA m_sColor;
+		bool m_bJustify;
+		bool m_bCentered;
+		bool m_bBackground;
+		bool m_bBackgroundOnly;
+		float m_fWrapX;
+		float m_fCenterSize;
+		CRGBA m_sBackgroundColor;
+		bool m_bTextProportional;
+		bool m_bTextBeforeFade;
+		bool m_bRightJustify;
+		int32 m_nFont;
+		float m_fAtX;
+		float m_fAtY;
+		wchar text[500]; // 100 in VC, 500 in III
 };
 
 struct bVehicleFlags
@@ -86,10 +76,10 @@ struct bVehicleFlags
 
 struct GamePool
 {
-		char* objects;
-		uchar* flags;
-		uint capacity;
-		uint count;
+	char* objects;
+	uchar* flags;
+	uint capacity;
+	uint count;
 };
 
 struct tUsedObject
@@ -109,29 +99,25 @@ class GtaGame
 				tScriptVar* pScriptParams;
 				ushort* pNumOpcodesExecuted;
 				OpcodeHandler OpcodeHandlers[15]; // 15 in VC, 12 in III
-				CScript** pActiveScriptsList;
+				CScript** ppActiveScripts;
 				tUsedObject* pUsedObjectArray;
 				void (__thiscall *pfAddScriptToList)(CScript*, CScript**);
 				void (__thiscall *pfRemoveScriptFromList)(CScript*, CScript**);
-				void (__thiscall *pfStoreParameters)(CScript*, uint*, uint);
+				void (__thiscall *pfStoreParameters)(CScript*, uint*, short);
 				void (__thiscall *pfUpdateCompareFlag)(CScript*, bool);
-				void* (__thiscall *pfGetPointerToScriptVariable)(CScript*, uint*, uchar);
+				void* (__thiscall *pfGetPointerToScriptVariable)(CScript*, uint*, short); // last param is unused
 		} Scripts;
 
 		struct tText {
-				wchar_t* (__thiscall *pfGetText)(int, char*);
-			#if CLEO_VC
-				void(__cdecl *TextBox)(const wchar_t* text, bool flag1, bool infinite, bool flag2);
-			#else
-				void(__cdecl *TextBox)(const wchar_t* text, bool flag1);
-			#endif
-				void(__cdecl *StyledText)(const wchar_t* text, unsigned time, unsigned style);
-				void(__cdecl *TextLowPriority) (const wchar_t* text, unsigned time, bool flag1, bool flag2);
-				void(__cdecl *TextHighPriority) (const wchar_t* text, unsigned time, bool flag1, bool flag2);
-				uintptr_t CText;
-				CTextDrawer* textDrawers;
-				ushort* currentTextDrawer;
-				char* cheatString;
+				wchar_t* (__thiscall *pfSearch)(void*, const char*);
+				void(__cdecl *pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
+				void(__cdecl *pfAddBigMessageQ)(wchar_t*, uint, ushort);
+				void(__cdecl *pfAddMessage)(wchar_t*, uint, ushort);
+				void(__cdecl *pfAddMessageJumpQ)(wchar_t*, uint, ushort);
+				void* pTheText;
+				CIntroTextLine* pIntroTextLines;
+				ushort* pNumberOfIntroTextLinesThisFrame;
+				char* szKeyboardCheatString;
 		} Text;
 
 		struct tScreen {
