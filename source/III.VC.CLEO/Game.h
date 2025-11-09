@@ -74,12 +74,12 @@ struct bVehicleFlags
 		uint8_t bFreebies : 1; // Any freebies left in this vehicle ?
 };
 
-struct GamePool
+struct CPool
 {
-	char* objects;
-	uchar* flags;
-	uint capacity;
-	uint count;
+		void* m_entries;
+		uchar* m_flags;
+		int m_size;
+		int m_allocPtr;
 };
 
 struct tUsedObject
@@ -121,32 +121,32 @@ class GtaGame
 		} Text;
 
 		struct tScreen {
-				int* Width;
-				int* Height;
+				int* pWidth;
+				int* pHeight;
 		} Screen;
 
 		struct tFont {
-				void (__cdecl *AsciiToUnicode)(const char* ascii, short* pUni);
-				void (__cdecl *PrintString)(float x, float y, wchar_t* text);
-				void (__cdecl *SetFontStyle)(int style);
-				void (__cdecl *SetScale)(float w, float h);
-				void (__cdecl *SetColor)(uint* color);
-				void (__cdecl *SetLeftJustifyOn)();
-				void (__cdecl *SetDropShadowPosition)(int position);
-				void (__cdecl *SetPropOn)();
+				void (__cdecl *pfAsciiToUnicode)(const char*, wchar_t*);
+				void (__cdecl *pfPrintString)(float, float, wchar_t*);
+				void (__cdecl *pfSetFontStyle)(short);
+				void (__cdecl *pfSetScale)(float, float);
+				void (__cdecl *pfSetColor)(CRGBA* color);
+				void (__cdecl *pfSetJustifyOn)();
+				void (__cdecl *pfSetDropShadowPosition)(short);
+				void (__cdecl *pfSetPropOn)();
 		} Font;
 
 		struct tPools {
-				GamePool** pPedPool;
-				GamePool** pVehiclePool;
-				GamePool** pObjectPool;
-				uintptr_t* pCPlayerPedPool;
-				void* (__thiscall *pfPedPoolGetStruct)(GamePool* pool, int handle);
-				void* (__thiscall *pfVehiclePoolGetStruct)(GamePool* pool, int handle);
-				void* (__thiscall *pfObjectPoolGetStruct)(GamePool* pool, int handle);
-				int (__thiscall *pfPedPoolGetHandle)(GamePool* pool, void* ped);
-				int (__thiscall *pfVehiclePoolGetHandle)(GamePool* pool, void* vehicle);
-				int (__thiscall *pfObjectPoolGetHandle)(GamePool* pool, void* object);
+				CPool** ppPedPool;
+				CPool** ppVehiclePool;
+				CPool** ppObjectPool;
+				void* pPlayers; // CPlayerInfo*
+				void* (__thiscall *pfPedPoolGetAt)(CPool*, int);
+				void* (__thiscall *pfVehiclePoolGetAt)(CPool*, int);
+				void* (__thiscall *pfObjectPoolGetAt)(CPool*, int);
+				int (__thiscall *pfPedPoolGetIndex)(CPool*, void*);
+				int (__thiscall *pfVehiclePoolGetIndex)(CPool*, void*);
+				int (__thiscall *pfObjectPoolGetIndex)(CPool*, void*);
 		} Pools;
 
 		struct tEvents {
