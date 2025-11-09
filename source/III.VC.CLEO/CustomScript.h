@@ -80,7 +80,7 @@ class CScript
 		/* 0x8C */ uint m_nLastVehicleSearchIndex;
 		/* 0x90 */ uint m_nLastObjectSearchIndex;
 		/* 0x94 */ uint _padd;
-		/* 0x98 */ char* m_pCodeData;
+		/* 0x98 */ uchar* m_pCodeData;
 		/* 0x9C */ uint m_dwBaseIp;
 		/* 0xA0 */ StackFrame* m_pCleoCallStack;
 		/* 0xA4 */ CScript* m_pNextCustom;
