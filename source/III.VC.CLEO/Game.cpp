@@ -114,9 +114,9 @@ GtaGame::Patch()
 		memory::RedirectJump(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], CScript::CollectNextParameterWithoutIncreasingPC);
 		Scripts.pfAddScriptToList = (void (__thiscall *)(CScript*, CScript**))lut[MA_ADD_SCRIPT_TO_LIST];
 		Scripts.pfRemoveScriptFromList = (void (__thiscall *)(CScript*, CScript**))lut[MA_REMOVE_SCRIPT_FROM_LIST];
-		Scripts.pfStoreParameters = (void (__thiscall *)(CScript*, uint*, uint))lut[MA_STORE_PARAMETERS];
+		Scripts.pfStoreParameters = (void (__thiscall *)(CScript*, uint*, short))lut[MA_STORE_PARAMETERS];
 		Scripts.pfUpdateCompareFlag = (void (__thiscall *)(CScript*, bool))lut[MA_UPDATE_COMPARE_FLAG];
-		Scripts.pfGetPointerToScriptVariable = (void* (__thiscall *)(CScript*, uint*, uchar))lut[MA_GET_POINTER_TO_SCRIPT_VARIABLE];
+		Scripts.pfGetPointerToScriptVariable = (void* (__thiscall *)(CScript*, uint*, short))lut[MA_GET_POINTER_TO_SCRIPT_VARIABLE];
 		Scripts.OpcodeHandlers[0] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_0];
 		Scripts.OpcodeHandlers[1] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_1];
 		Scripts.OpcodeHandlers[2] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_2];
@@ -132,22 +132,22 @@ GtaGame::Patch()
 		Scripts.OpcodeHandlers[12] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_12];
 		Scripts.OpcodeHandlers[13] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_13];
 		Scripts.OpcodeHandlers[14] = (OpcodeHandler)lut[MA_OPCODE_HANDLER_14];
-		Scripts.pActiveScriptsList = (CScript**)lut[MA_ACTIVE_SCRIPTS_LIST];
+		Scripts.ppActiveScriptsList = (CScript**)lut[MA_ACTIVE_SCRIPTS];
 		Scripts.pScriptParams = (tScriptVar*)lut[MA_SCRIPT_PARAMS];
 		Scripts.pScriptSpace = (char*)lut[MA_SCRIPT_SPACE];
 		Scripts.pNumOpcodesExecuted = (ushort*)lut[MA_NUM_OPCODES_EXECUTED];
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
-		Text.pfGetText = (wchar_t* (__thiscall *)(int, char*))lut[MA_GET_TEXT];
-		memory::RedirectJump(lut[CA_GET_TEXT], CustomText::GetText);
-		Text.CText = lut[MA_CTEXT];
-		Text.textDrawers = (CTextDrawer*)lut[MA_TEXT_DRAWERS];
-		Text.currentTextDrawer = (ushort*)lut[MA_CURRENT_TEXT_DRAWER];
-		Text.cheatString = (char*)lut[MA_CHEAT_STRING];
-		Text.TextBox = (void (__cdecl *)(const wchar_t* text, bool flag1))lut[MA_TEXT_BOX];
-		Text.StyledText = (void (__cdecl *)(const wchar_t* text, unsigned time, unsigned style))lut[MA_STYLED_TEXT];
-		Text.TextLowPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))lut[MA_TEXT_LOW_PRIORITY];
-		Text.TextHighPriority = (void (__cdecl *)(const wchar_t* text, unsigned time, bool flag1, bool flag2))lut[MA_TEXT_HIGH_PRIORITY];
+		Text.pfSearch = (wchar_t* (__thiscall *)(void*, const char*))lut[MA_SEARCH];
+		memory::RedirectJump(lut[CA_SEARCH], CustomText::Search);
+		Text.pTheText = lut[MA_THE_TEXT];
+		Text.pIntroTextLines = (CIntroTextLine*)lut[MA_INTRO_TEXT_LINES];
+		Text.pNumberOfIntroTextLinesThisFrame = (ushort*)lut[MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME];
+		Text.szKeyboardCheatString = (char*)lut[MA_KEYBOARD_CHEAT_STRING];
+		Text.pfSetHelpMessage = (void (__cdecl *)(wchar_t*, bool, bool))lut[MA_SET_HELP_MESSAGE];
+		Text.pfAddBigMessageQ = (void (__cdecl *)(wchar_t*, uint, ushort))lut[MA_ADD_BIG_MESSAGE_Q];
+		Text.pfAddMessage = (void (__cdecl *)(wchar_t*, uint, ushort))lut[MA_ADD_MESSAGE];
+		Text.pfAddMessageJumpQ = (void (__cdecl *)(wchar_t*, uint, ushort))lut[MA_ADD_MESSAGE_JUMP_Q];
 		if (Version >= GAME_GTAVC_V1_0 || Version <= GAME_GTAVC_VSTEAMENC) {
 				memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
 				memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
