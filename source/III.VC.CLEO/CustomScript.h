@@ -105,10 +105,10 @@ class CScript
 		CLEOAPI void ReadShortString(char* out);
 		CLEOAPI void JumpTo(int address);
 
-		CLEOAPI void Collect(uint numParams);
-		CLEOAPI void CollectParameters(uint* pIp, uint numParams);
+		CLEOAPI void Collect(short numParams);
+		CLEOAPI void CollectParameters(uint* pIp, short numParams);
 		CLEOAPI int CollectNextParameterWithoutIncreasingPC(uint ip);
-		CLEOAPI void Store(uint numParams);
+		CLEOAPI void Store(short numParams);
 
 	private:
 		struct StackFrame {
