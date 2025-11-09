@@ -38,7 +38,7 @@ struct CVector
 
 class CRGBA
 {
-		uint8 r, g, b, a;
+		uchar r, g, b, a;
 };
 
 struct CIntroTextLine
@@ -159,16 +159,15 @@ class GtaGame
 		} Events;
 
 		struct tShadows {
-				float (__cdecl *StoreShadowToBeRendered)(uchar, uintptr_t*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, uintptr_t*, bool);
-				uintptr_t** pRwTexture;
-				uintptr_t** pRwTexture_shad_car;
-				uintptr_t** pRwTexture_shad_ped;
-				uintptr_t** pRwTexture_shad_heli;
-				uintptr_t** pRwTexture_shad_bike;
-				uintptr_t** pRwTexture_shad_rcbaron;
-				uintptr_t** pRwTexture_shad_exp;
-				uintptr_t** pRwTexture_headlight;
-				uintptr_t** pRwTexture_bloodpool_64;
+				float (__cdecl *pfStoreShadowToBeRendered)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool);
+				void** ppShadowCarTex;
+				void** ppShadowPedTex;
+				void** ppShadowHeliTex;
+				void** ppShadowBikeTex;
+				void** ppShadowBaronTex;
+				void** ppShadowExplosionTex;
+				void** ppShadowHeadLightsTex;
+				void** ppBloodPoolTex;
 		} Shadows;
 
 		struct tMisc {
