@@ -188,15 +188,15 @@ GtaGame::Patch()
 		Events.pfDrawInMenu = (void (__cdecl *)(float, float, wchar_t*))memory::MakeCallAddr(lut[CA_DRAW_IN_MENU], lut[MA_DRAW_IN_MENU]);
 		memory::RedirectCall(lut[CA_DRAW_IN_MENU], GtaGame::OnMenuDrawing);
 
-		Shadows.StoreShadowToBeRendered = (float(__cdecl *)(uchar, uintptr_t*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, uintptr_t*, bool))lut[MA_STORE_SHADOW_TO_BE_RENDERED];
-		Shadows.pRwTexture_shad_car = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_CAR];
-		Shadows.pRwTexture_shad_ped = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_PED];
-		Shadows.pRwTexture_shad_heli = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_HELI];
-		Shadows.pRwTexture_shad_bike = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_BIKE];
-		Shadows.pRwTexture_shad_rcbaron = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_RCBARON];
-		Shadows.pRwTexture_shad_exp = (uintptr_t**)lut[MA_RWTEXTURE_SHAD_EXP];
-		Shadows.pRwTexture_headlight = (uintptr_t**)lut[MA_RWTEXTURE_HEADLIGHT];
-		Shadows.pRwTexture_bloodpool_64 = (uintptr_t**)lut[MA_RWTEXTURE_BLOODPOOL_64];
+		Shadows.pfStoreShadowToBeRendered = (float(__cdecl *)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool))lut[MA_STORE_SHADOW_TO_BE_RENDERED];
+		Shadows.ppShadowCarTex = (void**)lut[MA_SHADOW_CAR_TEX];
+		Shadows.ppShadowPedTex = (void**)lut[MA_SHADOW_PED_TEX];
+		Shadows.ppShadowHeliTex = (void**)lut[MA_SHADOW_HELI_TEX];
+		Shadows.ppShadowBikeTex = (void**)lut[MA_SHADOW_BIKE_TEX];
+		Shadows.ppShadowBaronTex = (void**)lut[MA_SHADOW_RCBARON_TEX];
+		Shadows.ppShadowExplosionTex = (void**)lut[MA_SHADOW_EXPLOSION_TEX];
+		Shadows.ppShadowHeadLightsTex = (void**)lut[MA_SHADOW_HEADLIGHTS_TEX];
+		Shadows.ppBloodPoolTex = (void**)lut[MA_BLOOD_POOL_TEX];
 
 		Misc.stVehicleModelInfo = lut[MA_VEHICLE_MODEL_INFO];
 		Misc.activePadState = lut[MA_ACTIVE_PAD_STATE];
