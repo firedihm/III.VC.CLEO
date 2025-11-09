@@ -2,14 +2,14 @@
 
 namespace memory
 {
-		void Nop(char* dest, size_t count);
+		void Nop(uchar* dest, size_t count);
 
-		void SetChar(char* dest, char value);
-		void SetShort(char* dest, short value);
-		void SetInt(char* dest, int value);
-		void SetFloat(char* dest, float value);
-		void SetPointer(char* dest, char* value);
+		void SetChar(uchar* dest, char value);
+		void SetShort(uchar* dest, short value);
+		void SetInt(uchar* dest, int value);
+		void SetFloat(uchar* dest, float value);
+		void SetPointer(uchar* dest, uchar* value);
 
-		void RedirectCall(char* dest, char* func);
-		void RedirectJump(char* dest, char* func);
+		void RedirectCall(uchar* dest, uchar* func);
+		void RedirectJump(uchar* dest, uchar* func);
 }
