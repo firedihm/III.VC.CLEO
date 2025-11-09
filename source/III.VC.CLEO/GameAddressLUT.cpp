@@ -100,14 +100,14 @@ char* LookUpTable[NUM_MA][NUM_GV] = {
         // Shadows
         // VC 1.0  VC 1.1    VC STEAM  VC STEAM           III 1.0   III 1.1   III STEAM III STEAM
         {0x56E6C0, 0x56E6E0, 0x56E5B0, 0x56E5B0, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_STORE_SHADOW_TO_BE_RENDERED
-        {0x97F2EC, 0x97F2F4, 0x97E2F4, 0x97E2F4, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_SHAD_CAR
-        {0x9B5F2C, 0x9B5F34, 0x9B4F34, 0x9B4F34, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_SHAD_PED
-        {0x975218, 0x975220, 0x974220, 0x974220, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_SHAD_HELI
-        {0x94DBC0, 0x94DBC8, 0x94CBC8, 0x94CBC8, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_SHAD_BIKE
-        {0x94DBD4, 0x94DBDC, 0x94CBDC, 0x94CBDC, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_SHAD_RCBARON
-        {0x978DB4, 0x978DBC, 0x977DBC, 0x977DBC, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_SHAD_EXP
-        {0xA1073C, 0xA10744, 0xA0F744, 0xA0F744, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_HEADLIGHT
-        {0xA0DAC8, 0xA0DAD0, 0xA0CAD0, 0xA0CAD0, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_RWTEXTURE_BLOODPOOL_64
+        {0x97F2EC, 0x97F2F4, 0x97E2F4, 0x97E2F4, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_CAR_TEX
+        {0x9B5F2C, 0x9B5F34, 0x9B4F34, 0x9B4F34, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_PED_TEX
+        {0x975218, 0x975220, 0x974220, 0x974220, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_HELI_TEX
+        {0x94DBC0, 0x94DBC8, 0x94CBC8, 0x94CBC8, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_BIKE_TEX
+        {0x94DBD4, 0x94DBDC, 0x94CBDC, 0x94CBDC, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_RCBARON_TEX
+        {0x978DB4, 0x978DBC, 0x977DBC, 0x977DBC, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_EXPLOSION_TEX
+        {0xA1073C, 0xA10744, 0xA0F744, 0xA0F744, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_SHADOW_HEADLIGHTS_TEX
+        {0xA0DAC8, 0xA0DAD0, 0xA0CAD0, 0xA0CAD0, /*    */ nullptr,  nullptr,  nullptr,  nullptr }, // MA_BLOOD_POOL_TEX
 
         // Misc
         // VC 1.0  VC 1.1    VC STEAM  VC STEAM           III 1.0   III 1.1   III STEAM III STEAM
