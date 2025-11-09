@@ -155,7 +155,7 @@ CScript::JumpTo(int address)
 }
 
 void
-CScript::Collect(uint numParams)
+CScript::Collect(short numParams)
 {
 		CollectParameters(&m_dwIp, numParams);
 }
@@ -257,7 +257,7 @@ CScript::CollectNextParameterWithoutIncreasingPC(uint ip)
 }
 
 void
-CScript::Store(uint numParams)
+CScript::Store(short numParams)
 {
-		game.Scripts.StoreParameters(this, &m_dwIp, numParams);
+		game.Scripts.pfStoreParameters(this, &m_dwIp, numParams);
 }
