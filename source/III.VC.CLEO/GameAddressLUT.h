@@ -105,7 +105,7 @@ enum eMemoryAddress
         MA_BLOOD_POOL_TEX,
 
         // Misc
-        MA_VEHICLE_MODEL_INFO,
+        MA_VEHICLE_MODEL_STORE,
         MA_ACTIVE_PAD_STATE,
         MA_MODEL_FOR_WEAPON,
         MA_CAMERA_WIDESCREEN,
@@ -125,5 +125,5 @@ struct GameAddressLUT
         const eGameVersion Target;
 
         explicit GameAddressLUT(eGameVersion target);
-        char* operator[](eMemoryAddress index);
+        uchar* operator[](eMemoryAddress index);
 };
