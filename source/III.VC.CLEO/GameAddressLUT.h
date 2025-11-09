@@ -42,6 +42,9 @@ enum eMemoryAddress
 
         // Text
         MA_SEARCH,
+        MA_VC_ASM_0,
+        MA_VC_ASM_1,
+        MA_VC_ASM_2,
         CA_SEARCH,
         MA_THE_TEXT,
         MA_INTRO_TEXT_LINES,
@@ -51,9 +54,6 @@ enum eMemoryAddress
         MA_ADD_BIG_MESSAGE_Q,
         MA_ADD_MESSAGE,
         MA_ADD_MESSAGE_JUMP_Q,
-        MA_VC_ASM_0,
-        MA_VC_ASM_1,
-        MA_VC_ASM_2,
 
         // Screen
         MA_SCREEN_WIDTH,
@@ -65,7 +65,7 @@ enum eMemoryAddress
         MA_SET_FONT_STYLE,
         MA_SET_SCALE,
         MA_SET_COLOR,
-        MA_SET_LEFT_JUSTIFY_ON,
+        MA_SET_JUSTIFY_ON,
         MA_SET_DROP_SHADOW_POSITION,
         MA_SET_PROP_ON,
 
@@ -73,13 +73,13 @@ enum eMemoryAddress
         MA_PED_POOL,
         MA_VEHICLE_POOL,
         MA_OBJECT_POOL,
-        MA_CPLAYERPED_POOL,
-        MA_PED_POOL_GET_STRUCT,
-        MA_VEHICLE_POOL_GET_STRUCT,
-        MA_OBJECT_POOL_GET_STRUCT,
-        MA_PED_POOL_GET_HANDLE,
-        MA_VEHICLE_POOL_GET_HANDLE,
-        MA_OBJECT_POOL_GET_HANDLE,
+        MA_PLAYERS,
+        MA_PED_POOL_GET_AT,
+        MA_VEHICLE_POOL_GET_AT,
+        MA_OBJECT_POOL_GET_AT,
+        MA_PED_POOL_GET_INDEX,
+        MA_VEHICLE_POOL_GET_INDEX,
+        MA_OBJECT_POOL_GET_INDEX,
 
         // Events
         MA_INIT_SCRIPTS,
