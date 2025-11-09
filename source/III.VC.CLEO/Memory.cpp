@@ -6,9 +6,9 @@
 using namespace memory;
 
 void
-Write(char* dest, const char* src, size_t count)
+Write(uchar* dest, const uchar* src, size_t count)
 {
-        if (!dest)
+        if (dest < 0x401000)
                 return;
 
         uint oldProtect;
@@ -23,50 +23,50 @@ Write(char* dest, const char* src, size_t count)
 }
 
 void
-Nop(char* dest, size_t count)
+Nop(uchar* dest, size_t count)
 {
         Write(dest, nullptr, count);
 }
 
 void
-SetChar(char* dest, char value)
+SetChar(uchar* dest, char value)
 {
         Write(dest, &value, sizeof(value));
 }
 
 void
-SetShort(char* dest, short value)
+SetShort(uchar* dest, short value)
 {
         Write(dest, &value, sizeof(value));
 }
 
 void
-SetInt(char* dest, int value)
+SetInt(uchar* dest, int value)
 {
         Write(dest, &value, sizeof(value));
 }
 
 void
-SetFloat(char* dest, float value)
+SetFloat(uchar* dest, float value)
 {
         Write(dest, &value, sizeof(value));
 }
 
 void
-SetPointer(char* dest, char* value)
+SetPointer(uchar* dest, uchar* value)
 {        
         Write(dest, &value, sizeof(value));
 }
 
 void
-RedirectCall(char* dest, char* func)
+RedirectCall(uchar* dest, uchar* func)
 {
         SetChar(dest, 0xE8);
     	SetInt(dest + 1, func - (dest + 5));
 }
 
 void
-RedirectJump(char* dest, char* func)
+RedirectJump(uchar* dest, uchar* func)
 {
     	SetChar(dest, 0xE9);
     	SetInt(dest + 1, func - (dest + 5));
