@@ -28,7 +28,7 @@ ScriptManager::LoadScripts()
 						try {
 								CScript* script = new CScript(entry.path().c_str());
 
-								game.Scripts.AddScriptToList(script, game.Scripts.pActiveScriptsList);
+								game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
 								script->AddToCustomList(&pCusomScripts);
 								script->m_bIsActive = true;
 								numLoadedCustomScripts++;
@@ -50,7 +50,7 @@ ScriptManager::UnloadScripts()
 {
 		CScript* script = pCusomScripts;
 		while (script) {
-				game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
+				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 				numLoadedCustomScripts--;
 
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloaded custom script \"%s\"", &script->m_acName);
@@ -67,7 +67,7 @@ ScriptManager::EnableAllScripts()
 {
 		CScript* script = pCusomScripts;
 		while (script) {
-				game.Scripts.AddScriptToList(script, game.Scripts.pActiveScriptsList);
+				game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", &script->m_acName);
 				script = script->m_pNextCustom;
 		}
@@ -78,7 +78,7 @@ ScriptManager::DisableAllScripts()
 {
 		CScript* script = pCusomScripts;
 		while (script) {
-				game.Scripts.RemoveScriptFromList(script, game.Scripts.pActiveScriptsList);
+				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", &script->m_acName);
 				script = script->m_pNextCustom;
 		}
