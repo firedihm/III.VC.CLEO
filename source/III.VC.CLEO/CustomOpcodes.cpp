@@ -1453,33 +1453,34 @@ eOpcodeResult CustomOpcodes::DRAW_SHADOW(CScript *script)
 	float angle = game.Scripts.Params[4].fVar;
 	float length = game.Scripts.Params[5].fVar;
 
+	void* pShadowTex;
 	switch (game.Scripts.Params[0].nVar)
 	{
 		case 1:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_car;
+			pShadowTex = *game.Shadows.ppShadowCarTex;
 			type = 1;
 			break;
 		case 2:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_ped;
+			pShadowTex = *game.Shadows.ppShadowPedTex;
 			break;
 		case 3:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_exp;
+			pShadowTex = *game.Shadows.ppShadowExplosionTex;
 			break;
 		case 4:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_heli;
+			pShadowTex = *game.Shadows.ppShadowHeliTex;
 			type = 1;
 			break;
 		case 5:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_headlight;
+			pShadowTex = *game.Shadows.ppShadowHeadLightsTex;
 			break;
 		case 6:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_bloodpool_64;
+			pShadowTex = *game.Shadows.ppBloodPoolTex;
 			break;
 		case 7:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_bike;
+			pShadowTex = *game.Shadows.ppShadowBikeTex;
 			break;
 		case 8:
-			game.Shadows.pRwTexture = game.Shadows.pRwTexture_shad_rcbaron;
+			pShadowTex = *game.Shadows.ppShadowBaronTex;
 			break;
 		default:
 			return OR_CONTINUE;
@@ -1498,7 +1499,7 @@ eOpcodeResult CustomOpcodes::DRAW_SHADOW(CScript *script)
 	float sideX = y;
 	float sideY = x;
 
-	game.Shadows.pfStoreShadowToBeRendered(type, *game.Shadows.pRwTexture, &pos, frontX, frontY, sideX, sideY, game.Scripts.Params[6].nVar, game.Scripts.Params[7].nVar, game.Scripts.Params[8].nVar, game.Scripts.Params[9].nVar, 150.0f, true, 1.0f, nullptr, false);
+	game.Shadows.pfStoreShadowToBeRendered(type, pShadowTex, &pos, frontX, frontY, sideX, sideY, game.Scripts.Params[6].nVar, game.Scripts.Params[7].nVar, game.Scripts.Params[8].nVar, game.Scripts.Params[9].nVar, 150.0f, true, 1.0f, nullptr, false);
 	return OR_CONTINUE;
 }
 
