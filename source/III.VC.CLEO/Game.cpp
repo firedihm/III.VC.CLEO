@@ -139,6 +139,9 @@ GtaGame::Patch()
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
 		Text.pfSearch = (wchar_t* (__thiscall *)(void*, const char*))lut[MA_SEARCH];
+		memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
+		memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
+		memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
 		memory::RedirectJump(lut[CA_SEARCH], CustomText::Search);
 		Text.pTheText = lut[MA_THE_TEXT];
 		Text.pIntroTextLines = (CIntroTextLine*)lut[MA_INTRO_TEXT_LINES];
@@ -148,34 +151,29 @@ GtaGame::Patch()
 		Text.pfAddBigMessageQ = (void (__cdecl *)(wchar_t*, uint, ushort))lut[MA_ADD_BIG_MESSAGE_Q];
 		Text.pfAddMessage = (void (__cdecl *)(wchar_t*, uint, ushort))lut[MA_ADD_MESSAGE];
 		Text.pfAddMessageJumpQ = (void (__cdecl *)(wchar_t*, uint, ushort))lut[MA_ADD_MESSAGE_JUMP_Q];
-		if (Version >= GAME_GTAVC_V1_0 || Version <= GAME_GTAVC_VSTEAMENC) {
-				memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
-				memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
-				memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
-		}
 
-		Screen.Width = (int*)lut[MA_SCREEN_WIDTH];
-		Screen.Height = (int*)lut[MA_SCREEN_HEIGHT];
+		Screen.pWidth = (int*)lut[MA_SCREEN_WIDTH];
+		Screen.pHeight = (int*)lut[MA_SCREEN_HEIGHT];
 
-		Font.AsciiToUnicode = (void (__cdecl *)(const char*, short*))lut[MA_ASCII_TO_UNICODE];
-		Font.PrintString = (void (__cdecl *)(float, float, wchar_t*))lut[MA_PRINT_STRING];
-		Font.SetFontStyle = (void (__cdecl *)(int))lut[MA_SET_FONT_STYLE];
-		Font.SetScale = (void (__cdecl *)(float, float))lut[MA_SET_SCALE];
-		Font.SetColor = (void (__cdecl *)(uint*))lut[MA_SET_COLOR];
-		Font.SetLeftJustifyOn = (void (__cdecl *)())lut[MA_SET_LEFT_JUSTIFY_ON];
-		Font.SetDropShadowPosition = (void (__cdecl *)(int))lut[MA_SET_DROP_SHADOW_POSITION];
-		Font.SetPropOn = (void (__cdecl *)())lut[MA_SET_PROP_ON];
+		Font.pfAsciiToUnicode = (void (__cdecl *)(const char*, wchar_t*))lut[MA_ASCII_TO_UNICODE];
+		Font.pfPrintString = (void (__cdecl *)(float, float, wchar_t*))lut[MA_PRINT_STRING];
+		Font.pfSetFontStyle = (void (__cdecl *)(short))lut[MA_SET_FONT_STYLE];
+		Font.pfSetScale = (void (__cdecl *)(float, float))lut[MA_SET_SCALE];
+		Font.pfSetColor = (void (__cdecl *)(CRGBA*))lut[MA_SET_COLOR];
+		Font.pfSetJustifyOn = (void (__cdecl *)())lut[MA_SET_JUSTIFY_ON];
+		Font.pfSetDropShadowPosition = (void (__cdecl *)(short))lut[MA_SET_DROP_SHADOW_POSITION];
+		Font.pfSetPropOn = (void (__cdecl *)())lut[MA_SET_PROP_ON];
 
-		Pools.pPedPool = (GamePool**)lut[MA_PED_POOL];
-		Pools.pVehiclePool = (GamePool**)lut[MA_VEHICLE_POOL];
-		Pools.pObjectPool = (GamePool**)lut[MA_OBJECT_POOL];
-		Pools.pCPlayerPedPool = (uintptr_t*)lut[MA_CPLAYERPED_POOL];
-		Pools.pfPedPoolGetStruct = (void* (__thiscall *)(GamePool*, int))lut[MA_PED_POOL_GET_STRUCT];
-		Pools.pfVehiclePoolGetStruct = (void* (__thiscall *)(GamePool*, int))lut[MA_VEHICLE_POOL_GET_STRUCT];
-		Pools.pfObjectPoolGetStruct = (void* (__thiscall *)(GamePool*, int))lut[MA_OBJECT_POOL_GET_STRUCT];
-		Pools.pfPedPoolGetHandle = (int (__thiscall *)(GamePool*, void*))lut[MA_PED_POOL_GET_HANDLE];
-		Pools.pfVehiclePoolGetHandle = (int (__thiscall *)(GamePool*, void*))lut[MA_VEHICLE_POOL_GET_HANDLE];
-		Pools.pfObjectPoolGetHandle = (int (__thiscall *)(GamePool*, void*))lut[MA_OBJECT_POOL_GET_HANDLE];
+		Pools.ppPedPool = (CPool**)lut[MA_PED_POOL];
+		Pools.ppVehiclePool = (CPool**)lut[MA_VEHICLE_POOL];
+		Pools.ppObjectPool = (CPool**)lut[MA_OBJECT_POOL];
+		Pools.pPlayers = (void*)lut[MA_PLAYERS];
+		Pools.pfPedPoolGetAt = (void* (__thiscall *)(CPool*, int))lut[MA_PED_POOL_GET_AT];
+		Pools.pfVehiclePoolGetAt = (void* (__thiscall *)(CPool*, int))lut[MA_VEHICLE_POOL_GET_AT];
+		Pools.pfObjectPoolGetAt = (void* (__thiscall *)(CPool*, int))lut[MA_OBJECT_POOL_GET_AT];
+		Pools.pfPedPoolGetHandle = (int (__thiscall *)(CPool*, void*))lut[MA_PED_POOL_GET_HANDLE];
+		Pools.pfVehiclePoolGetHandle = (int (__thiscall *)(CPool*, void*))lut[MA_VEHICLE_POOL_GET_HANDLE];
+		Pools.pfObjectPoolGetHandle = (int (__thiscall *)(CPool*, void*))lut[MA_OBJECT_POOL_GET_HANDLE];
 
 		Events.pfInitScripts_OnGameSaveLoad = (void (__cdecl *)())memory::MakeCallAddr(lut[CA_INIT_SCRIPTS_ON_LOAD], lut[MA_INIT_SCRIPTS]);
 		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_LOAD], GtaGame::InitScripts_OnGameSaveLoad);
