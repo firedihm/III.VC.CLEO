@@ -13,6 +13,8 @@
 
 namespace fs = std::filesystem;
 
+#define HELP_MSG_LENGTH 256
+
 int format(CScript *script, char *str, size_t len, const char *format);
 
 tScriptVar CustomOpcodes::SHARED_VAR[0xFFFF];
@@ -1426,11 +1428,11 @@ eOpcodeResult CustomOpcodes::GET_CURRENT_WEATHER(CScript *script)
 eOpcodeResult CustomOpcodes::SHOW_TEXT_POSITION(CScript *script)
 {
 	script->Collect(3);
-	game.Text.textDrawers[*game.Text.currentTextDrawer].x = game.Scripts.pScriptParams[0].fVar;
-	game.Text.textDrawers[*game.Text.currentTextDrawer].y = game.Scripts.pScriptParams[1].fVar;
+	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].x = game.Scripts.pScriptParams[0].fVar;
+	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].y = game.Scripts.pScriptParams[1].fVar;
 	const char *text = game.Scripts.pScriptParams[2].cVar;
-	swprintf((wchar_t*)&game.Text.textDrawers[*game.Text.currentTextDrawer].text, 100, L"%hs", text);
-	*game.Text.currentTextDrawer = *game.Text.currentTextDrawer + 1;
+	swprintf((wchar_t*)&game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].text, 100, L"%hs", text);
+	*game.Text.pNumberOfIntroTextLinesThisFrame = *game.Text.pNumberOfIntroTextLinesThisFrame + 1;
 	return OR_CONTINUE;
 };
 
@@ -1438,16 +1440,16 @@ eOpcodeResult CustomOpcodes::SHOW_TEXT_POSITION(CScript *script)
 eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(CScript *script)
 {
 	script->Collect(3);
-	game.Text.textDrawers[*game.Text.currentTextDrawer].x = game.Scripts.pScriptParams[0].fVar;
-	game.Text.textDrawers[*game.Text.currentTextDrawer].y = game.Scripts.pScriptParams[1].fVar;
+	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].x = game.Scripts.pScriptParams[0].fVar;
+	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].y = game.Scripts.pScriptParams[1].fVar;
 	char fmt[100]; char text[100]; static wchar_t message_buf[0x80];
 	strcpy(fmt, game.Scripts.pScriptParams[2].cVar);
 	format(script, text, sizeof(text), fmt);
-	swprintf((wchar_t*)&game.Text.textDrawers[*game.Text.currentTextDrawer].text, 100, L"%hs", text);
+	swprintf((wchar_t*)&game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].text, 100, L"%hs", text);
 	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
-	*game.Text.currentTextDrawer = *game.Text.currentTextDrawer + 1;
+	*game.Text.pNumberOfIntroTextLinesThisFrame = *game.Text.pNumberOfIntroTextLinesThisFrame + 1;
 	return OR_CONTINUE;
 };
 
@@ -1524,7 +1526,7 @@ eOpcodeResult CustomOpcodes::DRAW_SHADOW(CScript *script)
 eOpcodeResult CustomOpcodes::SET_TEXT_DRAW_FONT(CScript *script)
 {
 	script->Collect(1);
-	game.Text.textDrawers[*game.Text.currentTextDrawer].fontStyle = game.Scripts.pScriptParams[0].nVar;
+	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].fontStyle = game.Scripts.pScriptParams[0].nVar;
 	return OR_CONTINUE;
 }
 
@@ -1909,65 +1911,57 @@ CustomOpcodes::OPCODE_0AC9(CScript* script)
 //0ACA=1,show_text_box %1s%
 eOpcodeResult CustomOpcodes::OPCODE_0ACA(CScript *script)
 {
-	static wchar_t message_buf[MAX_PATH];
+	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(1);
-	swprintf(message_buf, MAX_PATH, L"%hs", game.Scripts.pScriptParams[0].cVar);
-#if CLEO_VC
-	game.Text.TextBox(message_buf, false, false, false);
-#else
-	game.Text.TextBox(message_buf, false);
-#endif
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", game.Scripts.pScriptParams[0].cVar);
+	game.Text.pfSetHelpMessage(message_buf, false, false);
 	return OR_CONTINUE;
 };
 
 //0ACB=3,show_styled_text %1s% time %2d% style %3d%
 eOpcodeResult CustomOpcodes::OPCODE_0ACB(CScript *script)
 {
-	static wchar_t message_buf[MAX_PATH];
+	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(3);
 	const char *text = game.Scripts.pScriptParams[0].cVar;
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-	game.Text.StyledText(message_buf, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[2].nVar - 1);
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfAddBigMessageQ(message_buf, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[2].nVar - 1);
 	return OR_CONTINUE;
 };
 
 //0ACC=2,show_text_lowpriority %1s% time %2d%
 eOpcodeResult CustomOpcodes::OPCODE_0ACC(CScript *script)
 {
-	static wchar_t message_buf[MAX_PATH];
+	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(2);
 	const char *text = game.Scripts.pScriptParams[0].cVar;
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-	game.Text.TextLowPriority(message_buf, game.Scripts.pScriptParams[1].nVar, false, false);
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfAddMessage(message_buf, game.Scripts.pScriptParams[1].nVar, false, false);
 	return OR_CONTINUE;
 };
 
 //0ACD=2,show_text_highpriority %1s% time %2d%
 eOpcodeResult CustomOpcodes::OPCODE_0ACD(CScript *script)
 {
-	static wchar_t message_buf[MAX_PATH];
+	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(2);
 	const char *text = game.Scripts.pScriptParams[0].cVar;
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-	game.Text.TextHighPriority(message_buf, game.Scripts.pScriptParams[1].nVar, false, false);
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfAddMessageJumpQ(message_buf, game.Scripts.pScriptParams[1].nVar, false, false);
 	return OR_CONTINUE;
 };
 
 //0ACE=-1,show_formatted_text_box %1s%
 eOpcodeResult CustomOpcodes::OPCODE_0ACE(CScript *script)
 {
-	static wchar_t message_buf[MAX_PATH];
+	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(1);
-	char fmt[MAX_PATH]; char text[MAX_PATH];
+	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH];
 	strcpy(fmt, game.Scripts.pScriptParams[0].cVar);
 	format(script, text, sizeof(text), fmt);
 
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-#if CLEO_VC
-	game.Text.TextBox(message_buf, false, false, false);
-#else
-	game.Text.TextBox(message_buf, false);
-#endif
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfSetHelpMessage(message_buf, false, false);
 
 	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
@@ -1979,14 +1973,14 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACE(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0ACF(CScript *script)
 {
 	script->Collect(3);
-	char fmt[MAX_PATH]; char text[MAX_PATH]; static wchar_t message_buf[MAX_PATH];
+	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
 	unsigned time, style;
 	strcpy(fmt, game.Scripts.pScriptParams[0].cVar);
 	time = game.Scripts.pScriptParams[1].nVar;
 	style = game.Scripts.pScriptParams[2].nVar;
 	format(script, text, sizeof(text), fmt);
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-	game.Text.StyledText(message_buf, time, style - 1);
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfAddBigMessageQ(message_buf, time, style - 1);
 	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
@@ -1997,13 +1991,13 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACF(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0AD0(CScript *script)
 {
 	script->Collect(2);
-	char fmt[MAX_PATH]; char text[MAX_PATH]; static wchar_t message_buf[MAX_PATH];
+	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
 	unsigned time;
 	strcpy(fmt, game.Scripts.pScriptParams[0].cVar);
 	time = game.Scripts.pScriptParams[1].nVar;
 	format(script, text, sizeof(text), fmt);
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-	game.Text.TextLowPriority(message_buf, time, false, false);
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfAddMessage(message_buf, time, false, false);
 	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
@@ -2014,13 +2008,13 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD0(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0AD1(CScript *script)
 {
 	script->Collect(2);
-	char fmt[MAX_PATH]; char text[MAX_PATH]; static wchar_t message_buf[MAX_PATH];
+	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
 	unsigned time;
 	strcpy(fmt, game.Scripts.pScriptParams[0].cVar);
 	time = game.Scripts.pScriptParams[1].nVar;
 	format(script, text, sizeof(text), fmt);
-	swprintf(message_buf, MAX_PATH, L"%hs", text);
-	game.Text.TextHighPriority(message_buf, time, false, false);
+	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
+	game.Text.pfAddMessageJumpQ(message_buf, time, false, false);
 	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
@@ -2033,7 +2027,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD1(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0AD3(CScript *script)
 {
 	script->Collect(2);
-	char fmt[MAX_PATH], *dst;
+	char fmt[HELP_MSG_LENGTH], *dst;
 	dst = (char*)game.Scripts.pScriptParams[0].pVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].cVar);
 	format(script, dst, static_cast<size_t>(-1), fmt);
@@ -2047,7 +2041,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD3(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0AD4(CScript *script)
 {
 	script->Collect(2);
-	char fmt[MAX_PATH], *src;
+	char fmt[HELP_MSG_LENGTH], *src;
 	src = game.Scripts.pScriptParams[0].cVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].cVar);
 	size_t cExParams = 0;
@@ -2120,7 +2114,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD8(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0AD9(CScript *script)
 {
 	script->Collect(2);
-	char fmt[MAX_PATH]; char text[MAX_PATH];
+	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH];
 	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].cVar);
 	format(script, text, sizeof(text), fmt);
@@ -2136,7 +2130,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD9(CScript *script)
 eOpcodeResult CustomOpcodes::OPCODE_0ADA(CScript *script)
 {
 	script->Collect(2);
-	char fmt[MAX_PATH];
+	char fmt[HELP_MSG_LENGTH];
 	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].cVar);
 	size_t cExParams = 0;
@@ -2194,7 +2188,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADC(CScript *script)
 {
 	script->Collect(1);
 
-	char *c = game.Text.cheatString;
+	char *c = game.Text.szKeyboardCheatString;
 	char buf[30];
 	strcpy(buf, game.Scripts.pScriptParams[0].cVar);
 	char *s = _strrev(buf);
@@ -2206,7 +2200,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADC(CScript *script)
 			return OR_CONTINUE;
 		}
 	}
-	game.Text.cheatString[0] = 0;
+	game.Text.szKeyboardCheatString[0] = 0;
 	script->UpdateCompareFlag(true);
 
 	return OR_CONTINUE;
