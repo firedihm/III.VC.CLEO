@@ -66,10 +66,10 @@ void CustomText::Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len
 	utf16[len] = 0;
 }
 
-wchar_t *CustomText::GetText(int theText, int, char *key)
+wchar_t* CustomText::GetText(void* pTheText, int, const char* key)
 {
-	wchar_t *result = nullptr;
-	CustomTextEntry *entry = pCustomTextList;
+	wchar_t* result = nullptr;
+	CustomTextEntry* entry = pCustomTextList;
 	while(entry)
 	{
 		if(!_stricmp(entry->m_key, key))
@@ -80,7 +80,7 @@ wchar_t *CustomText::GetText(int theText, int, char *key)
 		entry = entry->m_pNext;
 	}
 	if(!result)
-		result = game.Text.pfGetText(theText, key);
+		result = game.Text.pfGet(pTheText, key);
 	if(!result)
 		return nullptr;
 	return result;
