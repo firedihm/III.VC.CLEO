@@ -142,7 +142,7 @@ GtaGame::Patch()
 		memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
 		memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
 		memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
-		memory::RedirectJump(lut[MA_GET], CustomText::GetText);
+		memory::RedirectJump(lut[CA_GET], CustomText::GetText);
 		Text.pTheText = lut[MA_THE_TEXT];
 		Text.pIntroTextLines = (CIntroTextLine*)lut[MA_INTRO_TEXT_LINES];
 		Text.pNumberOfIntroTextLinesThisFrame = (ushort*)lut[MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME];
