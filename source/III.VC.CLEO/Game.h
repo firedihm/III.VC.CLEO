@@ -59,7 +59,7 @@ struct CIntroTextLine
 		int32 m_nFont;
 		float m_fAtX;
 		float m_fAtY;
-		wchar text[500]; // 100 in VC, 500 in III
+		wchar_t text[500]; // 100 in VC, 500 in III
 };
 
 struct bVehicleFlags
@@ -109,7 +109,7 @@ class GtaGame
 		} Scripts;
 
 		struct tText {
-				wchar_t* (__thiscall *pfSearch)(void*, const char*);
+				wchar_t* (__thiscall *pfGet)(void*, const char*);
 				void(__cdecl *pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
 				void(__cdecl *pfAddBigMessageQ)(wchar_t*, uint, ushort);
 				void(__cdecl *pfAddMessage)(wchar_t*, uint, ushort);
