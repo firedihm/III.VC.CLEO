@@ -138,11 +138,11 @@ GtaGame::Patch()
 		Scripts.pNumOpcodesExecuted = (ushort*)lut[MA_NUM_OPCODES_EXECUTED];
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
-		Text.pfSearch = (wchar_t* (__thiscall *)(void*, const char*))lut[MA_SEARCH];
+		Text.pfGet = (wchar_t* (__thiscall *)(void*, const char*))lut[MA_GET];
 		memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
 		memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
 		memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
-		memory::RedirectJump(lut[CA_SEARCH], CustomText::Search);
+		memory::RedirectJump(lut[MA_GET], CustomText::GetText);
 		Text.pTheText = lut[MA_THE_TEXT];
 		Text.pIntroTextLines = (CIntroTextLine*)lut[MA_INTRO_TEXT_LINES];
 		Text.pNumberOfIntroTextLinesThisFrame = (ushort*)lut[MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME];
@@ -308,30 +308,34 @@ GtaGame::OnShutdownGame()
 float
 ScreenCoord(float a)
 {
-		return a*(((float)(*Screen.pHeight))/900.f);
+		return a * (*Screen.pHeight / 900.0f);
 }
 
 void
-GtaGame::OnMenuDrawing(float x, float y, wchar_t *text)
+GtaGame::OnMenuDrawing(float x, float y, wchar_t* text)
 {
 	game.Events.pfDrawInMenu(x, y, text);
-#if CLEO_VC
-	unsigned char color[4] = { 0xFF, 0x96, 0xE1, 0xFF };
-#else
-	unsigned char color[4] = { 0xEB, 0xAA, 0x32, 0xFF };
-#endif
-	game.Font.SetColor((unsigned int *)color);
-	game.Font.SetDropShadowPosition(0);
-	game.Font.SetPropOn();
-	game.Font.SetFontStyle(0);
-	game.Font.SetScale(ScreenCoord(0.45f), ScreenCoord(0.7f));
-	game.Font.SetLeftJustifyOn();
+
+	CRGBA color;
 	wchar_t line[128];
+	if (game.Version >= GAME_GTAVC_V1_0 && game.Version <= GAME_GTAVC_VSTEAMENC)
+			color = { 0xFF, 0x96, 0xE1, 0xFF };
+	else
+			color = { 0xEB, 0xAA, 0x32, 0xFF };
+
+	game.Font.pfSetColor(&color);
+	game.Font.pfSetDropShadowPosition(0);
+	game.Font.pfSetPropOn();
+	game.Font.pfSetFontStyle(0);
+	game.Font.pfSetScale(ScreenCoord(0.45f), ScreenCoord(0.7f));
+	game.Font.pfSetJustifyOn();
+	
 	swprintf(line, L"CLEO v%d.%d.%d", CLEO_VERSION_MAIN, CLEO_VERSION_MAJOR, CLEO_VERSION_MINOR);
-	game.Font.PrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(34.0f), line);
+	game.Font.pfPrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(34.0f), line);
+
 	scriptMgr.numLoadedCustomScripts ?
 	swprintf(line, L"%d %s, %d %s loaded", scriptMgr.numLoadedCustomScripts, scriptMgr.numLoadedCustomScripts == 1? L"script" : L"scripts",
 		CleoPlugins::numLoadedPlugins, CleoPlugins::numLoadedPlugins == 1? L"plugin" : L"plugins") :
 	swprintf(line, L"%d %s loaded", CleoPlugins::numLoadedPlugins, CleoPlugins::numLoadedPlugins == 1 ? L"plugin" : L"plugins");
-	game.Font.PrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(20.0f), line);
+	game.Font.pfPrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(20.0f), line);
 }
