@@ -2254,7 +2254,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADE(CScript *script)
 	script->Collect(2);
 	char *gxt = game.Scripts.pScriptParams[0].cVar;
 	char *result = game.Scripts.pScriptParams[1].cVar;
-	wchar_t *text = CustomText::GetText(game.Text.CText, 0, gxt);
+	wchar_t *text = CustomText::GetText(game.Text.pTheText, 0, gxt);
 	wcstombs(result, text, wcslen(text));
 	result[wcslen(text)] = '\0';
 	return OR_CONTINUE;
