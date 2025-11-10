@@ -41,11 +41,11 @@ enum eMemoryAddress
         MA_USED_OBJECT_ARRAY,
 
         // Text
-        MA_SEARCH,
+        MA_GET,
         MA_VC_ASM_0,
         MA_VC_ASM_1,
         MA_VC_ASM_2,
-        CA_SEARCH,
+        MA_GET,
         MA_THE_TEXT,
         MA_INTRO_TEXT_LINES,
         MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME,
