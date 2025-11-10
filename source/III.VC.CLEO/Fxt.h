@@ -22,7 +22,7 @@ public:
 
 	static void Unload();
 
-	static wchar_t * __fastcall GetText(int theText, int, char *key);
+	static wchar_t * __fastcall GetText(void* pTheText, int, const char* key);
 
 	static void LoadFxtFile(char *filepath);
 
