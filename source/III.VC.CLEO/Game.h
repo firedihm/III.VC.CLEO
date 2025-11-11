@@ -1,7 +1,20 @@
 #pragma once
 
-#include "CustomScript.h"
 #include "OpcodesSystem.h"
+
+#ifdef CLEO_VC
+	#define SIZE_MAIN_SCRIPT = 225512,
+	#define SIZE_MISSION_SCRIPT = 35000,
+	#define SIZE_SCRIPT_SPACE = SIZE_MAIN_SCRIPT + SIZE_MISSION_SCRIPT
+#else
+	#define SIZE_MAIN_SCRIPT = 128 * 1024,
+	#define SIZE_MISSION_SCRIPT = 32 * 1024,
+	#define SIZE_SCRIPT_SPACE = SIZE_MAIN_SCRIPT + SIZE_MISSION_SCRIPT
+#endif
+
+#define MAX_NUM_SCRIPTS 128
+
+struct tScriptVar;
 
 enum eGameVersion
 {
@@ -88,10 +101,8 @@ struct tUsedObject
 		int index;
 };
 
-class GtaGame
+struct GtaGame
 {
-	public:
-		const char* szRootPath;
 		const eGameVersion Version;
 
 		struct tScripts {
@@ -189,10 +200,12 @@ class GtaGame
 
 		void Patch();
 
-		// lazy init, as it checks for loaded modules
+		bool IsGtaVC();
+		bool IsGta3();
 		static bool IsChinese();
 
 	private:
+
 		// hooks
 		static void InitScripts_OnGameInit();
 		static void InitScripts_OnGameReinit();
