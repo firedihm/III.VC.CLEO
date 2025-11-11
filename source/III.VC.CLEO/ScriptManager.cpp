@@ -1,9 +1,8 @@
-#include "CustomScript.h"
 #include "Game.h"
 #include "Log.h"
+#include "Script.h"
 #include "ScriptManager.h"
 
-#include <cstdio>
 #include <filesystem>
 #include <set>
 
