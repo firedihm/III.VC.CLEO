@@ -1,8 +1,7 @@
-#include "CustomScript.h"
 #include "Game.h"
 #include "Log.h"
 #include "OpcodesSystem.h"
-#include "ScriptManager.h"
+#include "Script.h"
 
 #include <cstring>
 #include <ifstream>
@@ -189,29 +188,29 @@ CScript::CollectParameters(uint* pIp, short numParams)
 						*pIp += 2;
 						break;
 					case PARAM_TYPE_FLOAT:
-					#if CLEO_VC
-						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
-						*pIp += 4;
-						break;
-					#else
-						game.Scripts.pScriptParams[i].fVar = (float)(*(short*)&game.Scripts.pScriptSpace[*pIp]) / 16.0f;
-						*pIp += 2;
-						break;
-					#endif
+						if (game.IsGta3()) {
+								game.Scripts.pScriptParams[i].fVar = *(short*)&game.Scripts.pScriptSpace[*pIp] / 16.0f;
+								*pIp += 2;
+								break;
+						} else {
+								game.Scripts.pScriptParams[i].fVar = *(float*)&game.Scripts.pScriptSpace[*pIp];
+								*pIp += 4;
+								break;
+						}
 					case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
-								uchar length = *(uchar*)&game.Scripts.pScriptSpace[*pIp];
+								uchar length = game.Scripts.pScriptSpace[*pIp];
 								std::memcpy(&game.Scripts.pScriptSpace[*pIp + 1], &game.Scripts.pScriptSpace[*pIp], length);
-								*((char*)&game.Scripts.pScriptSpace[*pIp] + length) = '\0';
+								(game.Scripts.pScriptSpace[*pIp] + length) = '\0';
 								paramType->processed = true;
 						}
 
-						game.Scripts.pScriptParams[i].cVar = &game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].szVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += std::strlen(&game.Scripts.pScriptSpace[*pIp]) + 1;
 						break;
 					default:
 						*pIp -= 1;
-						game.Scripts.pScriptParams[i].cVar = &game.Scripts.pScriptSpace[*pIp];
+						game.Scripts.pScriptParams[i].szVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += KEY_LENGTH_IN_SCRIPT;
 						break;
 				}
@@ -236,17 +235,15 @@ CScript::CollectNextParameterWithoutIncreasingPC(uint ip)
 			case PARAM_TYPE_INT16:
 				return *(short*)&game.Scripts.pScriptSpace[ip];
 			case PARAM_TYPE_FLOAT:
-			#if CLEO_VC
-				return *(int*)&game.Scripts.pScriptSpace[ip];
-			#else
-				float fParam = ((float)(*(short*)&game.Scripts.pScriptSpace[ip]) / 16.0f);
-				return static_cast<int>(fParam);
-			#endif
+				if (game.IsGta3())
+						return (int)(*(short*)&game.Scripts.pScriptSpace[ip] / 16.0f);
+				else
+						return *(int*)&game.Scripts.pScriptSpace[ip];
 			case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
-						uchar length = *(uchar*)&game.Scripts.pScriptSpace[ip];
+						uchar length = game.Scripts.pScriptSpace[ip];
 						std::memcpy(&game.Scripts.pScriptSpace[ip + 1], &game.Scripts.pScriptSpace[ip], length);
-						*((char*)&game.Scripts.pScriptSpace[ip] + length) = '\0';
+						(game.Scripts.pScriptSpace[ip] + length) = '\0';
 						paramType->processed = true;
 				}
 
