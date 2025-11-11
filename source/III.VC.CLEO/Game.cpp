@@ -12,7 +12,6 @@
 	#define MAX_FILEPATH MAX_PATH
 	#define DIRECTORY_SEPARATOR '\\'
 	#define GET_EXE_PATH(buf) GetModuleFileNameA(NULL, buf, MAX_PATH)
-	#define LOAD_MODULE(name) GetModuleHandleA(name)
 #else
 	#include <dlfcn.h>
 	#include <limits.h>
@@ -21,7 +20,6 @@
 	#define MAX_FILEPATH PATH_MAX
 	#define DIRECTORY_SEPARATOR '/'
 	#define GET_EXE_PATH(buf) readlink("/proc/self/exe", buf, PATH_MAX)
-	#define LOAD_MODULE(name) dlopen(name, RTLD_LAZY)
 #endif
 
 #include <cstring>
@@ -143,7 +141,7 @@ GtaGame::Patch()
 		memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
 		memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
 		memory::RedirectJump(lut[CA_GET], CustomText::GetText);
-		Text.pTheText = lut[MA_THE_TEXT];
+		Text.pTheText = (void*)lut[MA_THE_TEXT];
 		Text.pIntroTextLines = (CIntroTextLine*)lut[MA_INTRO_TEXT_LINES];
 		Text.pNumberOfIntroTextLinesThisFrame = (ushort*)lut[MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME];
 		Text.szKeyboardCheatString = (char*)lut[MA_KEYBOARD_CHEAT_STRING];
@@ -167,7 +165,7 @@ GtaGame::Patch()
 		Pools.ppPedPool = (CPool**)lut[MA_PED_POOL];
 		Pools.ppVehiclePool = (CPool**)lut[MA_VEHICLE_POOL];
 		Pools.ppObjectPool = (CPool**)lut[MA_OBJECT_POOL];
-		Pools.pPlayers = (void*)lut[MA_PLAYERS];
+		Pools.pPlayers = lut[MA_PLAYERS];
 		Pools.pfPedPoolGetAt = (void* (__thiscall *)(CPool*, int))lut[MA_PED_POOL_GET_AT];
 		Pools.pfVehiclePoolGetAt = (void* (__thiscall *)(CPool*, int))lut[MA_VEHICLE_POOL_GET_AT];
 		Pools.pfObjectPoolGetAt = (void* (__thiscall *)(CPool*, int))lut[MA_OBJECT_POOL_GET_AT];
@@ -212,10 +210,22 @@ GtaGame::Patch()
 }
 
 bool
+GtaGame::IsGtaVC()
+{
+		return Version >= GAME_GTAVC_V1_0 && Version <= GAME_GTAVC_VSTEAMENC;
+}
+
+bool
+GtaGame::IsGta3()
+{
+		return Version >= GAME_GTA3_V1_0 && Version <= GAME_GTA3_VSTEAMENC;
+}
+
+bool
 GtaGame::IsChinese()
 {
-		static bool china = (LOAD_MODULE("wm_vcchs.asi") || LOAD_MODULE("wm_vcchs.dll") || 
-							 LOAD_MODULE("wm_lcchs.asi") || LOAD_MODULE("wm_lcchs.dll")) ? true : false;
+		static bool china = (GetModuleHandleA("wm_vcchs.asi") || GetModuleHandleA("wm_vcchs.dll") || 
+							 GetModuleHandleA("wm_lcchs.asi") || GetModuleHandleA("wm_lcchs.dll")) ? true : false;
 		return china;
 }
 
@@ -318,10 +328,10 @@ GtaGame::OnMenuDrawing(float x, float y, wchar_t* text)
 
 	CRGBA color;
 	wchar_t line[128];
-	if (game.Version >= GAME_GTAVC_V1_0 && game.Version <= GAME_GTAVC_VSTEAMENC)
-			color = { 0xFF, 0x96, 0xE1, 0xFF };
-	else
+	if (game.IsGta3())
 			color = { 0xEB, 0xAA, 0x32, 0xFF };
+	else
+			color = { 0xFF, 0x96, 0xE1, 0xFF };
 
 	game.Font.pfSetColor(&color);
 	game.Font.pfSetDropShadowPosition(0);
