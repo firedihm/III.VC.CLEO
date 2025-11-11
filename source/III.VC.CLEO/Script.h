@@ -20,9 +20,8 @@ union tScriptVar
 {
 		int nVar;
 		float fVar;
-		char* cVar;
+		char* szVar;
 		void* pVar;
-		ulong dVar; // DWORD
 };
 
 enum eParamType : uchar
