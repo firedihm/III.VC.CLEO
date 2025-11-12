@@ -4,48 +4,15 @@
 #include "Game.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Script.h"
 #include "ScriptManager.h"
 
-#ifdef _WIN32
-	#include <windows.h>
-
-	#define MAX_FILEPATH MAX_PATH
-	#define DIRECTORY_SEPARATOR '\\'
-	#define GET_EXE_PATH(buf) GetModuleFileNameA(NULL, buf, MAX_PATH)
-#else
-	#include <dlfcn.h>
-	#include <limits.h>
-	#include <unistd.h>
-
-	#define MAX_FILEPATH PATH_MAX
-	#define DIRECTORY_SEPARATOR '/'
-	#define GET_EXE_PATH(buf) readlink("/proc/self/exe", buf, PATH_MAX)
-#endif
+#include <Windows.h>
 
 #include <cstring>
 #include <thread>
 
 GtaGame game;
-
-char*
-CopyGameRootPath()
-{
-		char path_buf[MAX_FILEPATH];
-
-		ssize_t length = GET_EXE_PATH(&path_buf);
-		if (length <= 0 || length == MAX_FILEPATH) // -1 is error for linux, 0 is for windows
-				throw "Couldn't find game's root directory";
-		else
-				path_buf[&path_buf + length] = '\0';
-
-		// cut off executable file's name: find rightmost separator and treat it as string's new terminator
-		char* new_end = std::strrchr(&path_buf, DIRECTORY_SEPARATOR);
-		*new_end = '\0';
-
-		char* path = new char[new_end - &path_buf + 1]; // add 1 for '\0'
-		std::strncpy(path, &path_buf, MAX_FILEPATH);
-		return path;
-}
 
 eGameVersion
 DetermineGameVersion()
@@ -72,38 +39,21 @@ DetermineGameVersion()
 		}
 }
 
-void
-SteamHandler()
-{
-		do
-				std::this_thread::yield();
-		while (DetermineGameVersion() != GAME_GTAVC_VSTEAM && DetermineGameVersion() != GAME_GTA3_VSTEAM)
-
-		game.Patch();
-}
-
-GtaGame::GtaGame() : szRootPath(CopyGameRootPath()), Version(DetermineGameVersion())
+GtaGame::GtaGame() : Version(DetermineGameVersion())
 {
 		if (Version == GAME_GTAVC_VSTEAMENC || Version == GAME_GTA3_VSTEAMENC) {
-				std::thread handler(SteamHandler); // wait for .exe to decrypt
-				handler.detach();
-		} else
-				Patch();
-}
+				do // wait for .exe to decrypt
+						std::this_thread::yield();
+				while (DetermineGameVersion() != GAME_GTAVC_VSTEAM && DetermineGameVersion() != GAME_GTA3_VSTEAM)
+		}
 
-GtaGame::~GtaGame()
-{
-		delete[] szRootPath;
-}
-
-void
-GtaGame::Patch()
-{
+		// we'll use this to facilitate 
 		GameAddressLUT lut(Version);
 
-		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_0], scriptMgr.aScriptsArray);
-		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_1], scriptMgr.aScriptsArray);
-		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_2], (uintptr_t)scriptMgr.aScriptsArray + 4);
+		Scripts.pScriptsArray = new Script[MAX_NUM_SCRIPTS];
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_0], (uchar*)Scripts.pScriptsArray);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_1], (uchar*)Scripts.pScriptsArray);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_2], (uchar*)&Scripts.pScriptsArray.m_pPrev);
 		memory::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(CScript));
 		memory::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(CScript));
 		memory::RedirectJump(lut[CA_INIT], CScript::Init);
@@ -209,6 +159,11 @@ GtaGame::Patch()
 		Misc.pfIsBoatModel = (bool (__cdecl *)(int mID))lut[MA_IS_BOAT_MODEL];
 }
 
+GtaGame::~GtaGame()
+{
+		delete[] Scripts.pScriptsArray;
+}
+
 bool
 GtaGame::IsGtaVC()
 {
@@ -224,6 +179,7 @@ GtaGame::IsGta3()
 bool
 GtaGame::IsChinese()
 {
+		// lazy init to make sure module will load by the time we'll attempt getting it's handle
 		static bool china = (GetModuleHandleA("wm_vcchs.asi") || GetModuleHandleA("wm_vcchs.dll") || 
 							 GetModuleHandleA("wm_lcchs.asi") || GetModuleHandleA("wm_lcchs.dll")) ? true : false;
 		return china;
