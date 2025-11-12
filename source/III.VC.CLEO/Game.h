@@ -106,6 +106,7 @@ struct GtaGame
 		const eGameVersion Version;
 
 		struct tScripts {
+				Script* pScriptsArray;
 				uchar* pScriptSpace;
 				tScriptVar* pScriptParams;
 				ushort* pNumOpcodesExecuted;
@@ -197,8 +198,6 @@ struct GtaGame
 
 		GtaGame();
 		~GtaGame();
-
-		void Patch();
 
 		bool IsGtaVC();
 		bool IsGta3();
