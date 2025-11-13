@@ -106,16 +106,15 @@ enum eMemoryAddress
 
         // Misc
         MA_VEHICLE_MODEL_STORE,
-        MA_ACTIVE_PAD_STATE,
-        MA_MODEL_FOR_WEAPON,
+        MA_PAD_NEW_STATE,
         MA_CAMERA_WIDESCREEN,
         MA_CURRENT_WEATHER,
-        MA_MULTIPLY_3X3,
-        MA_RW3D_TRANSFORM_POINTS,
-        MA_GET_USER_DIRECTORY,
+        
+        MA_GET_USER_FILES_FOLDER,
+        MA_MODEL_FOR_WEAPON,
         MA_SPAWN_CAR,
+        MA_RWV3D_TRANSFORM_POINTS,
         MA_BLEND_ANIMATION,
-        MA_IS_BOAT_MODEL,
 
         NUM_MA
 };
