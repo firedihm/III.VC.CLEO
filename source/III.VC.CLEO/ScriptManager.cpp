@@ -14,7 +14,7 @@ std::set<const fs::directory_iterator*> FileSearchHandles;
 
 ScriptManager scriptMgr;
 
-ScriptManager::ScriptManager() : gameScripts(), scriptMemory(), pCusomScripts(nullptr), numLoadedCustomScripts(0) {}
+ScriptManager::ScriptManager() : pCusomScripts(nullptr), numLoadedCustomScripts(0) {}
 
 void
 ScriptManager::LoadScripts()
@@ -117,4 +117,125 @@ void
 ScriptManager::DeleteFileSearchHandle(const fs::directory_iterator* handle)
 {
 		FileSearchHandles.erase(handle);
+}
+
+void
+GtaGame::InitScripts_OnGameInit()
+{
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Init--");
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		Events.pfInitScripts_OnGameInit();
+
+		scriptMgr.LoadScripts();
+		CustomText::Load();
+}
+
+void
+GtaGame::InitScripts_OnGameReinit()
+{
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Re-Init--");
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		Events.pfInitScripts_OnGameReinit();
+
+		scriptMgr.LoadScripts();
+		CustomText::Load();
+
+		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
+		Misc.openedFiles->clear();
+		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
+		Misc.allocatedMemory->clear();
+		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
+		Misc.openedHandles->clear();
+}
+
+void
+GtaGame::InitScripts_OnGameSaveLoad()
+{
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Load Save--");
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		Events.pfInitScripts_OnGameSaveLoad();
+
+		scriptMgr.LoadScripts();
+		CustomText::Load();
+
+		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
+		Misc.openedFiles->clear();
+		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
+		Misc.allocatedMemory->clear();
+		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
+		Misc.openedHandles->clear();
+}
+
+void
+GtaGame::OnGameSaveScripts(int a, int b)
+{
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Save Scripts--");
+
+		scriptMgr.DisableAllScripts();
+
+		Events.pfGameSaveScripts(a, b);
+
+		scriptMgr.EnableAllScripts();
+}
+
+void
+GtaGame::OnShutdownGame()
+{
+		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Shutdown--");
+
+		Events.pfShutdownGame();
+
+		scriptMgr.UnloadScripts();
+		CustomText::Unload();
+
+		std::for_each(Misc.openedFiles->begin(),.Misc.openedFiles->end(), fclose);
+		Misc.openedFiles->clear();
+		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
+		Misc.allocatedMemory->clear();
+		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
+		Misc.openedHandles->clear();
+}
+
+float
+ScreenCoord(float a)
+{
+		return a * (*Screen.pHeight / 900.0f);
+}
+
+void
+GtaGame::OnMenuDrawing(float x, float y, wchar_t* text)
+{
+	game.Events.pfDrawInMenu(x, y, text);
+
+	CRGBA color;
+	wchar_t line[128];
+	if (game.IsGta3())
+			color = { 0xEB, 0xAA, 0x32, 0xFF };
+	else
+			color = { 0xFF, 0x96, 0xE1, 0xFF };
+
+	game.Font.pfSetColor(&color);
+	game.Font.pfSetDropShadowPosition(0);
+	game.Font.pfSetPropOn();
+	game.Font.pfSetFontStyle(0);
+	game.Font.pfSetScale(ScreenCoord(0.45f), ScreenCoord(0.7f));
+	game.Font.pfSetJustifyOn();
+	
+	swprintf(line, L"CLEO v%d.%d.%d", CLEO_VERSION_MAIN, CLEO_VERSION_MAJOR, CLEO_VERSION_MINOR);
+	game.Font.pfPrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(34.0f), line);
+
+	scriptMgr.numLoadedCustomScripts ?
+	swprintf(line, L"%d %s, %d %s loaded", scriptMgr.numLoadedCustomScripts, scriptMgr.numLoadedCustomScripts == 1? L"script" : L"scripts",
+		CleoPlugins::numLoadedPlugins, CleoPlugins::numLoadedPlugins == 1? L"plugin" : L"plugins") :
+	swprintf(line, L"%d %s loaded", CleoPlugins::numLoadedPlugins, CleoPlugins::numLoadedPlugins == 1 ? L"plugin" : L"plugins");
+	game.Font.pfPrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(20.0f), line);
 }
