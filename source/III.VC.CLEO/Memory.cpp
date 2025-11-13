@@ -7,7 +7,7 @@
 using namespace memory;
 
 void
-Write(uchar* dest, const uchar* src, size_t count)
+Write(void* dest, const void* src, size_t count)
 {
         if (dest < 0x401000)
                 return;
@@ -54,7 +54,7 @@ SetFloat(uchar* dest, float value)
 }
 
 void
-SetPointer(uchar* dest, uchar* value)
+SetPointer(uchar* dest, void* value)
 {        
         Write(dest, &value, sizeof(value));
 }
