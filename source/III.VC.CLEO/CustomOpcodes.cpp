@@ -1166,7 +1166,7 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_OBJECT_WITH_OFFSET(CScript *scrip
 	offset.y = game.Scripts.pScriptParams[2].fVar;
 	offset.z = game.Scripts.pScriptParams[3].fVar;
 
-	game.Misc.RwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)object + 4));
+	game.Misc.pfRwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)object + 4));
 
 	game.Scripts.pScriptParams[0].fVar = offset.x;
 	game.Scripts.pScriptParams[1].fVar = offset.y;
@@ -1187,7 +1187,7 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_CAR_WITH_OFFSET(CScript *script)
 	offset.y = game.Scripts.pScriptParams[2].fVar;
 	offset.z = game.Scripts.pScriptParams[3].fVar;
 
-	game.Misc.RwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)car + 4));
+	game.Misc.pfRwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)car + 4));
 
 	game.Scripts.pScriptParams[0].fVar = offset.x;
 	game.Scripts.pScriptParams[1].fVar = offset.y;
@@ -1208,7 +1208,7 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_ACTOR_WITH_OFFSET(CScript *script
 	offset.y = game.Scripts.pScriptParams[2].fVar;
 	offset.z = game.Scripts.pScriptParams[3].fVar;
 
-	game.Misc.RwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)actor + 4));
+	game.Misc.pfRwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)actor + 4));
 
 	game.Scripts.pScriptParams[0].fVar = offset.x;
 	game.Scripts.pScriptParams[1].fVar = offset.y;
@@ -1235,70 +1235,120 @@ eOpcodeResult CustomOpcodes::GET_CHAR_ARMOUR(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::PLAYER_DRIVING_PLANE(CScript *script)
+eOpcodeResult
+CustomOpcodes::PLAYER_DRIVING_PLANE(CScript* script)
 {
-	script->Collect(1);
-	DWORD player = game.Pools.pPlayers[79 * game.Scripts.pScriptParams[0].nVar];
-	if (*(BYTE *)(player + 0x314))
-	{
-		DWORD vehicle = *(DWORD *)(player + 0x310);
-		if (*(DWORD *)(vehicle + 0x5C) == 126) //#DODO
-		{
-			script->UpdateCompareFlag(true);
-			return OR_CONTINUE;
+		bool gta3 = game.IsGta3();
+		short miDodo = gta3 ? 126 : 190; // skimmer for VC
+		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
+		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
+
+		script->Collect(1);
+
+		// get CPlayerInfo::m_pPed as uchar*
+		uint offset = CPlayerInfoSize * game.Scripts.pScriptParams[0].nVar); // game technically supports only 1 player...
+		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game.Pools.pPlayers + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+
+		bool result = false;
+		if (*(bool*)(player + offset_bInVehicle)) {
+				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				short mi = *(short*)(vehicle + 0x5C); // CEntity::m_modelIndex; same offset for both games
+
+				uchar* handling = reinterpret_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+				uint flags = *(uint*)(handling + offset_Flags);
+
+				result = (mi == miDodo || flags & 0x40000) ? true : false;
 		}
 
-		DWORD dwFlags = *(DWORD *)(*(DWORD *)(vehicle + 0x128) + 0xC8);
-		if ((dwFlags & 0x20000) != false /*|| (dwFlags & 0x40000) != false*/)
-		{
-			script->UpdateCompareFlag(true);
-			return OR_CONTINUE;
-		}
-	}
-	script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
+		script->UpdateCompareFlag(result);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::PLAYER_DRIVING_BOAT(CScript *script)
+eOpcodeResult
+CustomOpcodes::PLAYER_DRIVING_BOAT(CScript* script)
 {
-	script->Collect(1);
-	DWORD player = game.Pools.pPlayers[79 * game.Scripts.pScriptParams[0].nVar];
-	if (*(BYTE *)(player + 0x314))
-	{
-		DWORD vehicle = *(DWORD *)(player + 0x310);
-		if (game.Misc.pfIsBoatModel(*(DWORD *)(vehicle + 0x5C)))
-		{
-			script->UpdateCompareFlag(true);
-			return OR_CONTINUE;
+		bool gta3 = game.IsGta3();
+		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
+
+		script->Collect(1);
+
+		// get CPlayerInfo::m_pPed as uchar*
+		uint offset = CPlayerInfoSize * game.Scripts.pScriptParams[0].nVar); // game technically supports only 1 player...
+		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game.Pools.pPlayers + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+
+		bool result = false;
+		if (*(bool*)(player + offset_bInVehicle)) {
+				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				result = *(int*)(vehicle + offset_vehType) == 1 ? true : false;
 		}
-	}
-	script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
+
+		script->UpdateCompareFlag(result);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::PLAYER_DRIVING_HELI(CScript *script)
+eOpcodeResult
+CustomOpcodes::PLAYER_DRIVING_HELI(CScript* script)
 {
-	script->Collect(1);
-	DWORD player = game.Pools.pPlayers[79 * game.Scripts.pScriptParams[0].nVar];
-	if (*(BYTE *)(player + 0x314))
-	{
-		DWORD vehicle = *(DWORD *)(player + 0x310);
-		DWORD dwFlags = *(DWORD *)(*(DWORD *)(vehicle + 0x128) + 0xC8);
-		if ((dwFlags & 0x20000) != false)
-		{
-			script->UpdateCompareFlag(true);
-			return OR_CONTINUE;
+		bool gta3 = game.IsGta3();
+		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
+		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
+
+		script->Collect(1);
+
+		// get CPlayerInfo::m_pPed as uchar*
+		uint offset = CPlayerInfoSize * game.Scripts.pScriptParams[0].nVar); // game technically supports only 1 player...
+		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game.Pools.pPlayers + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+
+		bool result = false;
+		if (*(bool*)(player + offset_bInVehicle)) {
+				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+
+				uchar* handling = reinterpret_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+				uint flags = *(uint*)(handling + offset_Flags);
+
+				result = (flags & 0x20000) ? true : false;
 		}
-	}
-	script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
+
+		script->UpdateCompareFlag(result);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::PLAYER_DRIVING_A_MOTORBIKE(CScript *script)
+eOpcodeResult
+CustomOpcodes::PLAYER_DRIVING_A_MOTORBIKE(CScript* script)
 {
-	script->Collect(1);
-	script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
+		bool gta3 = game.IsGta3();
+		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
+
+		script->Collect(1);
+
+		// get CPlayerInfo::m_pPed as uchar*
+		uint offset = CPlayerInfoSize * game.Scripts.pScriptParams[0].nVar); // game technically supports only 1 player...
+		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game.Pools.pPlayers + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+
+		bool result = false;
+		if (*(bool*)(player + offset_bInVehicle)) {
+				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				result = *(int*)(vehicle + offset_vehType) == 5 ? true : false;
+		}
+
+		script->UpdateCompareFlag(result);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::IS_PC_VERSION(CScript *script)
@@ -1348,26 +1398,34 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD_VSTRING(CScript *script)
 }
 
 //0601=2, is_button_pressed_on_pad %1d% with_sensitivity %2d%
-eOpcodeResult CustomOpcodes::IS_BUTTON_PRESSED_ON_PAD(CScript *script)
+eOpcodeResult
+CustomOpcodes::IS_BUTTON_PRESSED_ON_PAD(CScript* script)
 {
-	script->Collect(2);
-	script->UpdateCompareFlag(*(short*)((game.Scripts.pScriptParams[0].nVar * 2) + game.Misc.activePadState) == (short)game.Scripts.pScriptParams[1].nVar);
-	return OR_CONTINUE;
+		script->Collect(2);
+
+		script->UpdateCompareFlag(*(game.Scripts.pScriptParams[0].nVar + game.Misc.pPadNewState) == (short)game.Scripts.pScriptParams[1].nVar);
+
+		return OR_CONTINUE;
 }
 
 //0602=2, emulate_button_press_on_pad %1d% with_sensitivity %2d%
-eOpcodeResult CustomOpcodes::EMULATE_BUTTON_PRESS_ON_PAD(CScript *script)
+eOpcodeResult
+CustomOpcodes::EMULATE_BUTTON_PRESS_ON_PAD(CScript* script)
 {
-	script->Collect(2);
-	*(short*)((game.Scripts.pScriptParams[0].nVar * 2) + game.Misc.activePadState) = game.Scripts.pScriptParams[1].nVar;
-	return OR_CONTINUE;
+		script->Collect(2);
+
+		*(game.Scripts.pScriptParams[0].nVar + game.Misc.pPadNewState) = (short)game.Scripts.pScriptParams[1].nVar;
+
+		return OR_CONTINUE;
 }
 
 //0603=0, is_camera_in_widescreen_mode
-eOpcodeResult CustomOpcodes::IS_CAMERA_IN_WIDESCREEN_MODE(CScript *script)
+eOpcodeResult
+CustomOpcodes::IS_CAMERA_IN_WIDESCREEN_MODE(CScript* script)
 {
-	script->UpdateCompareFlag(*(char*)game.Misc.cameraWidescreen != 0);
-	return OR_CONTINUE;
+		script->UpdateCompareFlag(*game.Misc.pWideScreenOn);
+
+		return OR_CONTINUE;
 }
 
 //0604=2, %2d% = weapon %1d% model
@@ -1417,11 +1475,13 @@ eOpcodeResult CustomOpcodes::SET_MEM_OFFSET(CScript *script)
 }
 
 //0607=1, %1d% = get_current_weather
-eOpcodeResult CustomOpcodes::GET_CURRENT_WEATHER(CScript *script)
+eOpcodeResult
+CustomOpcodes::GET_CURRENT_WEATHER(CScript* script)
 {
-	game.Scripts.pScriptParams[0].nVar = *(short*)game.Misc.currentWeather;
-	script->Store(1);
-	return OR_CONTINUE;
+		game.Scripts.pScriptParams[0].nVar = *game.Misc.pOldWeatherType;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0608=3, show_text_position %1d% %2d% text %3d%
@@ -1458,7 +1518,7 @@ eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(CScript *script)
 {
 	script->Collect(4);
 	void* actor = game.Pools.pfPedPoolGetAt(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].nVar);
-	game.Misc.pfCAnimManagerBlendAnimation(*(DWORD *)((uintptr_t)actor + 0x4C), game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[3].fVar);
+	game.Misc.pfBlendAnimation(*(DWORD *)((uintptr_t)actor + 0x4C), game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[3].fVar);
 	return OR_CONTINUE;
 }
 
@@ -1587,7 +1647,7 @@ CustomOpcodes::OPCODE_0A99(CScript* script)
 		script->Collect(1);
 
 		fs::current_path(game.Scripts.pScriptParams[0].nVar == 0 ? game.szRootPath : 
-						 game.Scripts.pScriptParams[0].nVar == 1 ? game.Misc.pfGetUserDirectory() : game.Scripts.pScriptParams[0].szVar);
+						 game.Scripts.pScriptParams[0].nVar == 1 ? game.Misc.pfGetUserFilesFolder() : game.Scripts.pScriptParams[0].szVar);
 
 		return OR_CONTINUE;
 }
@@ -2215,12 +2275,6 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADD(CScript *script)
 	game.Misc.pfSpawnCar(game.Scripts.pScriptParams[0].nVar);
 #else
 	int modelIdx = game.Scripts.pScriptParams[0].nVar;
-	
-	if (game.Misc.pfIsBoatModel(modelIdx)) // pfSpawnCar crashes with boats
-	{
-		return OR_CONTINUE; // TODO: check for other unsupported vehicle types 
-	}
-
 	int fun = (int)game.Misc.pfSpawnCar;
 	const char oriModelIdx = 122; // by default function spawns tank
 
