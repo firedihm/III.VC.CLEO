@@ -184,16 +184,15 @@ struct GtaGame
 
 		struct tMisc {
 				uchar* pVehicleModelStore;
-				uintptr_t activePadState;
-				uintptr_t cameraWidescreen;
-				uintptr_t currentWeather;
-				int (__cdecl *pfModelForWeapon)(int eWeaponType);
-				char* (__cdecl *pfGetUserDirectory)();
-				void (__cdecl *pfSpawnCar)(int model); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
-				void (__cdecl *Multiply3x3)(CVector* out, uintptr_t* m, CVector* in);
-				void (__cdecl *RwV3dTransformPoints)(CVector*, CVector const*, int, uintptr_t const*);
-				bool (__cdecl *pfIsBoatModel)(int mID);
-				int (__cdecl *pfCAnimManagerBlendAnimation)(int pRpClump, int dwAnimGroupId, int dwAnimId, float fSpeed);
+				short* pPadNewState;
+				bool* pWideScreenOn;
+				short* pOldWeatherType;
+
+				char* (__cdecl *pfGetUserFilesFolder)();
+				int (__cdecl *pfModelForWeapon)(int);
+				void (__cdecl *pfSpawnCar)(int); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
+				void (__cdecl *pfRwV3dTransformPoints)(CVector*, CVector const*, int, const void*);
+				void* (__cdecl *pfBlendAnimation)(void*, int, int, float);
 		} Misc;
 
 		GtaGame();
@@ -202,16 +201,6 @@ struct GtaGame
 		bool IsGtaVC();
 		bool IsGta3();
 		static bool IsChinese();
-
-	private:
-
-		// hooks
-		static void InitScripts_OnGameInit();
-		static void InitScripts_OnGameReinit();
-		static void InitScripts_OnGameSaveLoad();
-		static void OnGameSaveScripts(int a, int b);
-		static void OnShutdownGame();
-		static void OnMenuDrawing(float x, float y, wchar_t* text);
 };
 
 extern GtaGame game;
