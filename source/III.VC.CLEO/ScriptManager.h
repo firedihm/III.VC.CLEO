@@ -1,13 +1,10 @@
 #pragma once
 
-#include "Script.h"
-
+class CScript;
 class std::filesystem::directory_iterator;
 
-class ScriptManager
+struct ScriptManager
 {
-	public:
-		CScript gameScripts[MAX_NUM_SCRIPTS];
 		CScript* pCusomScripts;
 		uint numLoadedCustomScripts;
 
@@ -26,6 +23,14 @@ class ScriptManager
 		static void DeleteFileStream(const FILE* stream);
 		static void SaveFileSearchHandle(const std::filesystem::directory_iterator* handle);
 		static void	DeleteFileSearchHandle(const std::filesystem::directory_iterator* handle);
+
+		// hooks
+		static void InitScripts_OnGameInit();
+		static void InitScripts_OnGameReinit();
+		static void InitScripts_OnGameSaveLoad();
+		static void OnGameSaveScripts(int a, int b);
+		static void OnShutdownGame();
+		static void OnMenuDrawing(float x, float y, wchar_t* text);
 };
 
 extern ScriptManager scriptMgr;
