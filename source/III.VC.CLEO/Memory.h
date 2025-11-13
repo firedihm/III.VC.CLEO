@@ -8,7 +8,7 @@ namespace memory
 		void SetShort(uchar* dest, short value);
 		void SetInt(uchar* dest, int value);
 		void SetFloat(uchar* dest, float value);
-		void SetPointer(uchar* dest, uchar* value);
+		void SetPointer(uchar* dest, void* value);
 
 		void RedirectCall(uchar* dest, uchar* func);
 		void RedirectJump(uchar* dest, uchar* func);
