@@ -47,7 +47,6 @@ GtaGame::GtaGame() : Version(DetermineGameVersion())
 				while (DetermineGameVersion() != GAME_GTAVC_VSTEAM && DetermineGameVersion() != GAME_GTA3_VSTEAM)
 		}
 
-		// we'll use this to facilitate 
 		GameAddressLUT lut(Version);
 
 		Scripts.pScriptsArray = new Script[MAX_NUM_SCRIPTS];
@@ -147,16 +146,15 @@ GtaGame::GtaGame() : Version(DetermineGameVersion())
 		Shadows.ppBloodPoolTex = (void**)lut[MA_BLOOD_POOL_TEX];
 
 		Misc.pVehicleModelStore = lut[MA_VEHICLE_MODEL_STORE];
-		Misc.activePadState = lut[MA_ACTIVE_PAD_STATE];
-		Misc.pfModelForWeapon = (int (__cdecl *)(int eWeaponType))lut[MA_MODEL_FOR_WEAPON];
-		Misc.cameraWidescreen = lut[MA_CAMERA_WIDESCREEN];
-		Misc.currentWeather = lut[MA_CURRENT_WEATHER];
-		Misc.Multiply3x3 = (void (__cdecl *)(CVector* out, uintptr_t* m, CVector* in))lut[MA_MULTIPLY_3X3];
-		Misc.RwV3dTransformPoints = (void (__cdecl *)(CVector*, CVector const*, int, uintptr_t const*))lut[MA_RW3D_TRANSFORM_POINTS];
-		Misc.pfGetUserDirectory = (char* (__cdecl *)())lut[MA_GET_USER_DIRECTORY];
-		Misc.pfSpawnCar = (void (__cdecl *)(int model))lut[MA_SPAWN_CAR];
-		Misc.pfCAnimManagerBlendAnimation = (int (__cdecl *)(int pRpClump, int dwAnimGroupId, int dwAnimId, float fSpeed))lut[MA_BLEND_ANIMATION];
-		Misc.pfIsBoatModel = (bool (__cdecl *)(int mID))lut[MA_IS_BOAT_MODEL];
+		Misc.pPadNewState = (short*)lut[MA_PAD_NEW_STATE];
+		Misc.pWideScreenOn = (bool*)lut[MA_CAMERA_WIDESCREEN];
+		Misc.pOldWeatherType = (short*)lut[MA_CURRENT_WEATHER];
+		
+		Misc.pfGetUserFilesFolder = (char* (__cdecl *)())lut[MA_GET_USER_FILES_FOLDER];
+		Misc.pfModelForWeapon = (int (__cdecl *)(int))lut[MA_MODEL_FOR_WEAPON];
+		Misc.pfSpawnCar = (void (__cdecl *)(int))lut[MA_SPAWN_CAR];
+		Misc.pfRwV3dTransformPoints = (void (__cdecl *)(CVector*, const CVector*, int, const void*))lut[MA_RWV3D_TRANSFORM_POINTS];
+		Misc.pfBlendAnimation = (int (__cdecl *)(void*, int, int, float))lut[MA_BLEND_ANIMATION];
 }
 
 GtaGame::~GtaGame()
@@ -183,125 +181,4 @@ GtaGame::IsChinese()
 		static bool china = (GetModuleHandleA("wm_vcchs.asi") || GetModuleHandleA("wm_vcchs.dll") || 
 							 GetModuleHandleA("wm_lcchs.asi") || GetModuleHandleA("wm_lcchs.dll")) ? true : false;
 		return china;
-}
-
-void
-GtaGame::InitScripts_OnGameInit()
-{
-		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Init--");
-
-		scriptMgr.UnloadScripts();
-		CustomText::Unload();
-
-		Events.pfInitScripts_OnGameInit();
-
-		scriptMgr.LoadScripts();
-		CustomText::Load();
-}
-
-void
-GtaGame::InitScripts_OnGameReinit()
-{
-		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Re-Init--");
-
-		scriptMgr.UnloadScripts();
-		CustomText::Unload();
-
-		Events.pfInitScripts_OnGameReinit();
-
-		scriptMgr.LoadScripts();
-		CustomText::Load();
-
-		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
-		Misc.openedFiles->clear();
-		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
-		Misc.allocatedMemory->clear();
-		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
-		Misc.openedHandles->clear();
-}
-
-void
-GtaGame::InitScripts_OnGameSaveLoad()
-{
-		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Load Save--");
-
-		scriptMgr.UnloadScripts();
-		CustomText::Unload();
-
-		Events.pfInitScripts_OnGameSaveLoad();
-
-		scriptMgr.LoadScripts();
-		CustomText::Load();
-
-		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
-		Misc.openedFiles->clear();
-		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
-		Misc.allocatedMemory->clear();
-		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
-		Misc.openedHandles->clear();
-}
-
-void
-GtaGame::OnGameSaveScripts(int a, int b)
-{
-		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Save Scripts--");
-
-		scriptMgr.DisableAllScripts();
-
-		Events.pfGameSaveScripts(a, b);
-
-		scriptMgr.EnableAllScripts();
-}
-
-void
-GtaGame::OnShutdownGame()
-{
-		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Shutdown--");
-
-		Events.pfShutdownGame();
-
-		scriptMgr.UnloadScripts();
-		CustomText::Unload();
-
-		std::for_each(Misc.openedFiles->begin(),.Misc.openedFiles->end(), fclose);
-		Misc.openedFiles->clear();
-		std::for_each(Misc.allocatedMemory->begin(), Misc.allocatedMemory->end(), free);
-		Misc.allocatedMemory->clear();
-		std::for_each(Misc.openedHandles->begin(), Misc.openedHandles->end(), CloseHandle);
-		Misc.openedHandles->clear();
-}
-
-float
-ScreenCoord(float a)
-{
-		return a * (*Screen.pHeight / 900.0f);
-}
-
-void
-GtaGame::OnMenuDrawing(float x, float y, wchar_t* text)
-{
-	game.Events.pfDrawInMenu(x, y, text);
-
-	CRGBA color;
-	wchar_t line[128];
-	if (game.IsGta3())
-			color = { 0xEB, 0xAA, 0x32, 0xFF };
-	else
-			color = { 0xFF, 0x96, 0xE1, 0xFF };
-
-	game.Font.pfSetColor(&color);
-	game.Font.pfSetDropShadowPosition(0);
-	game.Font.pfSetPropOn();
-	game.Font.pfSetFontStyle(0);
-	game.Font.pfSetScale(ScreenCoord(0.45f), ScreenCoord(0.7f));
-	game.Font.pfSetJustifyOn();
-	
-	swprintf(line, L"CLEO v%d.%d.%d", CLEO_VERSION_MAIN, CLEO_VERSION_MAJOR, CLEO_VERSION_MINOR);
-	game.Font.pfPrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(34.0f), line);
-
-	scriptMgr.numLoadedCustomScripts ?
-	swprintf(line, L"%d %s, %d %s loaded", scriptMgr.numLoadedCustomScripts, scriptMgr.numLoadedCustomScripts == 1? L"script" : L"scripts",
-		CleoPlugins::numLoadedPlugins, CleoPlugins::numLoadedPlugins == 1? L"plugin" : L"plugins") :
-	swprintf(line, L"%d %s loaded", CleoPlugins::numLoadedPlugins, CleoPlugins::numLoadedPlugins == 1 ? L"plugin" : L"plugins");
-	game.Font.pfPrintString(ScreenCoord(30.0f), (float)*game.Screen.pHeight - ScreenCoord(20.0f), line);
 }
