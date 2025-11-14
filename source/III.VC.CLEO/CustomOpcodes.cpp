@@ -273,7 +273,6 @@ eOpcodeResult CustomOpcodes::TERMINATE_CUSTOM_THREAD(CScript *script)
 {
 	game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 	script->RemoveFromCustomList(&scriptMgr.pCusomScripts);
-	scriptMgr.numLoadedCustomScripts--;
 	LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_CUSTOM_THREAD: Terminating custom script \"%s\"", script->m_acName);
 	delete script;
 	return OR_TERMINATE;
@@ -295,7 +294,6 @@ eOpcodeResult CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(CScript *script)
 				result = OR_TERMINATE;
 			game.Scripts.pfRemoveScriptFromList(search, game.Scripts.ppActiveScripts);
 			search->RemoveFromCustomList(&scriptMgr.pCusomScripts);
-			scriptMgr.numLoadedCustomScripts--;
 			LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_NAMED_CUSTOM_THREAD: Terminating custom script with name \"%s\"", search->m_acName);
 			delete search;
 			found = true;
@@ -319,7 +317,6 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(CScript *script)
 	if(newScript && newScript->Loaded())
 	{
 		newScript->AddToCustomList(&scriptMgr.pCusomScripts);
-		scriptMgr.numLoadedCustomScripts++;
 		game.Scripts.pfAddScriptToList(newScript, game.Scripts.ppActiveScripts);
 		newScript->m_bIsActive = true;
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Started new script \"%s\"", name);
@@ -1373,7 +1370,6 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD_VSTRING(CScript *script)
 	if(newScript && newScript->Loaded())
 	{
 		newScript->AddToCustomList(&scriptMgr.pCusomScripts);
-		scriptMgr.numLoadedCustomScripts++;
 		game.Scripts.pfAddScriptToList(newScript, game.Scripts.ppActiveScripts);
 		newScript->m_bIsActive = true;
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Started new script \"%s\"", script->m_acName);
