@@ -132,11 +132,6 @@ struct GtaGame
 				char* szKeyboardCheatString;
 		} Text;
 
-		struct tScreen {
-				int* pWidth;
-				int* pHeight;
-		} Screen;
-
 		struct tFont {
 				void (__cdecl *pfAsciiToUnicode)(const char*, wchar_t*);
 				void (__cdecl *pfPrintString)(float, float, wchar_t*);
@@ -162,12 +157,9 @@ struct GtaGame
 		} Pools;
 
 		struct tEvents {
-				void (__cdecl *pfInitScripts_OnGameSaveLoad)();
-				void (__cdecl *pfInitScripts_OnGameInit)();
-				void (__cdecl *pfInitScripts_OnGameReinit)();
-				void (__cdecl *pfShutdownGame)();
-				void (__cdecl *pfGameSaveScripts)(int, int);
-				void (__cdecl *pfDrawInMenu)(float, float, wchar_t*);
+				void (__cdecl *pfInitScripts)();
+				void (__cdecl *pfSaveAllScripts)(uchar*, uint*);
+				void (__cdecl *pfCdStreamRemoveImages)();
 		} Events;
 
 		struct tShadows {
