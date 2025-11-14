@@ -10,7 +10,7 @@ enum eMemoryAddress
         MA_SCRIPTS_ARRAY_2,
         MA_SIZEOF_CRUNNINGSCRIPT_0,
         MA_SIZEOF_CRUNNINGSCRIPT_1,
-        CA_INIT,
+        CA_INIT_SCRIPT,
         CA_PROCESS_ONE_COMMAND,
         CA_COLLECT_PARAMETERS,
         CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC,
@@ -45,7 +45,7 @@ enum eMemoryAddress
         MA_VC_ASM_0,
         MA_VC_ASM_1,
         MA_VC_ASM_2,
-        CA_GET,
+        CA_GET_TEXT,
         MA_THE_TEXT,
         MA_INTRO_TEXT_LINES,
         MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME,
@@ -54,10 +54,6 @@ enum eMemoryAddress
         MA_ADD_BIG_MESSAGE_Q,
         MA_ADD_MESSAGE,
         MA_ADD_MESSAGE_JUMP_Q,
-
-        // Screen
-        MA_SCREEN_WIDTH,
-        MA_SCREEN_HEIGHT,
 
         // Font
         MA_ASCII_TO_UNICODE,
@@ -83,15 +79,13 @@ enum eMemoryAddress
 
         // Events
         MA_INIT_SCRIPTS,
-        CA_INIT_SCRIPTS_ON_LOAD,
-        CA_INIT_SCRIPTS_ON_START,
-        CA_INIT_SCRIPTS_ON_RELOAD,
-        MA_SHUTDOWN_GAME,
-        CA_SHUTDOWN_GAME,
-        MA_GAME_SAVE_SCRIPTS,
-        CA_GAME_SAVE_SCRIPTS,
-        MA_DRAW_IN_MENU,
-        CA_DRAW_IN_MENU,
+        CA_INIT_SCRIPTS_ON_GAME_START,
+        CA_INIT_SCRIPTS_ON_GAME_LOAD,
+        CA_INIT_SCRIPTS_ON_GAME_RELOAD,
+        MA_SAVE_ALL_SCRIPTS,
+        CA_SAVE_ALL_SCRIPTS,
+        MA_CD_STREAM_REMOVE_IMAGES,
+        CA_CD_STREAM_REMOVE_IMAGES,
 
         // Shadows
         MA_STORE_SHADOW_TO_BE_RENDERED,
