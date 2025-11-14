@@ -3,18 +3,23 @@
 class CScript;
 class std::filesystem::directory_iterator;
 
+// manages custom .cs scripts in a separate list
 struct ScriptManager
 {
-		CScript* pCusomScripts;
-		uint numLoadedCustomScripts;
-
-		ScriptManager();
+		CScript* pCusomScripts = nullptr;
 
 		void LoadScripts();
 		void UnloadScripts();
 
-		void EnableAllScripts();
-		void DisableAllScripts();
+		void EnableScripts();
+		void DisableScripts();
+
+		// hooks
+		void OnGameStart();
+		void OnGameLoad();
+		void OnGameReload();
+		void OnGameSaveAllScripts(uchar* buf, uint* size);
+		void OnGameShutdown();
 
 		// keep track of objects that scripts create, so we won't lose them if scripts get terminated prematurely
 		static void SaveMemoryAddress(const void* memory);
@@ -23,14 +28,6 @@ struct ScriptManager
 		static void DeleteFileStream(const FILE* stream);
 		static void SaveFileSearchHandle(const std::filesystem::directory_iterator* handle);
 		static void	DeleteFileSearchHandle(const std::filesystem::directory_iterator* handle);
-
-		// hooks
-		static void InitScripts_OnGameInit();
-		static void InitScripts_OnGameReinit();
-		static void InitScripts_OnGameSaveLoad();
-		static void OnGameSaveScripts(int a, int b);
-		static void OnShutdownGame();
-		static void OnMenuDrawing(float x, float y, wchar_t* text);
 };
 
 extern ScriptManager scriptMgr;
