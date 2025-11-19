@@ -28,6 +28,7 @@ ScriptManager::LoadScripts()
 								game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
 								script->AddToCustomList(&pCusomScripts);
 								script->m_bIsActive = true;
+								script->m_bIsCustom = true;
 
 								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Loaded custom script \"%s\"", &script->m_acName);
 						} catch (const char* e) {
