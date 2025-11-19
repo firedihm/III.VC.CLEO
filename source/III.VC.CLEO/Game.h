@@ -101,8 +101,9 @@ struct tUsedObject
 		int index;
 };
 
-struct GtaGame
+class GtaGame
 {
+	public:
 		const eGameVersion Version;
 
 		struct tScripts {
