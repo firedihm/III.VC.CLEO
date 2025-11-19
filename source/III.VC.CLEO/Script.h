@@ -113,7 +113,7 @@ class CScript
 		struct StackFrame {
 				StackFrame* prev;
 				tScriptVar vars[NUM_LOCAL_VARS];
-				int retAddr;
+				uint retAddr;
 		};
 };
 
