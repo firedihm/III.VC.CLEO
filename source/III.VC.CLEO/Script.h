@@ -52,7 +52,7 @@ class CScript
 		/* 0x14 */ uint m_aGosubAddr[MAX_STACK_DEPTH];
 		/* 0x2C */ ushort m_nCurrentGosub;
 		/* 0x2E */ bool m_bIsCustom;
-		/* 0x2F */ char _pad;
+		/* 0x2F */ bool m_bIsPersistent;
 		/* 0x30 */ tScriptVar m_aLVars[NUM_LOCAL_VARS];
 		/* 0x70 */ tScriptVar m_aTimers[NUM_TIMERS];
 	#if CLEO_VC
@@ -89,13 +89,15 @@ class CScript
 		CScript(const char* filepath);
 		~CScript();
 
+		void Init();
+
 		void AddToCustomList(CScript** list);
 		void RemoveFromCustomList(CScript** list);
-		eOpcodeResult ProcessOneCommand();
 
-		// called by 0AB1: CLEO_CALL and 0AB2: CLEO_RETURN respectively
 		void PushStackFrame();
 		void PopStackFrame();
+
+		eOpcodeResult ProcessOneCommand();
 
 		// exports
 		CLEOAPI eParamType GetNextParamType();
