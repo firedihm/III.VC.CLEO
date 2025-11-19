@@ -4,9 +4,11 @@ class CScript;
 class std::filesystem::directory_iterator;
 
 // manages custom .cs scripts in a separate list
-struct ScriptManager
+class ScriptManager
 {
+	public:
 		CScript* pCusomScripts = nullptr;
+		CScript* pPersistentScripts = nullptr;
 
 		void LoadScripts();
 		void UnloadScripts();
