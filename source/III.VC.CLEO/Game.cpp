@@ -11,6 +11,8 @@
 #include <cstring>
 #include <thread>
 
+void* ChinaLib;
+
 GtaGame game;
 
 eGameVersion
@@ -38,7 +40,27 @@ DetermineGameVersion()
 		}
 }
 
-GtaGame::GtaGame() : Version(DetermineGameVersion())
+bool
+DetermineChineseness()
+{
+		// chinese support mod may have any of these names
+		const char* libs[] = {
+				"wm_vcchs.asi",
+				"wm_vcchs.dll",
+				"wm_lcchs.asi",
+				"wm_lcchs.dll"
+		};
+
+		bool result = false;
+		for (int i = 0; i < 4; i++) {
+				ChinaLib = LoadLibraryA(libs[i]);
+				result = ChinaLib ? true : false;
+		}
+
+		return result;
+}
+
+GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChineseness())
 {
 		if (Version == GAME_GTAVC_VSTEAMENC || Version == GAME_GTA3_VSTEAMENC) {
 				do // wait for .exe to decrypt
@@ -152,25 +174,5 @@ GtaGame::GtaGame() : Version(DetermineGameVersion())
 GtaGame::~GtaGame()
 {
 		delete[] Scripts.pScriptsArray;
-}
-
-bool
-GtaGame::IsGtaVC()
-{
-		return Version >= GAME_GTAVC_V1_0 && Version <= GAME_GTAVC_VSTEAMENC;
-}
-
-bool
-GtaGame::IsGta3()
-{
-		return Version >= GAME_GTA3_V1_0 && Version <= GAME_GTA3_VSTEAMENC;
-}
-
-bool
-GtaGame::IsChinese()
-{
-		// lazy init to make sure module will load by the time we'll attempt getting it's handle
-		static bool china = (GetModuleHandleA("wm_vcchs.asi") || GetModuleHandleA("wm_vcchs.dll") || 
-							 GetModuleHandleA("wm_lcchs.asi") || GetModuleHandleA("wm_lcchs.dll")) ? true : false;
-		return china;
+		FreeLibrary(ChinaLib);
 }
