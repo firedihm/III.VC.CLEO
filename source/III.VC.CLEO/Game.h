@@ -105,6 +105,7 @@ class GtaGame
 {
 	public:
 		const eGameVersion Version;
+		const bool bIsChinese;
 
 		struct tScripts {
 				Script* pScriptsArray;
@@ -191,9 +192,8 @@ class GtaGame
 		GtaGame();
 		~GtaGame();
 
-		bool IsGtaVC();
-		bool IsGta3();
-		static bool IsChinese();
+		bool IsGtaVC() { Version >= GAME_GTAVC_V1_0 && Version <= GAME_GTAVC_VSTEAMENC; }
+		bool IsGta3() { Version >= GAME_GTA3_V1_0 && Version <= GAME_GTA3_VSTEAMENC; }
 };
 
 extern GtaGame game;
