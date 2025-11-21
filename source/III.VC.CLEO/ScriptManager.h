@@ -1,14 +1,15 @@
 #pragma once
 
-class CScript;
+class Script;
+class std::FILE;
 class std::filesystem::directory_iterator;
 
-// manages custom .cs scripts in a separate list
+// manages custom .cs scripts in separate lists
 class ScriptManager
 {
 	public:
-		CScript* pCusomScripts = nullptr;
-		CScript* pPersistentScripts = nullptr;
+		Script* pCusomScripts = nullptr;
+		Script* pPersistentScripts = nullptr;
 
 		void LoadScripts();
 		void UnloadScripts();
@@ -26,8 +27,8 @@ class ScriptManager
 		// keep track of objects that scripts create, so we won't lose them if scripts get terminated prematurely
 		static void SaveMemoryAddress(const void* memory);
 		static void DeleteMemoryAddress(const void* memory);
-		static void SaveFileStream(const FILE* stream);
-		static void DeleteFileStream(const FILE* stream);
+		static void SaveFileStream(const std::FILE* stream);
+		static void DeleteFileStream(const std::FILE* stream);
 		static void SaveFileSearchHandle(const std::filesystem::directory_iterator* handle);
 		static void	DeleteFileSearchHandle(const std::filesystem::directory_iterator* handle);
 };
