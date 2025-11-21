@@ -15,7 +15,7 @@ namespace fs = std::filesystem;
 
 #define HELP_MSG_LENGTH 256
 
-int format(CScript *script, char *str, size_t len, const char *format);
+int format(Script *script, char *str, size_t len, const char *format);
 
 tScriptVar CustomOpcodes::SHARED_VAR[0xFFFF];
 
@@ -32,16 +32,16 @@ extern "C" {
 	tScriptVar* __stdcall _CLEO_GetParamsAddress() { return CLEO_GetParamsAddress(); }
 	bool __stdcall CLEO_RegisterOpcode(unsigned short id, Opcode func) { return Opcodes::RegisterOpcode(id, func); }
 
-	// CScript methods
-	void __stdcall CLEO_Collect(CScript* script, unsigned int numParams) { script->Collect(numParams); }
-	void __stdcall CLEO_CollectAt(CScript* script, unsigned int* pIp, unsigned int numParams) { script->Collect(pIp, numParams); }
-	int __stdcall CLEO_CollectNextWithoutIncreasingPC(CScript* script, unsigned int ip) { return script->CollectNextWithoutIncreasingPC(ip); }
-	eParamType __stdcall CLEO_GetNextParamType(CScript* script) { return script->GetNextParamType(); }
-	void __stdcall CLEO_Store(CScript* script, unsigned int numParams) { script->Store(numParams); }
-	void __stdcall CLEO_ReadShortString(CScript* script, char* out) { script->ReadShortString(out); }
-	void __stdcall CLEO_UpdateCompareFlag(CScript* script, bool result) { script->UpdateCompareFlag(result); }
-	void* __stdcall CLEO_GetPointerToScriptVariable(CScript* script) { return script->GetPointerToScriptVariable(); }
-	void __stdcall CLEO_JumpTo(CScript* script, int address) { script->JumpTo(address); }
+	// Script methods
+	void __stdcall CLEO_Collect(Script* script, unsigned int numParams) { script->Collect(numParams); }
+	void __stdcall CLEO_CollectAt(Script* script, unsigned int* pIp, unsigned int numParams) { script->Collect(pIp, numParams); }
+	int __stdcall CLEO_CollectNextWithoutIncreasingPC(Script* script, unsigned int ip) { return script->CollectNextWithoutIncreasingPC(ip); }
+	eParamType __stdcall CLEO_GetNextParamType(Script* script) { return script->GetNextParamType(); }
+	void __stdcall CLEO_Store(Script* script, unsigned int numParams) { script->Store(numParams); }
+	void __stdcall CLEO_ReadShortString(Script* script, char* out) { script->ReadShortString(out); }
+	void __stdcall CLEO_UpdateCompareFlag(Script* script, bool result) { script->UpdateCompareFlag(result); }
+	void* __stdcall CLEO_GetPointerToScriptVariable(Script* script) { return script->GetPointerToScriptVariable(); }
+	void __stdcall CLEO_JumpTo(Script* script, int address) { script->JumpTo(address); }
 #ifdef __cplusplus
 }
 #endif
@@ -233,19 +233,19 @@ void CustomOpcodes::Register()
 	Opcodes::RegisterOpcode(0x0DD5, GET_PLATFORM);
 }
 
-eOpcodeResult CustomOpcodes::DUMMY(CScript *script)
+eOpcodeResult CustomOpcodes::DUMMY(Script *script)
 {
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GOTO(CScript *script)
+eOpcodeResult CustomOpcodes::GOTO(Script *script)
 {
 	script->Collect(1);
 	script->JumpTo(game.Scripts.pScriptParams[0].nVar);
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GOTO_IF_TRUE(CScript *script)
+eOpcodeResult CustomOpcodes::GOTO_IF_TRUE(Script *script)
 {
 	script->Collect(1);
 	if(script->m_bCondResult)
@@ -253,7 +253,7 @@ eOpcodeResult CustomOpcodes::GOTO_IF_TRUE(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GOTO_IF_FALSE(CScript *script)
+eOpcodeResult CustomOpcodes::GOTO_IF_FALSE(Script *script)
 {
 	script->Collect(1);
 	if(!script->m_bCondResult)
@@ -261,7 +261,7 @@ eOpcodeResult CustomOpcodes::GOTO_IF_FALSE(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GOSUB(CScript *script)
+eOpcodeResult CustomOpcodes::GOSUB(Script *script)
 {
 	script->Collect(1);
 	script->m_aGosubAddr[script->m_nCurrentGosub++] = script->m_dwIp;
@@ -269,7 +269,7 @@ eOpcodeResult CustomOpcodes::GOSUB(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::TERMINATE_CUSTOM_THREAD(CScript *script)
+eOpcodeResult CustomOpcodes::TERMINATE_CUSTOM_THREAD(Script *script)
 {
 	game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 	script->RemoveFromCustomList(&scriptMgr.pCusomScripts);
@@ -278,16 +278,16 @@ eOpcodeResult CustomOpcodes::TERMINATE_CUSTOM_THREAD(CScript *script)
 	return OR_TERMINATE;
 }
 
-eOpcodeResult CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(CScript *script)
+eOpcodeResult CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(Script *script)
 {
 	char name[8];
 	script->ReadShortString(name);
-	CScript *search = scriptMgr.pCusomScripts;
+	Script *search = scriptMgr.pCusomScripts;
 	eOpcodeResult result = OR_CONTINUE;
 	bool found = false;
 	while(search)
 	{
-		CScript *next = search->m_pNextCustom;
+		Script *next = search->m_pNextCustom;
 		if(!_stricmp(search->m_acName, name))
 		{
 			if(search == script)
@@ -307,13 +307,13 @@ eOpcodeResult CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(CScript *script)
 	return result;
 }
 
-eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(CScript *script)
+eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(Script *script)
 {
 	char name[8];
 	script->ReadShortString(name);
 	char filepath[MAX_PATH];
 	sprintf(filepath, "%s%.8s", "cleo\\", name);
-	CScript *newScript = new CScript(filepath);
+	Script *newScript = new Script(filepath);
 	if(newScript && newScript->Loaded())
 	{
 		newScript->AddToCustomList(&scriptMgr.pCusomScripts);
@@ -340,7 +340,7 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MEMORY_WRITE(CScript *script)
+eOpcodeResult CustomOpcodes::MEMORY_WRITE(Script *script)
 {
 	script->Collect(4);
 	if (game.Scripts.pScriptParams[0].pVar)
@@ -369,7 +369,7 @@ eOpcodeResult CustomOpcodes::MEMORY_WRITE(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MEMORY_READ(CScript *script)
+eOpcodeResult CustomOpcodes::MEMORY_READ(Script *script)
 {
 	script->Collect(3);
 	if (game.Scripts.pScriptParams[0].pVar)
@@ -400,7 +400,7 @@ eOpcodeResult CustomOpcodes::MEMORY_READ(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL(CScript *script)
+eOpcodeResult CustomOpcodes::CALL(Script *script)
 {
 	script->Collect(3);
 	void *func = game.Scripts.pScriptParams[0].pVar;
@@ -419,7 +419,7 @@ eOpcodeResult CustomOpcodes::CALL(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_FUNCTION(CScript *script)
+eOpcodeResult CustomOpcodes::CALL_FUNCTION(Script *script)
 {
 	script->Collect(3);
 	void *func = game.Scripts.pScriptParams[0].pVar;
@@ -442,7 +442,7 @@ eOpcodeResult CustomOpcodes::CALL_FUNCTION(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_METHOD(CScript *script)
+eOpcodeResult CustomOpcodes::CALL_METHOD(Script *script)
 {
 	script->Collect(4);
 	void *func = game.Scripts.pScriptParams[0].pVar;
@@ -463,7 +463,7 @@ eOpcodeResult CustomOpcodes::CALL_METHOD(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_FUNCTION_METHOD(CScript *script)
+eOpcodeResult CustomOpcodes::CALL_FUNCTION_METHOD(Script *script)
 {
 	script->Collect(4);
 	void *func = game.Scripts.pScriptParams[0].pVar;
@@ -488,7 +488,7 @@ eOpcodeResult CustomOpcodes::CALL_FUNCTION_METHOD(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_GAME_VERSION(CScript *script)
+eOpcodeResult CustomOpcodes::GET_GAME_VERSION(Script *script)
 {
 	game.Scripts.pScriptParams[0].nVar = game.Version - 1;
 	script->Store(1);
@@ -496,7 +496,7 @@ eOpcodeResult CustomOpcodes::GET_GAME_VERSION(CScript *script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_CHAR_STRUCT(CScript* script)
+CustomOpcodes::GET_CHAR_STRUCT(Script* script)
 {
 	script->Collect(1);
 
@@ -507,7 +507,7 @@ CustomOpcodes::GET_CHAR_STRUCT(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_CAR_STRUCT(CScript* script)
+CustomOpcodes::GET_CAR_STRUCT(Script* script)
 {
 	script->Collect(1);
 
@@ -518,7 +518,7 @@ CustomOpcodes::GET_CAR_STRUCT(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_OBJECT_STRUCT(CScript* script)
+CustomOpcodes::GET_OBJECT_STRUCT(Script* script)
 {
 	script->Collect(1);
 
@@ -529,7 +529,7 @@ CustomOpcodes::GET_OBJECT_STRUCT(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_CHAR_HANDLE(CScript* script)
+CustomOpcodes::GET_CHAR_HANDLE(Script* script)
 {
 	script->Collect(1);
 
@@ -540,7 +540,7 @@ CustomOpcodes::GET_CHAR_HANDLE(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_CAR_HANDLE(CScript* script)
+CustomOpcodes::GET_CAR_HANDLE(Script* script)
 {
 	script->Collect(1);
 
@@ -551,7 +551,7 @@ CustomOpcodes::GET_CAR_HANDLE(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_OBJECT_HANDLE(CScript* script)
+CustomOpcodes::GET_OBJECT_HANDLE(Script* script)
 {
 	script->Collect(1);
 
@@ -561,19 +561,19 @@ CustomOpcodes::GET_OBJECT_HANDLE(CScript* script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_THREAD_POINTER(CScript *script)
+eOpcodeResult CustomOpcodes::GET_THREAD_POINTER(Script *script)
 {
 	game.Scripts.pScriptParams[0].pVar = script;
 	script->Store(1);
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_NAMED_THREAD_POINTER(CScript *script)
+eOpcodeResult CustomOpcodes::GET_NAMED_THREAD_POINTER(Script *script)
 {
 	char name[8];
 	script->ReadShortString(name);
-	CScript *result_ptr = 0;
-	CScript *search = scriptMgr.pCusomScripts;
+	Script *result_ptr = 0;
+	Script *search = scriptMgr.pCusomScripts;
 	while(search)
 	{
 		if(!_stricmp(search->m_acName, name))
@@ -603,7 +603,7 @@ eOpcodeResult CustomOpcodes::GET_NAMED_THREAD_POINTER(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::IS_KEY_PRESSED(CScript *script)
+eOpcodeResult CustomOpcodes::IS_KEY_PRESSED(Script *script)
 {
 	script->Collect(1);
 #if CLEO_VC
@@ -782,7 +782,7 @@ eOpcodeResult CustomOpcodes::IS_KEY_PRESSED(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::FIND_RANDOM_CHAR(CScript *script)
+eOpcodeResult CustomOpcodes::FIND_RANDOM_CHAR(Script *script)
 {
 	script->Collect(6);
 	uint objcount;
@@ -857,7 +857,7 @@ eOpcodeResult CustomOpcodes::FIND_RANDOM_CHAR(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::FIND_RANDOM_CAR(CScript *script)
+eOpcodeResult CustomOpcodes::FIND_RANDOM_CAR(Script *script)
 {
 	script->Collect(6);
 	uint objcount;
@@ -929,7 +929,7 @@ eOpcodeResult CustomOpcodes::FIND_RANDOM_CAR(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::FIND_RANDOM_OBJECT(CScript *script)
+eOpcodeResult CustomOpcodes::FIND_RANDOM_OBJECT(Script *script)
 {
 	script->Collect(5);
 	uint objcount;
@@ -994,7 +994,7 @@ eOpcodeResult CustomOpcodes::FIND_RANDOM_OBJECT(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_POP_FLOAT(CScript *script)
+eOpcodeResult CustomOpcodes::CALL_POP_FLOAT(Script *script)
 {
 	float *pParam = &game.Scripts.pScriptParams[0].fVar;
 	__asm mov eax, pParam
@@ -1003,7 +1003,7 @@ eOpcodeResult CustomOpcodes::CALL_POP_FLOAT(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MATH_EXP(CScript *script)
+eOpcodeResult CustomOpcodes::MATH_EXP(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].fVar = powf(game.Scripts.pScriptParams[0].fVar, game.Scripts.pScriptParams[1].fVar);
@@ -1011,7 +1011,7 @@ eOpcodeResult CustomOpcodes::MATH_EXP(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MATH_LOG(CScript *script)
+eOpcodeResult CustomOpcodes::MATH_LOG(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].fVar =  logf(game.Scripts.pScriptParams[0].fVar) / logf(game.Scripts.pScriptParams[1].fVar);
@@ -1020,7 +1020,7 @@ eOpcodeResult CustomOpcodes::MATH_LOG(CScript *script)
 }
 
 eOpcodeResult
-CustomOpcodes::CALL_SCM_FUNCTION(CScript* script)
+CustomOpcodes::CALL_SCM_FUNCTION(Script* script)
 {
 		script->Collect(2);
 		int addr = game.Scripts.pScriptParams[0].nVar;
@@ -1043,7 +1043,7 @@ CustomOpcodes::CALL_SCM_FUNCTION(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::SCM_FUNCTION_RET(CScript* script)
+CustomOpcodes::SCM_FUNCTION_RET(Script* script)
 {
 		script->Collect(1);
 		int paramCount = game.Scripts.pScriptParams[0].nVar;
@@ -1067,7 +1067,7 @@ CustomOpcodes::SCM_FUNCTION_RET(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::GET_LABEL_OFFSET(CScript* script)
+CustomOpcodes::GET_LABEL_OFFSET(Script* script)
 {
 		script->Collect(1);
 		int address = game.Scripts.pScriptParams[0].nVar;
@@ -1089,14 +1089,14 @@ CustomOpcodes::GET_LABEL_OFFSET(CScript* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_VAR_OFFSET(CScript *script)
+eOpcodeResult CustomOpcodes::GET_VAR_OFFSET(Script *script)
 {
 	game.Scripts.pScriptParams[0].pVar = script->GetPointerToScriptVariable();
 	script->Store(1);
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_AND(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_AND(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar & game.Scripts.pScriptParams[1].nVar;
@@ -1104,7 +1104,7 @@ eOpcodeResult CustomOpcodes::BIT_AND(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_OR(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_OR(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar | game.Scripts.pScriptParams[1].nVar;
@@ -1112,7 +1112,7 @@ eOpcodeResult CustomOpcodes::BIT_OR(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_XOR(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_XOR(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar ^ game.Scripts.pScriptParams[1].nVar;
@@ -1120,7 +1120,7 @@ eOpcodeResult CustomOpcodes::BIT_XOR(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_NOT(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_NOT(Script *script)
 {
 	script->Collect(1);
 	game.Scripts.pScriptParams[0].nVar = ~game.Scripts.pScriptParams[0].nVar;
@@ -1128,7 +1128,7 @@ eOpcodeResult CustomOpcodes::BIT_NOT(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_MOD(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_MOD(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar % game.Scripts.pScriptParams[1].nVar;
@@ -1136,7 +1136,7 @@ eOpcodeResult CustomOpcodes::BIT_MOD(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_SHR(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_SHR(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar >> game.Scripts.pScriptParams[1].nVar;
@@ -1144,7 +1144,7 @@ eOpcodeResult CustomOpcodes::BIT_SHR(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_SHL(CScript *script)
+eOpcodeResult CustomOpcodes::BIT_SHL(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar << game.Scripts.pScriptParams[1].nVar;
@@ -1153,7 +1153,7 @@ eOpcodeResult CustomOpcodes::BIT_SHL(CScript *script)
 }
 
 //0400=7,store_coords_to %5d% %6d% %7d% from_object %1d% with_offset %2d% %3d% %4d%
-eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_OBJECT_WITH_OFFSET(CScript *script)
+eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_OBJECT_WITH_OFFSET(Script *script)
 {
 	script->Collect(4);
 	void* object = game.Pools.pfObjectPoolGetAt(*game.Pools.ppObjectPool, game.Scripts.pScriptParams[0].nVar);
@@ -1174,7 +1174,7 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_OBJECT_WITH_OFFSET(CScript *scrip
 }
 
 //0407=7,store_coords_to %5d% %6d% %7d% from_car %1d% with_offset %2d% %3d% %4d%
-eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_CAR_WITH_OFFSET(CScript *script)
+eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_CAR_WITH_OFFSET(Script *script)
 {
 	script->Collect(4);
 	void* car = game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar);
@@ -1195,7 +1195,7 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_CAR_WITH_OFFSET(CScript *script)
 }
 
 //04C4=7,store_coords_to %5d% %6d% %7d% from_actor %1d% with_offset %2d% %3d% %4d%
-eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_ACTOR_WITH_OFFSET(CScript *script)
+eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_ACTOR_WITH_OFFSET(Script *script)
 {
 	script->Collect(4);
 	void* actor = game.Pools.pfPedPoolGetAt(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].nVar);
@@ -1215,7 +1215,7 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_ACTOR_WITH_OFFSET(CScript *script
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::STORE_PLAYER_CURRENTLY_ARMED_WEAPON(CScript *script)
+eOpcodeResult CustomOpcodes::STORE_PLAYER_CURRENTLY_ARMED_WEAPON(Script *script)
 {
 	script->Collect(1);
 	game.Scripts.pScriptParams[0].nVar = *(DWORD *)(game.Pools.pPlayers[79 * game.Scripts.pScriptParams[0].nVar] + 24 * *(BYTE *)(game.Pools.pPlayers[79 * game.Scripts.pScriptParams[0].nVar] + 1176) + 860);
@@ -1223,7 +1223,7 @@ eOpcodeResult CustomOpcodes::STORE_PLAYER_CURRENTLY_ARMED_WEAPON(CScript *script
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_CHAR_ARMOUR(CScript *script)
+eOpcodeResult CustomOpcodes::GET_CHAR_ARMOUR(Script *script)
 {
 	script->Collect(1);
 	void* actor = game.Pools.pfPedPoolGetAt(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].nVar);
@@ -1233,7 +1233,7 @@ eOpcodeResult CustomOpcodes::GET_CHAR_ARMOUR(CScript *script)
 }
 
 eOpcodeResult
-CustomOpcodes::PLAYER_DRIVING_PLANE(CScript* script)
+CustomOpcodes::PLAYER_DRIVING_PLANE(Script* script)
 {
 		bool gta3 = game.IsGta3();
 		short miDodo = gta3 ? 126 : 190; // skimmer for VC
@@ -1266,7 +1266,7 @@ CustomOpcodes::PLAYER_DRIVING_PLANE(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::PLAYER_DRIVING_BOAT(CScript* script)
+CustomOpcodes::PLAYER_DRIVING_BOAT(Script* script)
 {
 		bool gta3 = game.IsGta3();
 		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
@@ -1292,7 +1292,7 @@ CustomOpcodes::PLAYER_DRIVING_BOAT(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::PLAYER_DRIVING_HELI(CScript* script)
+CustomOpcodes::PLAYER_DRIVING_HELI(Script* script)
 {
 		bool gta3 = game.IsGta3();
 		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
@@ -1323,7 +1323,7 @@ CustomOpcodes::PLAYER_DRIVING_HELI(CScript* script)
 }
 
 eOpcodeResult
-CustomOpcodes::PLAYER_DRIVING_A_MOTORBIKE(CScript* script)
+CustomOpcodes::PLAYER_DRIVING_A_MOTORBIKE(Script* script)
 {
 		bool gta3 = game.IsGta3();
 		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
@@ -1348,25 +1348,25 @@ CustomOpcodes::PLAYER_DRIVING_A_MOTORBIKE(CScript* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::IS_PC_VERSION(CScript *script)
+eOpcodeResult CustomOpcodes::IS_PC_VERSION(Script *script)
 {
 	script->UpdateCompareFlag(true);
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::IS_AUSTRALIAN_GAME(CScript *script)
+eOpcodeResult CustomOpcodes::IS_AUSTRALIAN_GAME(Script *script)
 {
 	script->UpdateCompareFlag(false);
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD_VSTRING(CScript *script)
+eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD_VSTRING(Script *script)
 {
 	script->Collect(1);
 	char filepath[MAX_PATH];
 	strcpy(filepath, "cleo\\");
 	strcat(filepath, game.Scripts.pScriptParams[0].szVar);
-	CScript *newScript = new CScript(filepath);
+	Script *newScript = new Script(filepath);
 	if(newScript && newScript->Loaded())
 	{
 		newScript->AddToCustomList(&scriptMgr.pCusomScripts);
@@ -1395,7 +1395,7 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD_VSTRING(CScript *script)
 
 //0601=2, is_button_pressed_on_pad %1d% with_sensitivity %2d%
 eOpcodeResult
-CustomOpcodes::IS_BUTTON_PRESSED_ON_PAD(CScript* script)
+CustomOpcodes::IS_BUTTON_PRESSED_ON_PAD(Script* script)
 {
 		script->Collect(2);
 
@@ -1406,7 +1406,7 @@ CustomOpcodes::IS_BUTTON_PRESSED_ON_PAD(CScript* script)
 
 //0602=2, emulate_button_press_on_pad %1d% with_sensitivity %2d%
 eOpcodeResult
-CustomOpcodes::EMULATE_BUTTON_PRESS_ON_PAD(CScript* script)
+CustomOpcodes::EMULATE_BUTTON_PRESS_ON_PAD(Script* script)
 {
 		script->Collect(2);
 
@@ -1417,7 +1417,7 @@ CustomOpcodes::EMULATE_BUTTON_PRESS_ON_PAD(CScript* script)
 
 //0603=0, is_camera_in_widescreen_mode
 eOpcodeResult
-CustomOpcodes::IS_CAMERA_IN_WIDESCREEN_MODE(CScript* script)
+CustomOpcodes::IS_CAMERA_IN_WIDESCREEN_MODE(Script* script)
 {
 		script->UpdateCompareFlag(*game.Misc.pWideScreenOn);
 
@@ -1425,7 +1425,7 @@ CustomOpcodes::IS_CAMERA_IN_WIDESCREEN_MODE(CScript* script)
 }
 
 //0604=2, %2d% = weapon %1d% model
-eOpcodeResult CustomOpcodes::GET_MODEL_ID_FROM_WEAPON_ID(CScript *script)
+eOpcodeResult CustomOpcodes::GET_MODEL_ID_FROM_WEAPON_ID(Script *script)
 {
 	script->Collect(1);
 	unsigned int wID = game.Misc.pfModelForWeapon(game.Scripts.pScriptParams[0].nVar);
@@ -1435,7 +1435,7 @@ eOpcodeResult CustomOpcodes::GET_MODEL_ID_FROM_WEAPON_ID(CScript *script)
 }
 
 //0605=2, %2d% = model %1d% weapon id
-eOpcodeResult CustomOpcodes::GET_WEAPON_ID_FROM_MODEL_ID(CScript *script)
+eOpcodeResult CustomOpcodes::GET_WEAPON_ID_FROM_MODEL_ID(Script *script)
 {
 	script->Collect(1);
 	int mID = game.Scripts.pScriptParams[0].nVar;
@@ -1456,7 +1456,7 @@ eOpcodeResult CustomOpcodes::GET_WEAPON_ID_FROM_MODEL_ID(CScript *script)
 }
 
 //0606=3, set_memory_offset memory_pointer %1d% memory_to_point %2d% virtual_protect %3d%
-eOpcodeResult CustomOpcodes::SET_MEM_OFFSET(CScript *script)
+eOpcodeResult CustomOpcodes::SET_MEM_OFFSET(Script *script)
 {
 	script->Collect(3);
 	DWORD flOldProtect;
@@ -1472,7 +1472,7 @@ eOpcodeResult CustomOpcodes::SET_MEM_OFFSET(CScript *script)
 
 //0607=1, %1d% = get_current_weather
 eOpcodeResult
-CustomOpcodes::GET_CURRENT_WEATHER(CScript* script)
+CustomOpcodes::GET_CURRENT_WEATHER(Script* script)
 {
 		game.Scripts.pScriptParams[0].nVar = *game.Misc.pOldWeatherType;
 		script->Store(1);
@@ -1481,7 +1481,7 @@ CustomOpcodes::GET_CURRENT_WEATHER(CScript* script)
 }
 
 //0608=3, show_text_position %1d% %2d% text %3d%
-eOpcodeResult CustomOpcodes::SHOW_TEXT_POSITION(CScript *script)
+eOpcodeResult CustomOpcodes::SHOW_TEXT_POSITION(Script *script)
 {
 	script->Collect(3);
 	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].x = game.Scripts.pScriptParams[0].fVar;
@@ -1493,7 +1493,7 @@ eOpcodeResult CustomOpcodes::SHOW_TEXT_POSITION(CScript *script)
 };
 
 //0609=-1, show_formatted_text_position %1d% %2d% text %3d%
-eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(CScript *script)
+eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(Script *script)
 {
 	script->Collect(3);
 	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].x = game.Scripts.pScriptParams[0].fVar;
@@ -1510,7 +1510,7 @@ eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(CScript *script)
 };
 
 //0673=4,play_animation on actor %1d% animgroup %2d% anim %3d% blendfactor %4f%
-eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(CScript *script)
+eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(Script *script)
 {
 	script->Collect(4);
 	void* actor = game.Pools.pfPedPoolGetAt(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].nVar);
@@ -1518,7 +1518,7 @@ eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::DRAW_SHADOW(CScript *script)
+eOpcodeResult CustomOpcodes::DRAW_SHADOW(Script *script)
 {
 	script->Collect(10);
 	int type = 2;	
@@ -1579,7 +1579,7 @@ eOpcodeResult CustomOpcodes::DRAW_SHADOW(CScript *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::SET_TEXT_DRAW_FONT(CScript *script)
+eOpcodeResult CustomOpcodes::SET_TEXT_DRAW_FONT(Script *script)
 {
 	script->Collect(1);
 	game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].fontStyle = game.Scripts.pScriptParams[0].nVar;
@@ -1593,7 +1593,7 @@ eOpcodeResult CustomOpcodes::SET_TEXT_DRAW_FONT(CScript *script)
 //0A8D=4,%4d% = read_memory %1d% size %2d% virtual_protect %3d% //dup
 
 //0A8E=3,%3d% = %1d% + %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A8E(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0A8E(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar + game.Scripts.pScriptParams[1].nVar;
@@ -1602,7 +1602,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0A8E(CScript *script)
 }
 
 //0A8F=3,%3d% = %1d% - %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A8F(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0A8F(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar - game.Scripts.pScriptParams[1].nVar;
@@ -1611,7 +1611,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0A8F(CScript *script)
 }
 
 //0A90=3,%3d% = %1d% * %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A90(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0A90(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar * game.Scripts.pScriptParams[1].nVar;
@@ -1620,7 +1620,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0A90(CScript *script)
 }
 
 //0A91=3,%3d% = %1d% / %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A91(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0A91(Script *script)
 {
 	script->Collect(2);
 	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar / game.Scripts.pScriptParams[1].nVar;
@@ -1638,11 +1638,11 @@ eOpcodeResult CustomOpcodes::OPCODE_0A91(CScript *script)
 
 //0A99=1,chdir %1buserdir/rootdir%
 eOpcodeResult
-CustomOpcodes::OPCODE_0A99(CScript* script)
+CustomOpcodes::OPCODE_0A99(Script* script)
 {
 		script->Collect(1);
 
-		fs::current_path(game.Scripts.pScriptParams[0].nVar == 0 ? game.szRootPath : 
+		fs::current_path(game.Scripts.pScriptParams[0].nVar == 0 ? game.Misc.szRootDirName : 
 						 game.Scripts.pScriptParams[0].nVar == 1 ? game.Misc.pfGetUserFilesFolder() : game.Scripts.pScriptParams[0].szVar);
 
 		return OR_CONTINUE;
@@ -1650,11 +1650,11 @@ CustomOpcodes::OPCODE_0A99(CScript* script)
 
 //0A9A=3,%3d% = openfile %1s% mode %2d% ; IF and SET
 eOpcodeResult
-CustomOpcodes::OPCODE_0A9A(CScript* script)
+CustomOpcodes::OPCODE_0A9A(Script* script)
 {
 		script->Collect(2);
 
-		FILE* file = std::fopen(game.Scripts.pScriptParams[0].szVar, game.Scripts.pScriptParams[1].szVar);
+		std::FILE* file = std::fopen(game.Scripts.pScriptParams[0].szVar, game.Scripts.pScriptParams[1].szVar);
 		if (file)
 				ScriptManager::SaveFileStream(file);
 		else
@@ -1669,10 +1669,10 @@ CustomOpcodes::OPCODE_0A9A(CScript* script)
 
 //0A9B=1,closefile %1d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0A9B(CScript* script)
+CustomOpcodes::OPCODE_0A9B(Script* script)
 {
 		script->Collect(1);
-		FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 
 		std::fclose(file);
 		ScriptManager::DeleteFileStream(file);
@@ -1682,10 +1682,10 @@ CustomOpcodes::OPCODE_0A9B(CScript* script)
 
 //0A9C=2,%2d% = file %1d% size
 eOpcodeResult
-CustomOpcodes::OPCODE_0A9C(CScript* script)
+CustomOpcodes::OPCODE_0A9C(Script* script)
 {
 		script->Collect(1);
-		FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 
 		long savedPos = std::ftell(file);
 		std::fseek(file, 0, SEEK_END);
@@ -1700,10 +1700,10 @@ CustomOpcodes::OPCODE_0A9C(CScript* script)
 
 //0A9D=3,readfile %1d% size %2d% to %3d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0A9D(CScript* script)
+CustomOpcodes::OPCODE_0A9D(Script* script)
 {
 		script->Collect(3);
-		FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 
 		std::fread(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar, 1, file);
 
@@ -1712,10 +1712,10 @@ CustomOpcodes::OPCODE_0A9D(CScript* script)
 
 //0A9E=3,writefile %1d% size %2d% from %3d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0A9E(CScript* script)
+CustomOpcodes::OPCODE_0A9E(Script* script)
 {
 		script->Collect(3);
-		FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 
 		std::fwrite(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar, 1, file);
 		std::fflush(file);
@@ -1727,7 +1727,7 @@ CustomOpcodes::OPCODE_0A9E(CScript* script)
 
 
 //0AA0=1,gosub_if_false %1p%
-eOpcodeResult CustomOpcodes::OPCODE_0AA0(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AA0(Script *script)
 {
 	script->Collect(1);
 	script->m_aGosubAddr[script->m_nCurrentGosub++] = script->m_dwIp;
@@ -1737,7 +1737,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA0(CScript *script)
 }
 
 //0AA1=0,return_if_false
-eOpcodeResult CustomOpcodes::OPCODE_0AA1(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AA1(Script *script)
 {
 	if (script->m_bCondResult) return OR_CONTINUE;
 	script->m_dwIp = script->m_aGosubAddr[--script->m_nCurrentGosub];
@@ -1745,7 +1745,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA1(CScript *script)
 }
 
 //0AA2=2,%2h% = load_library %1s% ; IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AA2(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AA2(Script *script)
 {
 	script->Collect(1);
 	auto libHandle = LoadLibrary(game.Scripts.pScriptParams[0].szVar);
@@ -1756,7 +1756,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA2(CScript *script)
 }
 
 //0AA3=1,free_library %1h%
-eOpcodeResult CustomOpcodes::OPCODE_0AA3(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AA3(Script *script)
 {
 	script->Collect(1);
 	HMODULE libHandle;
@@ -1766,7 +1766,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA3(CScript *script)
 }
 
 //0AA4=3,%3d% = get_proc_address %1s% library %2d% ; IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AA4(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AA4(Script *script)
 {
 	script->Collect(2);
 	char *funcName = game.Scripts.pScriptParams[0].szVar;
@@ -1786,7 +1786,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA4(CScript *script)
 
 
 //0AA9=0,  is_game_version_original
-eOpcodeResult CustomOpcodes::OPCODE_0AA9(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AA9(Script *script)
 {
 	script->UpdateCompareFlag(game.GetGameVersion() == GAME_V1_0);
 	return OR_CONTINUE;
@@ -1795,7 +1795,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA9(CScript *script)
 
 
 //0AAB=1,   file_exists %1s%
-eOpcodeResult CustomOpcodes::OPCODE_0AAB(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AAB(Script *script)
 {
 	script->Collect(1);
 	DWORD fAttr = GetFileAttributes(game.Scripts.pScriptParams[0].szVar);
@@ -1815,7 +1815,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AAB(CScript *script)
 //0AB2=-1,ret  //dup
 
 //0AB3=2,var %1d% = %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0AB3(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AB3(Script *script)
 {
 	script->Collect(2);
 	SHARED_VAR[game.Scripts.pScriptParams[0].nVar].nVar = game.Scripts.pScriptParams[1].nVar;
@@ -1823,7 +1823,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AB3(CScript *script)
 }
 
 //0AB4=2,%2d% = var %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0AB4(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AB4(Script *script)
 {
 	script->Collect(1);
 	game.Scripts.pScriptParams[0].nVar = SHARED_VAR[game.Scripts.pScriptParams[0].nVar].nVar;
@@ -1835,7 +1835,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AB4(CScript *script)
 //0AB6=3,store_target_marker_coords_to %1d% %2d% %3d% // IF and SET //not supported
 
 //0AB7=2,get_vehicle %1d% number_of_gears_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB7(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB7(Script *script)
 {
 	script->Collect(1);
 	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar));
@@ -1852,7 +1852,7 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB7(CScript *script)
 }
 
 //0AB8=2,get_vehicle %1d% current_gear_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB8(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB8(Script *script)
 {
 	script->Collect(1);
 	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar));
@@ -1874,7 +1874,7 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB8(CScript *script)
 //0ABC=2,set_audiostream %1d% volume %2d%
 
 //0ABD=1,  vehicle %1d% lights_on ( //0ABD=1,  vehicle %1d% siren_on // dup see 0383 )
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABD(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABD(Script *script)
 {
 	script->Collect(1);
 	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar));
@@ -1890,7 +1890,7 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABD(CScript *script)
 }
 
 //0ABE=1,  vehicle %1d% engine_on
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABE(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABE(Script *script)
 {
 	script->Collect(1);
 	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar));
@@ -1906,7 +1906,7 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABE(CScript *script)
 }
 
 //0ABF=2,set_vehicle %1d% engine_state_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(Script *script)
 {
 	script->Collect(2);
 	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar));
@@ -1934,7 +1934,7 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(CScript *script)
 
 //0AC8=2,%2d% = allocate_memory_size %1d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0AC8(CScript* script)
+CustomOpcodes::OPCODE_0AC8(Script* script)
 {
 		script->Collect(1);
 
@@ -1953,7 +1953,7 @@ CustomOpcodes::OPCODE_0AC8(CScript* script)
 
 //0AC9=1,free_allocated_memory %1d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0AC9(CScript* script)
+CustomOpcodes::OPCODE_0AC9(Script* script)
 {
 		script->Collect(1);
 		void* mem = game.Scripts.pScriptParams[0].pVar;
@@ -1965,7 +1965,7 @@ CustomOpcodes::OPCODE_0AC9(CScript* script)
 };
 
 //0ACA=1,show_text_box %1s%
-eOpcodeResult CustomOpcodes::OPCODE_0ACA(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ACA(Script *script)
 {
 	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(1);
@@ -1975,7 +1975,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACA(CScript *script)
 };
 
 //0ACB=3,show_styled_text %1s% time %2d% style %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACB(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ACB(Script *script)
 {
 	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(3);
@@ -1986,7 +1986,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACB(CScript *script)
 };
 
 //0ACC=2,show_text_lowpriority %1s% time %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACC(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ACC(Script *script)
 {
 	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(2);
@@ -1997,7 +1997,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACC(CScript *script)
 };
 
 //0ACD=2,show_text_highpriority %1s% time %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACD(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ACD(Script *script)
 {
 	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(2);
@@ -2008,7 +2008,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACD(CScript *script)
 };
 
 //0ACE=-1,show_formatted_text_box %1s%
-eOpcodeResult CustomOpcodes::OPCODE_0ACE(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ACE(Script *script)
 {
 	static wchar_t message_buf[HELP_MSG_LENGTH];
 	script->Collect(1);
@@ -2026,7 +2026,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACE(CScript *script)
 };
 
 //0ACF=-1,show_formatted_styled_text %1s% time %2d% style %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACF(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ACF(Script *script)
 {
 	script->Collect(3);
 	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
@@ -2044,7 +2044,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACF(CScript *script)
 };
 
 //0AD0=-1,show_formatted_text_lowpriority %1s% time %2s%
-eOpcodeResult CustomOpcodes::OPCODE_0AD0(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD0(Script *script)
 {
 	script->Collect(2);
 	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
@@ -2061,7 +2061,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD0(CScript *script)
 };
 
 //0AD1=-1,show_formatted_text_highpriority %1s% time %2s%
-eOpcodeResult CustomOpcodes::OPCODE_0AD1(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD1(Script *script)
 {
 	script->Collect(2);
 	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
@@ -2080,7 +2080,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD1(CScript *script)
 //0AD2=2,%2d% = player %1d% targeted_actor //IF and SET
 
 //0AD3=-1,string %1d% format %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0AD3(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD3(Script *script)
 {
 	script->Collect(2);
 	char fmt[HELP_MSG_LENGTH], *dst;
@@ -2094,7 +2094,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD3(CScript *script)
 };
 
 //0AD4=-1,  scan_string %1d% format %2s% store_num_results_to %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0AD4(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD4(Script *script)
 {
 	script->Collect(2);
 	char fmt[HELP_MSG_LENGTH], *src;
@@ -2125,10 +2125,10 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD4(CScript *script)
 };
 
 //0AD5=3,file %1d% seek %2d% from_origin %3d% //IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AD5(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD5(Script *script)
 {
 	script->Collect(3);
-	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+	std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 	int seek = game.Scripts.pScriptParams[1].nVar;
 	int origin = game.Scripts.pScriptParams[2].nVar;
 	script->UpdateCompareFlag(fseek(file, seek, origin) == 0);
@@ -2136,19 +2136,19 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD5(CScript *script)
 };
 
 //0AD6=1, end_of_file %1d% reached
-eOpcodeResult CustomOpcodes::OPCODE_0AD6(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD6(Script *script)
 {
 	script->Collect(1);
-	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+	std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 	script->UpdateCompareFlag(feof(file) != 0);
 	return OR_CONTINUE;
 };
 
 //0AD7=3,read_string_from_file %1d% to %2d% size %3d% // IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AD7(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD7(Script *script)
 {
 	script->Collect(3);
-	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+	std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 	char* buf = (char*)game.Scripts.pScriptParams[1].pVar;
 	unsigned size = game.Scripts.pScriptParams[2].nVar;
 	script->UpdateCompareFlag(fgets(buf, size, file) == buf);
@@ -2156,10 +2156,10 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD7(CScript *script)
 };
 
 //0AD8=2,write_string_to_file %1d% from %2d% //IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AD8(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD8(Script *script)
 {
 	script->Collect(2);
-	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+	std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 	char* buf = (char*)game.Scripts.pScriptParams[1].pVar;
 	script->UpdateCompareFlag(fputs(buf, file) > 0);
 	fflush(file);
@@ -2167,11 +2167,11 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD8(CScript *script)
 };
 
 //0AD9=-1,write_formatted_text %2d% in_file %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0AD9(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AD9(Script *script)
 {
 	script->Collect(2);
 	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH];
-	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+	std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].szVar);
 	format(script, text, sizeof(text), fmt);
 	fputs(text, file);
@@ -2183,11 +2183,11 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD9(CScript *script)
 };
 
 //0ADA=-1,%3d% = scan_file %1d% format %2d% //IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0ADA(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ADA(Script *script)
 {
 	script->Collect(2);
 	char fmt[HELP_MSG_LENGTH];
-	FILE* file = (FILE*)game.Scripts.pScriptParams[0].pVar;
+	std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].szVar);
 	size_t cExParams = 0;
 	int *result = (int *)script->GetPointerToScriptVariable();
@@ -2211,7 +2211,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADA(CScript *script)
 };
 
 //0ADB=2,%2d% = car_model %1o% name
-eOpcodeResult CustomOpcodes::OPCODE_0ADB(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ADB(Script *script)
 {
 	script->Collect(1);
 	auto modelIdx = game.Scripts.pScriptParams[0].nVar;
@@ -2240,7 +2240,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADB(CScript *script)
 }
 
 //0ADC=1,   test_cheat %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0ADC(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ADC(Script *script)
 {
 	script->Collect(1);
 
@@ -2263,7 +2263,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADC(CScript *script)
 }
 
 //0ADD=1,spawn_car_with_model %1o% like_a_cheat
-eOpcodeResult CustomOpcodes::OPCODE_0ADD(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ADD(Script *script)
 {
 	script->Collect(1);
 
@@ -2293,7 +2293,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADD(CScript *script)
 }
 
 //0ADE=2,%2d% = text_by_GXT_entry %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0ADE(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ADE(Script *script)
 {
 	script->Collect(2);
 	char *gxt = game.Scripts.pScriptParams[0].szVar;
@@ -2305,7 +2305,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADE(CScript *script)
 }
 
 //0ADF=2,add_dynamic_GXT_entry %1d% text %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0ADF(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0ADF(Script *script)
 {
 	script->Collect(2);
 
@@ -2320,7 +2320,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADF(CScript *script)
 }
 
 //0AE0=1,remove_dynamic_GXT_entry %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0AE0(CScript *script)
+eOpcodeResult CustomOpcodes::OPCODE_0AE0(Script *script)
 {
 	script->Collect(1);
 
@@ -2367,7 +2367,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AE0(CScript *script)
 
 //0AE4=1,  directory_exists %1d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0AE4(CScript* script)
+CustomOpcodes::OPCODE_0AE4(Script* script)
 {
 		script->Collect(1);
 
@@ -2378,7 +2378,7 @@ CustomOpcodes::OPCODE_0AE4(CScript* script)
 
 //0AE5=1,create_directory %1d% ; IF and SET
 eOpcodeResult
-CustomOpcodes::OPCODE_0AE5(CScript* script)
+CustomOpcodes::OPCODE_0AE5(Script* script)
 {
 		script->Collect(1);
 
@@ -2389,7 +2389,7 @@ CustomOpcodes::OPCODE_0AE5(CScript* script)
 
 //0AE6=3,%2d% = find_first_file %1d% get_filename_to %3d% ; IF and SET
 eOpcodeResult
-CustomOpcodes::OPCODE_0AE6(CScript* script)
+CustomOpcodes::OPCODE_0AE6(Script* script)
 {
 		script->Collect(1);
 
@@ -2411,7 +2411,7 @@ CustomOpcodes::OPCODE_0AE6(CScript* script)
 
 //0AE7=2,%2d% = find_next_file %1d% ; IF and SET
 eOpcodeResult
-CustomOpcodes::OPCODE_0AE7(CScript* script)
+CustomOpcodes::OPCODE_0AE7(Script* script)
 {
 		script->Collect(2);
 		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.pScriptParams[0].pVar;
@@ -2428,7 +2428,7 @@ CustomOpcodes::OPCODE_0AE7(CScript* script)
 
 //0AE8=1,find_close %1d%
 eOpcodeResult
-CustomOpcodes::OPCODE_0AE8(CScript* script)
+CustomOpcodes::OPCODE_0AE8(Script* script)
 {
 		script->Collect(1);
 		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.pScriptParams[0].pVar;
@@ -2448,7 +2448,7 @@ CustomOpcodes::OPCODE_0AE8(CScript* script)
 //0AEF=3,%3d% = log %1d% base %2d% //all floats //dup
 
 //0AF8=2,cleo_array %1d% = %2d%
-eOpcodeResult __stdcall CustomOpcodes::SET_CLEO_ARRAY(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::SET_CLEO_ARRAY(Script *script)
 {
 	script->Collect(2);
 	script->m_pLocalArray[game.Scripts.pScriptParams[0].nVar].nVar = game.Scripts.pScriptParams[1].nVar;
@@ -2456,7 +2456,7 @@ eOpcodeResult __stdcall CustomOpcodes::SET_CLEO_ARRAY(CScript *script)
 }
 
 //0AF9=2,%2d% = cleo_array %1d%
-eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY(Script *script)
 {
 	script->Collect(1);
 	game.Scripts.pScriptParams[0].nVar = script->m_pLocalArray[game.Scripts.pScriptParams[0].nVar].nVar;
@@ -2465,7 +2465,7 @@ eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY(CScript *script)
 }
 
 //0AFA=2,%2d% = cleo_array %1d% pointer
-eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_OFFSET(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_OFFSET(Script *script)
 {
 	script->Collect(1);
 	game.Scripts.pScriptParams[0].pVar = &script->m_pLocalArray[game.Scripts.pScriptParams[0].nVar].nVar;
@@ -2474,10 +2474,10 @@ eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_OFFSET(CScript *script)
 }
 
 //0AFB=3,%3d% = script %1d% cleo_array %2d% pointer
-eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_SCRIPT(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_SCRIPT(Script *script)
 {
 	script->Collect(2);
-	CScript *pScript = reinterpret_cast<CScript*>(game.Scripts.pScriptParams[0].pVar);
+	Script *pScript = reinterpret_cast<Script*>(game.Scripts.pScriptParams[0].pVar);
 	if (pScript)
 	{
 		game.Scripts.pScriptParams[0].pVar = &pScript->m_pLocalArray[game.Scripts.pScriptParams[1].nVar].nVar;
@@ -2487,7 +2487,7 @@ eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_SCRIPT(CScript *script)
 }
 
 //0DD5=1,%1d% = get_platform
-eOpcodeResult __stdcall CustomOpcodes::GET_PLATFORM(CScript *script)
+eOpcodeResult __stdcall CustomOpcodes::GET_PLATFORM(Script *script)
 {
 	game.Scripts.pScriptParams[0].nVar = PLATFORM_WINDOWS;
 	script->Store(1);
@@ -2495,7 +2495,7 @@ eOpcodeResult __stdcall CustomOpcodes::GET_PLATFORM(CScript *script)
 }
 
 // perform 'sprintf'-operation for parameters, passed through SCM
-int format(CScript *script, char *str, size_t len, const char *format)
+int format(Script *script, char *str, size_t len, const char *format)
 {
 	unsigned int written = 0;
 	const char *iter = format;
