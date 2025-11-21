@@ -6,7 +6,7 @@
 #include <cstring>
 #include <ifstream>
 
-CScript::CScript(const char* filepath)
+Script::Script(const char* filepath)
 {
 		Init();
 
@@ -21,7 +21,7 @@ CScript::CScript(const char* filepath)
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 }
 
-CScript::~CScript()
+Script::~Script()
 {
 		while (m_pCleoCallStack)
 				PopStackFrame();
@@ -30,9 +30,9 @@ CScript::~CScript()
 }
 
 void
-CScript::Init()
+Script::Init()
 {
-		std::memset(this, 0, sizeof(CScript));
+		std::memset(this, 0, sizeof(Script));
 		std::strcpy(&m_acName, "noname");
 		m_bDeathArrestCheckEnabled = true;
 
@@ -41,10 +41,10 @@ CScript::Init()
 }
 
 void
-CScript::AddToCustomList(CScript** list)
+Script::AddToCustomList(Script** list)
 {
 		// push_front()
-		CScript* first = *list;
+		Script* first = *list;
 		m_pNextCustom = first;
 		m_pPrevCustom = nullptr;
 
@@ -55,7 +55,7 @@ CScript::AddToCustomList(CScript** list)
 }
 
 void
-CScript::RemoveFromCustomList(CScript** list)
+Script::RemoveFromCustomList(Script** list)
 {
 		if (m_pPrevCustom)
 				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
@@ -67,7 +67,7 @@ CScript::RemoveFromCustomList(CScript** list)
 }
 
 void
-CScript::PushStackFrame()
+Script::PushStackFrame()
 {
 		// push_front()
 		StackFrame* frame = new StackFrame();
@@ -80,7 +80,7 @@ CScript::PushStackFrame()
 }
 
 void
-CScript::PopStackFrame()
+Script::PopStackFrame()
 {
 		m_dwIp = m_pCleoCallStack->retAddr;
 
@@ -93,7 +93,7 @@ CScript::PopStackFrame()
 }
 
 eOpcodeResult
-CScript::ProcessOneCommand()
+Script::ProcessOneCommand()
 {
 		// highest bit of opcode denotes notFlag: reversing conditional result
 		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_dwIp];
@@ -112,39 +112,39 @@ CScript::ProcessOneCommand()
 				return OR_UNDEFINED;
 		} else { // call default opcode
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
-				eOpcodeResult result = game.Scripts.OpcodeHandlers[op / 100](this, op);
+				eOpcodeResult result = game.Scripts.apfOpcodeHandlers[op / 100](this, op);
 				*game.Scripts.pNumOpcodesExecuted += 1;
 				return result;
 		}
 }
 
 eParamType
-CScript::GetNextParamType()
+Script::GetNextParamType()
 {
 		return ((tParamType*)&game.Scripts.pScriptSpace[m_dwIp])->type;
 }
 
 void*
-CScript::GetPointerToScriptVariable()
+Script::GetPointerToScriptVariable()
 {
 		return game.Scripts.pfGetPointerToScriptVariable(this, &m_dwIp, 1);
 }
 
 void
-CScript::UpdateCompareFlag(bool result)
+Script::UpdateCompareFlag(bool result)
 {
 		game.Scripts.pfUpdateCompareFlag(this, result);
 }
 
 void
-CScript::ReadShortString(char* out)
+Script::ReadShortString(char* out)
 {
 		std::strncpy(out, &game.Scripts.pScriptSpace[m_dwIp], KEY_LENGTH_IN_SCRIPT);
 		m_dwIp += KEY_LENGTH_IN_SCRIPT;
 }
 
 void
-CScript::JumpTo(int address)
+Script::JumpTo(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		if (address >= 0)
@@ -153,18 +153,18 @@ CScript::JumpTo(int address)
 				if (m_bIsCustom)
 						m_dwIp = m_dwBaseIp + (-address);
 				else
-						m_dwIp = SIZE_MAIN_SCRIPT + (-address);
+						m_dwIp = game.kMainSize + (-address);
 		}
 }
 
 void
-CScript::Collect(short numParams)
+Script::Collect(short numParams)
 {
 		CollectParameters(&m_dwIp, numParams);
 }
 
 void
-CScript::CollectParameters(uint* pIp, short numParams)
+Script::CollectParameters(uint* pIp, short numParams)
 {
 		for (short i = 0; i < numParams; i++) {
 				tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[*pIp];
@@ -222,7 +222,7 @@ CScript::CollectParameters(uint* pIp, short numParams)
 }
 
 int
-CScript::CollectNextParameterWithoutIncreasingPC(uint ip)
+Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 {
 		tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[ip];
 		ip += 1;
@@ -258,7 +258,7 @@ CScript::CollectNextParameterWithoutIncreasingPC(uint ip)
 }
 
 void
-CScript::Store(short numParams)
+Script::Store(short numParams)
 {
 		game.Scripts.pfStoreParameters(this, &m_dwIp, numParams);
 }
