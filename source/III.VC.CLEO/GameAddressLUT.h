@@ -103,7 +103,7 @@ enum eMemoryAddress
         MA_PAD_NEW_STATE,
         MA_CAMERA_WIDESCREEN,
         MA_CURRENT_WEATHER,
-        
+        MA_ROOT_DIR_NAME,
         MA_GET_USER_FILES_FOLDER,
         MA_MODEL_FOR_WEAPON,
         MA_SPAWN_CAR,
