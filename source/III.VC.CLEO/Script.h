@@ -42,11 +42,11 @@ struct tParamType
 		bool processed : 1; // strings are compiled as (size byte + char arr); we convert them to c-string at runtime
 };
 
-class CScript
+class Script
 {
 	public:
-		/* 0x00 */ CScript* m_pNext;
-		/* 0x04 */ CScript* m_pPrev;
+		/* 0x00 */ Script* m_pNext;
+		/* 0x04 */ Script* m_pPrev;
 		/* 0x08 */ char m_acName[KEY_LENGTH_IN_SCRIPT];
 		/* 0x10 */ uint m_dwIp;
 		/* 0x14 */ uint m_aGosubAddr[MAX_STACK_DEPTH];
@@ -82,17 +82,17 @@ class CScript
 		/* 0x98 */ uchar* m_pCodeData;
 		/* 0x9C */ uint m_dwBaseIp;
 		/* 0xA0 */ StackFrame* m_pCleoCallStack;
-		/* 0xA4 */ CScript* m_pNextCustom;
-		/* 0xA8 */ CScript* m_pPrevCustom;
+		/* 0xA4 */ Script* m_pNextCustom;
+		/* 0xA8 */ Script* m_pPrevCustom;
 		/* 0xAC */ tScriptVar* m_pLocalArray;
 
-		CScript(const char* filepath);
-		~CScript();
+		Script(const char* filepath);
+		~Script();
 
 		void Init();
 
-		void AddToCustomList(CScript** list);
-		void RemoveFromCustomList(CScript** list);
+		void AddToCustomList(Script** list);
+		void RemoveFromCustomList(Script** list);
 
 		void PushStackFrame();
 		void PopStackFrame();
@@ -119,5 +119,5 @@ class CScript
 		};
 };
 
-static_assert(offsetof(CScript, m_aTimers) == offsetof(CScript, m_aLVars) + sizeof(CScript::m_aLVars), "CScript::m_aTimers must follow CScript::m_aLVars")
-static_assert(sizeof(CScript) == 0xB0, "CScript size mismatch");
+static_assert(offsetof(Script, m_aTimers) == offsetof(Script, m_aLVars) + sizeof(Script::m_aLVars), "Script::m_aTimers must follow Script::m_aLVars")
+static_assert(sizeof(Script) == 0xB0, "Script size mismatch");
