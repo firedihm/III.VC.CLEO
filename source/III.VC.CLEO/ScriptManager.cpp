@@ -9,7 +9,7 @@
 namespace fs = std::filesystem;
 
 std::set<const void*> AllocatedMemory;
-std::set<const FILE*> FileStreams;
+std::set<const std::FILE*> FileStreams;
 std::set<const fs::directory_iterator*> FileSearchHandles;
 
 ScriptManager scriptMgr;
@@ -17,13 +17,13 @@ ScriptManager scriptMgr;
 void
 ScriptManager::LoadScripts()
 {
-		fs::path dir(game.szRootPath);
+		fs::path dir(game.Misc.szRootDirName);
 		dir /= "CLEO";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".cs") {
 						try {
-								CScript* script = new CScript(entry.path().c_str());
+								Script* script = new Script(entry.path().c_str());
 
 								game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
 								script->AddToCustomList(&pCusomScripts);
@@ -45,13 +45,13 @@ ScriptManager::LoadScripts()
 void
 ScriptManager::UnloadScripts()
 {
-		CScript* script = pCusomScripts;
+		Script* script = pCusomScripts;
 		while (script) {
 				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom script \"%s\"", &script->m_acName);
 
-				CScript* next = script->m_pNextCustom;
+				Script* next = script->m_pNextCustom;
 				delete script;
 				script = next;
 		}
@@ -61,7 +61,7 @@ ScriptManager::UnloadScripts()
 void
 ScriptManager::EnableScripts()
 {
-		CScript* script = pCusomScripts;
+		Script* script = pCusomScripts;
 		while (script) {
 				game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", &script->m_acName);
@@ -72,7 +72,7 @@ ScriptManager::EnableScripts()
 void
 ScriptManager::DisableScripts()
 {
-		CScript* script = pCusomScripts;
+		Script* script = pCusomScripts;
 		while (script) {
 				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", &script->m_acName);
@@ -153,7 +153,7 @@ ScriptManager::OnGameShutdown()
 
 		game.Events.pfCdStreamRemoveImages();
 
-		scriptMgr.UnloadScripts();
+		UnloadScripts();
 		CustomText::Unload();
 
 		std::for_each(Misc.openedFiles->begin(),.Misc.openedFiles->end(), fclose);
@@ -177,13 +177,13 @@ ScriptManager::DeleteMemoryAddress(const void* memory)
 }
 
 void
-ScriptManager::SaveFileStream(const FILE* stream)
+ScriptManager::SaveFileStream(const std::FILE* stream)
 {
 		FileStreams.insert(stream);
 }
 
 void
-ScriptManager::DeleteFileStream(const FILE* stream)
+ScriptManager::DeleteFileStream(const std::FILE* stream)
 {
 		FileStreams.erase(stream);
 }
