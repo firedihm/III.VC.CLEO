@@ -1,20 +1,8 @@
 #pragma once
 
-#include "OpcodesSystem.h"
-
-#ifdef CLEO_VC
-	#define SIZE_MAIN_SCRIPT = 225512,
-	#define SIZE_MISSION_SCRIPT = 35000,
-	#define SIZE_SCRIPT_SPACE = SIZE_MAIN_SCRIPT + SIZE_MISSION_SCRIPT
-#else
-	#define SIZE_MAIN_SCRIPT = 128 * 1024,
-	#define SIZE_MISSION_SCRIPT = 32 * 1024,
-	#define SIZE_SCRIPT_SPACE = SIZE_MAIN_SCRIPT + SIZE_MISSION_SCRIPT
-#endif
+#include "Script.h"
 
 #define MAX_NUM_SCRIPTS 128
-
-struct tScriptVar;
 
 enum eGameVersion
 {
@@ -106,28 +94,31 @@ class GtaGame
 	public:
 		const eGameVersion Version;
 		const bool bIsChinese;
+		const size_t kMainSize;
+		const size_t kMissionSize;
+		const size_t kScriptSpaceSize;
 
 		struct tScripts {
 				Script* pScriptsArray;
 				uchar* pScriptSpace;
 				tScriptVar* pScriptParams;
 				ushort* pNumOpcodesExecuted;
-				OpcodeHandler OpcodeHandlers[15]; // 15 in VC, 12 in III
-				CScript** ppActiveScripts;
+				eOpcodeResult (__thiscall* apfOpcodeHandlers[15])(Script*, int); // 15 in VC, 12 in III
+				Script** ppActiveScripts;
 				tUsedObject* pUsedObjectArray;
-				void (__thiscall *pfAddScriptToList)(CScript*, CScript**);
-				void (__thiscall *pfRemoveScriptFromList)(CScript*, CScript**);
-				void (__thiscall *pfStoreParameters)(CScript*, uint*, short);
-				void (__thiscall *pfUpdateCompareFlag)(CScript*, bool);
-				void* (__thiscall *pfGetPointerToScriptVariable)(CScript*, uint*, short); // last param is unused
+				void (__thiscall* pfAddScriptToList)(Script*, Script**);
+				void (__thiscall* pfRemoveScriptFromList)(Script*, Script**);
+				void (__thiscall* pfStoreParameters)(Script*, uint*, short);
+				void (__thiscall* pfUpdateCompareFlag)(Script*, bool);
+				void* (__thiscall* pfGetPointerToScriptVariable)(Script*, uint*, short); // last param is unused
 		} Scripts;
 
 		struct tText {
-				wchar_t* (__thiscall *pfGet)(void*, const char*);
-				void(__cdecl *pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
-				void(__cdecl *pfAddBigMessageQ)(wchar_t*, uint, ushort);
-				void(__cdecl *pfAddMessage)(wchar_t*, uint, ushort);
-				void(__cdecl *pfAddMessageJumpQ)(wchar_t*, uint, ushort);
+				wchar_t* (__thiscall* pfGet)(void*, const char*);
+				void(__cdecl* pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
+				void(__cdecl* pfAddBigMessageQ)(wchar_t*, uint, ushort);
+				void(__cdecl* pfAddMessage)(wchar_t*, uint, ushort);
+				void(__cdecl* pfAddMessageJumpQ)(wchar_t*, uint, ushort);
 				void* pTheText;
 				CIntroTextLine* pIntroTextLines;
 				ushort* pNumberOfIntroTextLinesThisFrame;
@@ -135,14 +126,14 @@ class GtaGame
 		} Text;
 
 		struct tFont {
-				void (__cdecl *pfAsciiToUnicode)(const char*, wchar_t*);
-				void (__cdecl *pfPrintString)(float, float, wchar_t*);
-				void (__cdecl *pfSetFontStyle)(short);
-				void (__cdecl *pfSetScale)(float, float);
-				void (__cdecl *pfSetColor)(CRGBA* color);
-				void (__cdecl *pfSetJustifyOn)();
-				void (__cdecl *pfSetDropShadowPosition)(short);
-				void (__cdecl *pfSetPropOn)();
+				void (__cdecl* pfAsciiToUnicode)(const char*, wchar_t*);
+				void (__cdecl* pfPrintString)(float, float, wchar_t*);
+				void (__cdecl* pfSetFontStyle)(short);
+				void (__cdecl* pfSetScale)(float, float);
+				void (__cdecl* pfSetColor)(CRGBA*);
+				void (__cdecl* pfSetJustifyOn)();
+				void (__cdecl* pfSetDropShadowPosition)(short);
+				void (__cdecl* pfSetPropOn)();
 		} Font;
 
 		struct tPools {
@@ -150,22 +141,22 @@ class GtaGame
 				CPool** ppVehiclePool;
 				CPool** ppObjectPool;
 				uchar* pPlayers; // CPlayerInfo*
-				void* (__thiscall *pfPedPoolGetAt)(CPool*, int);
-				void* (__thiscall *pfVehiclePoolGetAt)(CPool*, int);
-				void* (__thiscall *pfObjectPoolGetAt)(CPool*, int);
-				int (__thiscall *pfPedPoolGetIndex)(CPool*, void*);
-				int (__thiscall *pfVehiclePoolGetIndex)(CPool*, void*);
-				int (__thiscall *pfObjectPoolGetIndex)(CPool*, void*);
+				void* (__thiscall* pfPedPoolGetAt)(CPool*, int);
+				void* (__thiscall* pfVehiclePoolGetAt)(CPool*, int);
+				void* (__thiscall* pfObjectPoolGetAt)(CPool*, int);
+				int (__thiscall* pfPedPoolGetIndex)(CPool*, void*);
+				int (__thiscall* pfVehiclePoolGetIndex)(CPool*, void*);
+				int (__thiscall* pfObjectPoolGetIndex)(CPool*, void*);
 		} Pools;
 
 		struct tEvents {
-				void (__cdecl *pfInitScripts)();
-				void (__cdecl *pfSaveAllScripts)(uchar*, uint*);
-				void (__cdecl *pfCdStreamRemoveImages)();
+				void (__cdecl* pfInitScripts)();
+				void (__cdecl* pfSaveAllScripts)(uchar*, uint*);
+				void (__cdecl* pfCdStreamRemoveImages)();
 		} Events;
 
 		struct tShadows {
-				float (__cdecl *pfStoreShadowToBeRendered)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool);
+				float (__cdecl* pfStoreShadowToBeRendered)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool);
 				void** ppShadowCarTex;
 				void** ppShadowPedTex;
 				void** ppShadowHeliTex;
@@ -181,12 +172,12 @@ class GtaGame
 				short* pPadNewState;
 				bool* pWideScreenOn;
 				short* pOldWeatherType;
-
-				char* (__cdecl *pfGetUserFilesFolder)();
-				int (__cdecl *pfModelForWeapon)(int);
-				void (__cdecl *pfSpawnCar)(int); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
-				void (__cdecl *pfRwV3dTransformPoints)(CVector*, CVector const*, int, const void*);
-				void* (__cdecl *pfBlendAnimation)(void*, int, int, float);
+				char* szRootDirName;
+				char* (__cdecl* pfGetUserFilesFolder)();
+				int (__cdecl* pfModelForWeapon)(int);
+				void (__cdecl* pfSpawnCar)(int); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
+				void (__cdecl* pfRwV3dTransformPoints)(CVector*, CVector const*, int, const void*);
+				void* (__cdecl* pfBlendAnimation)(void*, int, int, float);
 		} Misc;
 
 		GtaGame();
