@@ -31,6 +31,7 @@ Script::~Script()
 		while (m_pCleoCallStack)
 				PopStackFrame();
 
+		delete[] m_pCodeData;
 		delete[] m_pLocalArray;
 }
 
