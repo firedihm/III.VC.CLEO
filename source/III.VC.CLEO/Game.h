@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Script.h"
+#include "domain.h"
+
+class Script;
 
 enum eGameVersion
 {
@@ -30,75 +32,18 @@ enum ePlatform
 		PLATFORM_WINDOWS
 };
 
-struct CVector
-{
-		float x, y, z;
-};
-
-class CRGBA
-{
-		uchar r, g, b, a;
-};
-
-struct CIntroTextLine
-{
-		float m_fScaleX;
-		float m_fScaleY;
-		CRGBA m_sColor;
-		bool m_bJustify;
-		bool m_bCentered;
-		bool m_bBackground;
-		bool m_bBackgroundOnly;
-		float m_fWrapX;
-		float m_fCenterSize;
-		CRGBA m_sBackgroundColor;
-		bool m_bTextProportional;
-		bool m_bTextBeforeFade;
-		bool m_bRightJustify;
-		int32 m_nFont;
-		float m_fAtX;
-		float m_fAtY;
-		wchar_t text[500]; // 100 in VC, 500 in III
-};
-
-struct bVehicleFlags
-{
-		uint8_t bIsLawEnforcer : 1; // Is this guy chasing the player at the moment
-		uint8_t bIsAmbulanceOnDuty : 1; // Ambulance trying to get to an accident
-		uint8_t bIsFireTruckOnDuty : 1; // Firetruck trying to get to a fire
-		uint8_t bIsLocked : 1; // Is this guy locked by the script (cannot be removed)
-		uint8_t bEngineOn : 1; // For sound purposes. Parked cars have their engines switched off (so do destroyed cars)
-		uint8_t bIsHandbrakeOn : 1; // How's the handbrake doing ?
-		uint8_t bLightsOn : 1; // Are the lights switched on ?
-		uint8_t bFreebies : 1; // Any freebies left in this vehicle ?
-};
-
-struct CPool
-{
-		void* m_entries;
-		uchar* m_flags;
-		int m_size;
-		int m_allocPtr;
-};
-
-struct tUsedObject
-{
-		char name[24];
-		int index;
-};
-
 class GtaGame
 {
-	public:
+public:
 		const eGameVersion Version;
 		const bool bIsChinese;
-		const size_t kMainSize;
-		const size_t kMissionSize;
-		const size_t kScriptSpaceSize;
+		const uint kMainSize;
+		const uint kMissionSize;
+		const uint kScriptSpaceSize;
 
 		struct tScripts {
 				uchar* pScriptSpace;
-				tScriptVar* pScriptParams;
+				ScriptParam* pScriptParams;
 				ushort* pNumOpcodesExecuted;
 				eOpcodeResult (__thiscall* apfOpcodeHandlers[15])(Script*, int); // 15 in VC, 12 in III
 				Script** ppActiveScripts;
@@ -117,7 +62,7 @@ class GtaGame
 				void(__cdecl* pfAddMessage)(wchar_t*, uint, ushort);
 				void(__cdecl* pfAddMessageJumpQ)(wchar_t*, uint, ushort);
 				void* pTheText;
-				CIntroTextLine* pIntroTextLines;
+				intro_text_line* pIntroTextLines;
 				ushort* pNumberOfIntroTextLinesThisFrame;
 				char* szKeyboardCheatString;
 		} Text;
