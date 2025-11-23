@@ -16,7 +16,7 @@
 
 #define CLEO_VERSION ((CLEO_VERSION_MAIN << 24)|(CLEO_VERSION_MAJOR << 16)|(CLEO_VERSION_MINOR << 8))
 
-tScriptVar *Params;
+ScriptParam* Params;
 
 //0BA2=2,%2h% = memory_load_library %1s% ; IF and SET
 eOpcodeResult WINAPI OPCODE_0BA2(CScript *script)
