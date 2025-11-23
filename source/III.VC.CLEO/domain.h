@@ -66,11 +66,11 @@ struct CRGBA
 // stores settings for script-based rectangle drawing, e.g. 038E: DRAW_RECT
 struct intro_script_rectangle 
 {
-	bool m_bIsUsed;
-	bool m_bBeforeFade;
-	short m_nTextureId;
-	CRect m_sRect;
-	CRGBA m_sColor;
+        bool m_bIsUsed;
+        bool m_bBeforeFade;
+        short m_nTextureId;
+        CRect m_sRect;
+        CRGBA m_sColor;
 };
 
 // stores settings for script-based string drawing, e.g. 033E: DISPLAY_TEXT
