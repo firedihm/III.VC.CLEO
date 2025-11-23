@@ -2,8 +2,6 @@
 
 #include "Script.h"
 
-#define MAX_NUM_SCRIPTS 128
-
 enum eGameVersion
 {
 		GAME_GTAVC_V1_0,
@@ -99,7 +97,6 @@ class GtaGame
 		const size_t kScriptSpaceSize;
 
 		struct tScripts {
-				Script* pScriptsArray;
 				uchar* pScriptSpace;
 				tScriptVar* pScriptParams;
 				ushort* pNumOpcodesExecuted;
