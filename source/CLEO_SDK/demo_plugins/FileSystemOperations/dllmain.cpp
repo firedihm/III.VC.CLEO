@@ -23,7 +23,7 @@
 
 #define CLEO_VERSION ((CLEO_VERSION_MAIN << 24)|(CLEO_VERSION_MAJOR << 16)|(CLEO_VERSION_MINOR << 8))
 
-tScriptVar *Params;
+ScriptParam* Params;
 
 char* MakeFullPath(char *path, char *dst)
 {
