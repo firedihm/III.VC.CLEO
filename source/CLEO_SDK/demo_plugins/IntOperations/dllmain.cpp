@@ -30,7 +30,7 @@
 
 #define CLEO_VERSION ((CLEO_VERSION_MAIN << 24)|(CLEO_VERSION_MAJOR << 16)|(CLEO_VERSION_MINOR << 8))
 
-tScriptVar *Params;
+ScriptParam* Params;
 
 eOpcodeResult WINAPI Script_IntOp_AND(CScript *script)
 /****************************************************************
@@ -126,7 +126,7 @@ Opcode Format
 0B17=2,%1d% &= %2d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	script->Collect(1);
 	int val = Params[0].nVar;
 	op->nVar &= val;
@@ -139,7 +139,7 @@ Opcode Format
 0B18=2,%1d% |= %2d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	script->Collect(1);
 	int val = Params[1].nVar;
 	op->nVar |= val;
@@ -152,7 +152,7 @@ Opcode Format
 0B19=2,%1d% ^= %2d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	script->Collect(1);
 	int val = Params[1].nVar;
 	op->nVar ^= val;
@@ -165,7 +165,7 @@ Opcode Format
 0B1A=1,~%1d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	op->nVar = ~op->nVar;
 	return OR_CONTINUE;
 }
@@ -176,7 +176,7 @@ Opcode Format
 0B1B=2,%1d% %= %2d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	script->Collect(1);
 	int val = Params[1].nVar;
 	op->nVar %= val;
@@ -189,7 +189,7 @@ Opcode Format
 0B1C=2,%1d% >>= %2d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	script->Collect(1);
 	int val = Params[1].nVar;
 	op->nVar >>= val;
@@ -202,7 +202,7 @@ Opcode Format
 0B1D=2,%1d% <<= %2d%
 ****************************************************************/
 {
-	tScriptVar* op = (tScriptVar*)script->GetPointerToScriptVariable();
+	ScriptParam* op = (ScriptParam*)script->GetPointerToScriptVariable();
 	script->Collect(1);
 	int val = Params[1].nVar;
 	op->nVar <<= val;
