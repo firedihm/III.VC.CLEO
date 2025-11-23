@@ -41,8 +41,8 @@ Script::Init()
 		std::strcpy(&m_acName, "noname");
 		m_bDeathArrestCheckEnabled = true;
 
-		m_pLocalArray = new tScriptVar[0xFF];
-		std::memset(m_pLocalArray, 0, sizeof(tScriptVar * 0xFF));
+		m_pLocalArray = new ScriptParam[0xFF];
+		std::memset(m_pLocalArray, 0, sizeof(ScriptParam) * 0xFF);
 }
 
 void
@@ -126,7 +126,7 @@ Script::ProcessOneCommand()
 eParamType
 Script::GetNextParamType()
 {
-		return ((tParamType*)&game.Scripts.pScriptSpace[m_dwIp])->type;
+		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_dwIp])->type;
 }
 
 void*
@@ -172,7 +172,7 @@ void
 Script::CollectParameters(uint* pIp, short numParams)
 {
 		for (short i = 0; i < numParams; i++) {
-				tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[*pIp];
+				ScriptParamType* paramType = (ScriptParamType*)&game.Scripts.pScriptSpace[*pIp];
 				*pIp += 1;
 
 				switch (paramType->type) {
@@ -229,7 +229,7 @@ Script::CollectParameters(uint* pIp, short numParams)
 int
 Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 {
-		tParamType* paramType = (tParamType*)&game.Scripts.pScriptSpace[ip];
+		ScriptParamType* paramType = (ScriptParamType*)&game.Scripts.pScriptSpace[ip];
 		ip += 1;
 
 		switch (paramType->type) {
