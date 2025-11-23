@@ -17,19 +17,19 @@ namespace fs = std::filesystem;
 
 int format(Script *script, char *str, size_t len, const char *format);
 
-tScriptVar CustomOpcodes::SHARED_VAR[0xFFFF];
+ScriptParam CustomOpcodes::SHARED_VAR[0xFFFF];
 
 // Exports
 CLEOAPI unsigned CLEO_GetVersion() { return CLEO_VERSION; }
 CLEOAPI char* CLEO_GetScriptSpaceAddress() { return game.Scripts.pScriptSpace; }
-CLEOAPI tScriptVar* CLEO_GetParamsAddress() { return game.Scripts.pScriptParams; }
+CLEOAPI ScriptParam* CLEO_GetParamsAddress() { return game.Scripts.pScriptParams; }
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 	unsigned __stdcall _CLEO_GetVersion() { return CLEO_GetVersion(); }
 	char* __stdcall _CLEO_GetScriptSpaceAddress() { return CLEO_GetScriptSpaceAddress(); }
-	tScriptVar* __stdcall _CLEO_GetParamsAddress() { return CLEO_GetParamsAddress(); }
+	ScriptParam* __stdcall _CLEO_GetParamsAddress() { return CLEO_GetParamsAddress(); }
 	bool __stdcall CLEO_RegisterOpcode(unsigned short id, Opcode func) { return Opcodes::RegisterOpcode(id, func); }
 
 	// Script methods
@@ -320,7 +320,7 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(Script *script)
 		game.Scripts.pfAddScriptToList(newScript, game.Scripts.ppActiveScripts);
 		newScript->m_bIsActive = true;
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Started new script \"%s\"", name);
-		for(int i = 0; (*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type; i++)
+		for(int i = 0; (*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type; i++)
 		{
 			script->Collect(1);
 			newScript->m_aLVars[i].nVar = game.Scripts.pScriptParams[0].nVar;
@@ -329,7 +329,7 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(Script *script)
 	}
 	else
 	{
-		while((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+		while((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 			script->Collect(1);
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", name);
 		if(newScript)
@@ -413,7 +413,7 @@ eOpcodeResult CustomOpcodes::CALL(Script *script)
 	}
 	__asm call func
 	__asm add esp, popsize
-	while((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -436,7 +436,7 @@ eOpcodeResult CustomOpcodes::CALL_FUNCTION(Script *script)
 	__asm add esp, popsize
 	game.Scripts.pScriptParams[0].nVar = func_result;
 	script->Store(1);
-	while((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -457,7 +457,7 @@ eOpcodeResult CustomOpcodes::CALL_METHOD(Script *script)
 	__asm mov ecx, object
 	__asm call func
 	__asm add esp, popsize
-	while((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -482,7 +482,7 @@ eOpcodeResult CustomOpcodes::CALL_FUNCTION_METHOD(Script *script)
 	__asm add esp, popsize
 	game.Scripts.pScriptParams[0].nVar = func_result;
 	script->Store(1);
-	while((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -1037,7 +1037,7 @@ CustomOpcodes::CALL_SCM_FUNCTION(Script* script)
 		script->JumpTo(addr);
 
 		std::memset(&script->m_aLVars, 0, sizeof(script->m_aLVars));
-		std::memcpy(&script->m_aLVars, &game.Scripts.pScriptParams, paramCount * sizeof(tScriptVar));
+		std::memcpy(&script->m_aLVars, &game.Scripts.pScriptParams, paramCount * sizeof(ScriptParam));
 
 		return OR_CONTINUE;
 }
@@ -1502,7 +1502,7 @@ eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(Script *script)
 	strcpy(fmt, game.Scripts.pScriptParams[2].szVar);
 	format(script, text, sizeof(text), fmt);
 	swprintf((wchar_t*)&game.Text.pIntroTextLines[*game.Text.pNumberOfIntroTextLinesThisFrame].text, 100, L"%hs", text);
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	*game.Text.pNumberOfIntroTextLinesThisFrame = *game.Text.pNumberOfIntroTextLinesThisFrame + 1;
@@ -2019,7 +2019,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACE(Script *script)
 	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
 	game.Text.pfSetHelpMessage(message_buf, false, false);
 
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -2037,7 +2037,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ACF(Script *script)
 	format(script, text, sizeof(text), fmt);
 	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
 	game.Text.pfAddBigMessageQ(message_buf, time, style - 1);
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -2054,7 +2054,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD0(Script *script)
 	format(script, text, sizeof(text), fmt);
 	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
 	game.Text.pfAddMessage(message_buf, time, false, false);
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -2071,7 +2071,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD1(Script *script)
 	format(script, text, sizeof(text), fmt);
 	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
 	game.Text.pfAddMessageJumpQ(message_buf, time, false, false);
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -2087,7 +2087,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD3(Script *script)
 	dst = (char*)game.Scripts.pScriptParams[0].pVar;
 	strcpy(fmt, game.Scripts.pScriptParams[1].szVar);
 	format(script, dst, static_cast<size_t>(-1), fmt);
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -2102,12 +2102,12 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD4(Script *script)
 	strcpy(fmt, game.Scripts.pScriptParams[1].szVar);
 	size_t cExParams = 0;
 	int *result = (int *)script->GetPointerToScriptVariable();
-	tScriptVar *ExParams[35];
-	memset(ExParams, 0, 35 * sizeof(tScriptVar*));
+	ScriptParam *ExParams[35];
+	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
 	// read extra params
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 	{
-		ExParams[cExParams++] = (tScriptVar *)script->GetPointerToScriptVariable();
+		ExParams[cExParams++] = (ScriptParam *)script->GetPointerToScriptVariable();
 	}
 	script->m_dwIp++;
 
@@ -2176,7 +2176,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD9(Script *script)
 	format(script, text, sizeof(text), fmt);
 	fputs(text, file);
 	fflush(file);
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 		script->Collect(1);
 	script->m_dwIp++;
 	return OR_CONTINUE;
@@ -2191,12 +2191,12 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADA(Script *script)
 	strcpy(fmt, game.Scripts.pScriptParams[1].szVar);
 	size_t cExParams = 0;
 	int *result = (int *)script->GetPointerToScriptVariable();
-	tScriptVar *ExParams[35];
-	memset(ExParams, 0, 35 * sizeof(tScriptVar*));
+	ScriptParam *ExParams[35];
+	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
 	// read extra params
-	while ((*(tParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
+	while ((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
 	{
-		ExParams[cExParams++] = (tScriptVar *)script->GetPointerToScriptVariable();
+		ExParams[cExParams++] = (ScriptParam *)script->GetPointerToScriptVariable();
 	}
 	script->m_dwIp++;
 
