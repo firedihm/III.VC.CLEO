@@ -14,31 +14,31 @@
 class CRunningScript
 {
 protected:
-		/* 0x00 */ CRunningScript* m_pNext;
-		/* 0x04 */ CRunningScript* m_pPrev;
-		/* 0x08 */ char m_acName[KEY_LENGTH_IN_SCRIPT];
-		/* 0x10 */ uint m_dwIp;
-		/* 0x14 */ uint m_aGosubAddr[MAX_STACK_DEPTH];
-		/* 0x2C */ ushort m_nCurrentGosub;
-		/* 0x30 */ tScriptVar m_aLVars[NUM_LOCAL_VARS];
-		/* 0x70 */ tScriptVar m_aTimers[NUM_TIMERS];
-#if CLEO_VC
-		/* 0x78 */ bool m_bIsActive; 
-		/* 0x79 */ bool m_bCondResult; 
-		/* 0x7A */ bool m_bIsMission;
+		CRunningScript* m_pNext;
+		CRunningScript* m_pPrev;
+		char m_acName[KEY_LENGTH_IN_SCRIPT];
+		uint m_dwIp;
+		uint m_aGosubAddr[MAX_STACK_DEPTH];
+		ushort m_nCurrentGosub;
+		ScriptParam m_aLVars[NUM_LOCAL_VARS];
+		ScriptParam m_aTimers[NUM_TIMERS];
+#ifdef CLEO_VC
+		bool m_bIsActive; 
+		bool m_bCondResult; 
+		bool m_bIsMission;
 #else
-		/* 0x78 */ bool m_bCondResult;
-		/* 0x79 */ bool m_bIsMission;
-		/* 0x7A */ bool m_bIsActive;
+		bool m_bCondResult;
+		bool m_bIsMission;
+		bool m_bIsActive;
 #endif
-		/* 0x7C */ uint m_dwWakeTime;
-		/* 0x80 */ ushort m_wIfOp;
-		/* 0x82 */ bool m_bNotFlag;
-		/* 0x83 */ bool m_bDeathArrestCheckEnabled;
-		/* 0x84 */ bool m_bWastedOrBusted;
-		/* 0x85 */ bool m_bMissionFlag;
+		uint m_dwWakeTime;
+		ushort m_wIfOp;
+		bool m_bNotFlag;
+		bool m_bDeathArrestCheckEnabled;
+		bool m_bWastedOrBusted;
+		bool m_bMissionFlag;
 
-		CRunningScript() = default;
+		CRunningScript();
 };
 
 class CCustomScript : protected CRunningScript
@@ -46,7 +46,7 @@ class CCustomScript : protected CRunningScript
 protected:
 		struct StackFrame {
 				StackFrame* prev;
-				tScriptVar vars[NUM_LOCAL_VARS];
+				ScriptParam vars[NUM_LOCAL_VARS];
 				uint retAddr;
 		};
 
@@ -60,9 +60,9 @@ protected:
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
 		StackFrame* m_pCleoCallStack;
-		tScriptVar* m_pLocalArray;
+		ScriptParam* m_pLocalArray;
 
-		CCustomScript() = default;
+		CCustomScript();
 };
 
 class Script : protected CCustomScript
@@ -95,5 +95,28 @@ public:
 		CLEOAPI void Store(short numParams);
 };
 
-static_assert(sizeof(CRunningScript) == 0x88, "CRunningScript size mismatch");
-static_assert(offsetof(CRunningScript, m_aTimers) == offsetof(CRunningScript, m_aLVars) + sizeof(CRunningScript::m_aLVars), "CRunningScript::m_aTimers must follow Script::m_aLVars")
+// CRunningScript's data structure must not be altered!
+static_assert(offsetof(CRunningScript, m_pNext) == 0x00);
+static_assert(offsetof(CRunningScript, m_pPrev) == 0x04);
+static_assert(offsetof(CRunningScript, m_acName) == 0x08);
+static_assert(offsetof(CRunningScript, m_dwIp) == 0x10);
+static_assert(offsetof(CRunningScript, m_aGosubAddr) == 0x14);
+static_assert(offsetof(CRunningScript, m_nCurrentGosub) == 0x2C);
+static_assert(offsetof(CRunningScript, m_aLVars) == 0x30);
+static_assert(offsetof(CRunningScript, m_aTimers) == 0x70);
+#ifdef CLEO_VC
+	static_assert(offsetof(CRunningScript, m_bIsActive) == 0x78);
+	static_assert(offsetof(CRunningScript, m_bCondResult) == 0x79);
+	static_assert(offsetof(CRunningScript, m_bIsMission) == 0x7A);
+#else
+	static_assert(offsetof(CRunningScript, m_bCondResult) == 0x78);
+	static_assert(offsetof(CRunningScript, m_bIsMission) == 0x79);
+	static_assert(offsetof(CRunningScript, m_bIsActive) == 0x7A);
+#endif
+static_assert(offsetof(CRunningScript, m_dwWakeTime) == 0x7C);
+static_assert(offsetof(CRunningScript, m_wIfOp) == 0x80);
+static_assert(offsetof(CRunningScript, m_bNotFlag) == 0x82);
+static_assert(offsetof(CRunningScript, m_bDeathArrestCheckEnabled) == 0x83);
+static_assert(offsetof(CRunningScript, m_bWastedOrBusted) == 0x84);
+static_assert(offsetof(CRunningScript, m_bMissionFlag) == 0x85);
+static_assert(sizeof(CRunningScript) == 0x88);
