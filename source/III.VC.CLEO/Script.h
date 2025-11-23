@@ -6,10 +6,12 @@
 #define CLEOAPI __declspec(dllexport)
 #endif
 
-#define KEY_LENGTH_IN_SCRIPT 8
-#define MAX_STACK_DEPTH 6
-#define NUM_LOCAL_VARS 16
-#define NUM_TIMERS 2
+enum {
+		KEY_LENGTH_IN_SCRIPT = 8,
+		MAX_STACK_DEPTH = 6,
+		NUM_LOCAL_VARS = 16,
+		NUM_TIMERS = 2
+};
 
 class CRunningScript
 {
