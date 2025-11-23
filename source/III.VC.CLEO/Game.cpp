@@ -9,6 +9,8 @@
 #include <cstring>
 #include <thread>
 
+Script ScriptsArray[128];
+
 void* ChinaLib;
 
 GtaGame game;
@@ -17,23 +19,23 @@ eGameVersion
 DetermineGameVersion()
 {
 		switch (*(uint*)0x61C11C) {
-			case 0x74FF5064:
+		case 0x74FF5064:
 				return GAME_GTAVC_V1_0;
-			case 0x00408DC0:
+		case 0x00408DC0:
 				return GAME_GTAVC_V1_1;
-			case 0x00004824:
+		case 0x00004824:
 				return GAME_GTAVC_VSTEAM;
-			case 0x24E58287:
+		case 0x24E58287:
 				return GAME_GTAVC_VSTEAMENC;
-			case 0x00598B80:
+		case 0x00598B80:
 				return GAME_GTA3_V1_0;
-			case 0x00598E40:
+		case 0x00598E40:
 				return GAME_GTA3_V1_1;
-			case 0x646E6957:
+		case 0x646E6957:
 				return GAME_GTA3_VSTEAM;
-			case 0x00FFFFFF:
+		case 0x00FFFFFF:
 				return GAME_GTA3_VSTEAMENC;
-			default:
+		default:
 				return NUM_GV;
 		}
 }
@@ -69,10 +71,9 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 
 		GameAddressLUT lut(Version);
 
-		Scripts.pScriptsArray = new Script[MAX_NUM_SCRIPTS];
-		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_0], Scripts.pScriptsArray);
-		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_1], Scripts.pScriptsArray);
-		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_2], Scripts.pScriptsArray->*m_pPrev);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_0], &ScriptsArray);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_1], &ScriptsArray.m_pNext);
+		memory::SetPointer(lut[MA_SCRIPTS_ARRAY_2], &ScriptsArray.m_pPrev);
 		memory::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(Script));
 		memory::SetInt(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(Script));
 		memory::RedirectJump(lut[CA_INIT_SCRIPT], Script::Init);
@@ -172,6 +173,5 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 
 GtaGame::~GtaGame()
 {
-		delete[] Scripts.pScriptsArray;
 		FreeLibrary(ChinaLib);
 }
