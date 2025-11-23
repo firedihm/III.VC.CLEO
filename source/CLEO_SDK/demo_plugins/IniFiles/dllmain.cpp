@@ -237,7 +237,7 @@ Opcode Format
 	BOOL result;
 
 	char* Space = CLEO_GetScriptSpaceAddress();
-	switch ((*(tParamType *)(&Space[script->m_dwIp])).type)
+	switch ((*(ScriptParamType *)(&Space[script->m_dwIp])).type)
 	{
 	case PARAM_TYPE_STRING:
 		strcpy(strValue, Params[0].cVar);
