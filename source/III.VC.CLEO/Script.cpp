@@ -6,6 +6,11 @@
 #include <cstring>
 #include <ifstream>
 
+Script::Script()
+{
+		Init();
+}
+
 Script::Script(const char* filepath)
 {
 		Init();
@@ -49,7 +54,7 @@ Script::AddToCustomList(Script** list)
 		m_pPrevCustom = nullptr;
 
 		if (first)
-				first->m_pPrevCustom = this;
+				first->m_pPrevCustom = (CCustomScript*)this;
 
 		first = this;
 }
@@ -60,7 +65,7 @@ Script::RemoveFromCustomList(Script** list)
 		if (m_pPrevCustom)
 				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
 		else
-				*list = m_pNextCustom;
+				*list = (Script*)m_pNextCustom;
 
 		if (m_pNextCustom)
 				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
@@ -171,27 +176,27 @@ Script::CollectParameters(uint* pIp, short numParams)
 				*pIp += 1;
 
 				switch (paramType->type) {
-					case PARAM_TYPE_INT32:
+				case PARAM_TYPE_INT32:
 						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 4;
 						break;
-					case PARAM_TYPE_GVAR:
+				case PARAM_TYPE_GVAR:
 						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[*pIp]];
 						*pIp += 2;
 						break;
-					case PARAM_TYPE_LVAR:
+				case PARAM_TYPE_LVAR:
 						game.Scripts.pScriptParams[i].nVar = m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[*pIp]].nVar;
 						*pIp += 2;
 						break;
-					case PARAM_TYPE_INT8:
+				case PARAM_TYPE_INT8:
 						game.Scripts.pScriptParams[i].nVar = *(char*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 1;
 						break;
-					case PARAM_TYPE_INT16:
+				case PARAM_TYPE_INT16:
 						game.Scripts.pScriptParams[i].nVar = *(short*)&game.Scripts.pScriptSpace[*pIp];
 						*pIp += 2;
 						break;
-					case PARAM_TYPE_FLOAT:
+				case PARAM_TYPE_FLOAT:
 						if (game.IsGta3()) {
 								game.Scripts.pScriptParams[i].fVar = *(short*)&game.Scripts.pScriptSpace[*pIp] / 16.0f;
 								*pIp += 2;
@@ -201,7 +206,7 @@ Script::CollectParameters(uint* pIp, short numParams)
 								*pIp += 4;
 								break;
 						}
-					case PARAM_TYPE_STRING:
+				case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
 								uchar length = game.Scripts.pScriptSpace[*pIp];
 								std::memcpy(&game.Scripts.pScriptSpace[*pIp + 1], &game.Scripts.pScriptSpace[*pIp], length);
@@ -212,7 +217,7 @@ Script::CollectParameters(uint* pIp, short numParams)
 						game.Scripts.pScriptParams[i].szVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += std::strlen(&game.Scripts.pScriptSpace[*pIp]) + 1;
 						break;
-					default:
+				default:
 						*pIp -= 1;
 						game.Scripts.pScriptParams[i].szVar = &game.Scripts.pScriptSpace[*pIp];
 						*pIp += KEY_LENGTH_IN_SCRIPT;
@@ -228,22 +233,22 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 		ip += 1;
 
 		switch (paramType->type) {
-			case PARAM_TYPE_INT32:
+		case PARAM_TYPE_INT32:
 				return *(int*)&game.Scripts.pScriptSpace[ip];
-			case PARAM_TYPE_GVAR:
+		case PARAM_TYPE_GVAR:
 				return *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[ip]];
-			case PARAM_TYPE_LVAR:
+		case PARAM_TYPE_LVAR:
 				return m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[ip]].nVar;
-			case PARAM_TYPE_INT8:
+		case PARAM_TYPE_INT8:
 				return *(char*)&game.Scripts.pScriptSpace[ip];
-			case PARAM_TYPE_INT16:
+		case PARAM_TYPE_INT16:
 				return *(short*)&game.Scripts.pScriptSpace[ip];
-			case PARAM_TYPE_FLOAT:
+		case PARAM_TYPE_FLOAT:
 				if (game.IsGta3())
 						return (int)(*(short*)&game.Scripts.pScriptSpace[ip] / 16.0f);
 				else
 						return *(int*)&game.Scripts.pScriptSpace[ip];
-			case PARAM_TYPE_STRING:
+		case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
 						uchar length = game.Scripts.pScriptSpace[ip];
 						std::memcpy(&game.Scripts.pScriptSpace[ip + 1], &game.Scripts.pScriptSpace[ip], length);
@@ -252,7 +257,7 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 				}
 
 				return (int)&game.Scripts.pScriptSpace[ip]; // string address
-			default:
+		default:
 				return -1;
 		}
 }
