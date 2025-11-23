@@ -15,7 +15,7 @@
 
 #define CLEO_VERSION ((CLEO_VERSION_MAIN << 24)|(CLEO_VERSION_MAJOR << 16)|(CLEO_VERSION_MINOR << 8))
 
-tScriptVar *Params;
+ScriptParam* Params;
 
 eOpcodeResult WINAPI OPCODE_0B20(CScript *script)
 /****************************************************************
