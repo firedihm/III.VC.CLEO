@@ -63,14 +63,9 @@ struct CRGBA
         uchar r, g, b, a;
 };
 
-// stores settings for script-based rectangle drawing, e.g. 038E: DRAW_RECT
-struct intro_script_rectangle 
+struct CSprite2d
 {
-        bool m_bIsUsed;
-        bool m_bBeforeFade;
-        short m_nTextureId;
-        CRect m_sRect;
-        CRGBA m_sColor;
+        void* m_pTexture; // RwTexture*
 };
 
 // stores settings for script-based string drawing, e.g. 033E: DISPLAY_TEXT
@@ -95,6 +90,17 @@ struct intro_text_line
         wchar_t text[500]; // 100 in VC, 500 in III
 };
 
+// stores settings for script-based rectangle drawing, e.g. 038E: DRAW_RECT
+struct intro_script_rectangle 
+{
+        bool m_bIsUsed;
+        bool m_bBeforeFade;
+        short m_nTextureId;
+        CRect m_sRect;
+        CRGBA m_sColor;
+};
+
+// this was template in original: CPool<T>; void* was T*
 struct CPool
 {
         void* m_entries;
