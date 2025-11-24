@@ -97,6 +97,7 @@ public:
 				void (__cdecl* pfCdStreamRemoveImages)();
 		} Events;
 
+		// VC only: first void* of func is RwTexture*, second is CCutsceneShadow*; the void** are RwTexture**
 		struct tShadows {
 				float (__cdecl* pfStoreShadowToBeRendered)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool);
 				void** ppShadowCarTex;
