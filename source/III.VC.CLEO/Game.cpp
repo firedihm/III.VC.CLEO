@@ -10,9 +10,9 @@
 
 enum {
 		MAX_NUM_SCRIPTS = 128,
-		MAX_NUM_INTRO_TEXT_LINES = 16,
-		MAX_NUM_INTRO_RECTANGLES = 125,
-		MAX_NUM_SCRIPT_SRPITES = 125
+		MAX_NUM_INTRO_TEXT_LINES = 48, // VC had 48 already, III had just 2
+		MAX_NUM_INTRO_RECTANGLES = 128,
+		MAX_NUM_SCRIPT_SRPITES = 128
 };
 
 Script* ScriptsArray;
@@ -117,7 +117,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
 		Text.pfGet = (wchar_t* (__thiscall*)(void*, const char*))lut[MA_GET_TEXT];
-		memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx push ebp mov ebx,ecx
+		memory::SetInt(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
 		memory::SetInt(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
 		memory::SetInt(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
 		memory::RedirectJump(lut[CA_GET_TEXT], CustomText::GetText);
@@ -186,6 +186,12 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 
 		// rather messy and incomplete: addresses below only apply to v1.0
 		if (Version == GAME_GTAVC_V1_0) {
+				//memory::SetPointer(0x451E72, IntroRectangles);			//  -> push    offset _textSprites; object
+				//memory::SetPointer(0x451EFA, IntroRectangles);			//  -> push    offset _textSprites; objects
+				memory::SetPointer(0x4591FB, IntroRectangles);				//  -> add     esi, offset _textSprites
+				memory::SetPointer(0x459306, IntroRectangles);				//  -> add     esi, offset _textSprites
+				memory::SetPointer(0x55690B, IntroRectangles);				//  -> mov     esi, offset _textSprites
+				memory::SetPointer(0x55AD3C, IntroRectangles);				//  -> mov     ebp, offset _textSprites
 				memory::SetPointer(0x450125, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ds:_textSprites.active[eax], 0
 				memory::SetPointer(0x450146, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ds:_textSprites.active[ebx], 0
 				memory::SetPointer(0x450164, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ds:_textSprites.active[ecx], 0
@@ -195,15 +201,9 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::SetPointer(0x4501DE, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ss:_textSprites.active[ebp], 0
 				memory::SetPointer(0x450203, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ds:_textSprites.active[ebx], 0
 				memory::SetPointer(0x450A78, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ds:_textSprites.active[ebx], 0
-				//memory::SetPointer(0x451E72, IntroRectangles);			//  -> push    offset _textSprites; object
-				//memory::SetPointer(0x451EFA, IntroRectangles);			//  -> push    offset _textSprites; objects
 				memory::SetPointer(0x45918E, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ss:_textSprites.active[ebp], 1
-				memory::SetPointer(0x4591FB, IntroRectangles);				//  -> add     esi, offset _textSprites
 				memory::SetPointer(0x45929E, &IntroRectangles->m_bIsUsed); //  -> mov     byte ptr ss:_textSprites.active[ebp], 1
-				memory::SetPointer(0x459306, IntroRectangles);				//  -> add     esi, offset _textSprites
-				memory::SetPointer(0x55690B, IntroRectangles);				//  -> mov     esi, offset _textSprites
 				memory::SetPointer(0x556912, &IntroRectangles->m_bIsUsed); //  -> cmp     byte ptr ss:_textSprites.active[ebp], 0
-				memory::SetPointer(0x55AD3C, IntroRectangles);				//  -> mov     ebp, offset _textSprites
 				memory::SetPointer(0x55AD42, &IntroRectangles->m_bIsUsed); //  -> cmp     byte ptr ds:_textSprites.active[ebx], 0
 				memory::SetPointer(0x45012D, &IntroRectangles->m_bBeforeFade); //  -> mov     ds:_textSprites.antialiased[eax], 0
 				memory::SetPointer(0x45014D, &IntroRectangles->m_bBeforeFade); //  -> mov     ds:_textSprites.antialiased[ebx], 0
@@ -255,192 +255,199 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::SetPointer(0x450AE2, &IntroRectangles->m_sColor.g); //  -> mov     ds:_textSprites.transparentColor.green[ebx], al
 				memory::SetPointer(0x450AEC, &IntroRectangles->m_sColor.b); //  -> mov     ds:_textSprites.transparentColor.blue[ebx], dl
 				memory::SetPointer(0x450AF2, &IntroRectangles->m_sColor.a); //  -> mov     ds:_textSprites.transparentColor.alpha[ebx], al
-				injector::WriteMemory<char>(0x4501F3 + 3, MAX_NUM_INTRO_RECTANGLES, true);
-				injector::WriteMemory<char>(0x450AF9 + 2, MAX_NUM_INTRO_RECTANGLES, true);
-				injector::WriteMemory<char>(0x4501F3 + 3, MAX_NUM_INTRO_RECTANGLES, true);
+				memory::SetChar(0x4501F6, MAX_NUM_INTRO_RECTANGLES); // jb
+				memory::SetChar(0x450AFB, MAX_NUM_INTRO_RECTANGLES); // jl
+				memory::SetChar(0x450AFD, 0x82)						 // jl -> jb
+				memory::SetChar(0x5569C0, MAX_NUM_INTRO_RECTANGLES); // jb
+				memory::SetChar(0x55AE0F, MAX_NUM_INTRO_RECTANGLES); // jb
 
-				memory::SetPointer(0x450B0E, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> mov     edi, offset _scriptTextures
-				memory::SetPointer(0x450C85, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> mov     esi, offset _scriptTextures
-				memory::SetPointer(0x451668, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> mov     esi, offset _scriptTextures
-				//memory::SetPointer(0x451EA1, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> push    offset _scriptTextures; object ctor
-				//memory::SetPointer(0x451EDA, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> push    offset _scriptTextures; objects dtor
-				memory::SetPointer(0x4593C7, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> add     ecx, offset _scriptTextures; this
-				memory::SetPointer(0x5569AD, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> add     ecx, offset _scriptTextures; this
-				memory::SetPointer(0x55ADFC, ScriptSprites, 0x8117E8, 0x8117E8 + 0x0); //  -> add     ecx, offset _scriptTextures; this
-				injector::WriteMemory<char>(0x450B1D + 3, MAX_NUM_SCRIPT_SRPITES, true);
-				injector::WriteMemory<char>(0x450C9B + 3, MAX_NUM_SCRIPT_SRPITES, true);
-				//injector::WriteMemory<char>(0x45167E + 3, MAX_NUM_SCRIPT_SRPITES, true); //CMissionCleanup::Process()
-				injector::WriteMemory<unsigned char>(0x451692, 0xEB, true); //CMissionCleanup::Process()
-				injector::WriteMemory<char>(0x5569BD + 3, MAX_NUM_SCRIPT_SRPITES, true);
-				injector::WriteMemory<char>(0x55AE0C + 3, MAX_NUM_SCRIPT_SRPITES, true);
+				memory::SetPointer(0x450B0E, ScriptSprites); //  -> mov     edi, offset _scriptTextures
+				memory::SetPointer(0x450C85, ScriptSprites); //  -> mov     esi, offset _scriptTextures
+				memory::SetPointer(0x451668, ScriptSprites); //  -> mov     esi, offset _scriptTextures
+				//memory::SetPointer(0x451EA1, ScriptSprites); //  -> push    offset _scriptTextures; object ctor
+				//memory::SetPointer(0x451EDA, ScriptSprites); //  -> push    offset _scriptTextures; objects dtor
+				memory::SetPointer(0x4593C7, ScriptSprites); //  -> add     ecx, offset _scriptTextures; this
+				memory::SetPointer(0x5569AD, ScriptSprites); //  -> add     ecx, offset _scriptTextures; this
+				memory::SetPointer(0x55ADFC, ScriptSprites); //  -> add     ecx, offset _scriptTextures; this
+				memory::SetChar(0x450B20, MAX_NUM_SCRIPT_SRPITES); // jb
+				memory::SetChar(0x450C9E, MAX_NUM_SCRIPT_SRPITES); // jb
+				//memory::SetChar(0x451681, MAX_NUM_SCRIPT_SRPITES); // jb; skipped to keep compatibility with default mission cleanup routines
+				memory::SetChar(0x451692, 0xEB); // don't remove 'script' txd slot during mission cleanup routines
 		} else if (Version == GAME_GTA3_V1_0) {
-				memory::SetPointer(0x438BB9, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > mov     ds:dword_70EA68[ebx], 3EF5C28Fh
-				memory::SetPointer(0x439106, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > mov     ds:dword_70EA68[ebx], 3EF5C28Fh
-				//memory::SetPointer(0x43EBEC, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > push    offset dword_70EA68
-				//memory::SetPointer(0x43ECDD, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > push    offset dword_70EA68
-				memory::SetPointer(0x449390, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > fstp    ds:dword_70EA68[eax]
-				memory::SetPointer(0x44943B, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > add     esi, offset dword_70EA68
-				memory::SetPointer(0x4496BD, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > add     edi, offset dword_70EA68
-				memory::SetPointer(0x5084DB, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > mov     esi, offset dword_70EA68
-				memory::SetPointer(0x508526, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > fmul    ss:dword_70EA68[ebp]
-				memory::SetPointer(0x50955D, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > mov     esi, offset dword_70EA68
-				memory::SetPointer(0x5095A7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > fmul    ss:dword_70EA68[ebp]
-				memory::SetPointer(0x58A3B1, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > add     eax, offset dword_70EA68
-				memory::SetPointer(0x58A468, IntroTextLines, 0x70EA68, 0x70EA68 + 0x0); // > add     eax, offset dword_70EA68
-				memory::SetPointer(0x438BD7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4); // > mov     ds:(dword_70EA68+4)[ebx], 3F8F5C29h
-				memory::SetPointer(0x439124, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4); // > mov     ds:(dword_70EA68+4)[ebx], 3F8F5C29h
-				memory::SetPointer(0x44939C, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4); // > fstp    ds:(dword_70EA68+4)[eax]
-				memory::SetPointer(0x50850A, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4); // > fmul    ss:(dword_70EA68+4)[ebp]
-				memory::SetPointer(0x50958B, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4); // > fmul    ss:(dword_70EA68+4)[ebp]
-				memory::SetPointer(0x438BF2, IntroTextLines, 0x70EA68, 0x70EA68 + 0x8); // > mov     byte ptr ds:(dword_70EA68+8)[ebx], dl
-				memory::SetPointer(0x43913F, IntroTextLines, 0x70EA68, 0x70EA68 + 0x8); // > mov     byte ptr ds:(dword_70EA68+8)[ebx], dl
-				memory::SetPointer(0x508534, IntroTextLines, 0x70EA68, 0x70EA68 + 0x8); // > mov     edx, ss:(dword_70EA68+8)[ebp]
-				memory::SetPointer(0x5095B7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x8); // > mov     ecx, ss:(dword_70EA68+8)[ebp]
-				memory::SetPointer(0x438BF8, IntroTextLines, 0x70EA68, 0x70EA68 + 0x9); // > mov     byte ptr ds:(dword_70EA68+9)[ebx], al
-				memory::SetPointer(0x439145, IntroTextLines, 0x70EA68, 0x70EA68 + 0x9); // > mov     byte ptr ds:(dword_70EA68+9)[ebx], al
-				memory::SetPointer(0x438BFE, IntroTextLines, 0x70EA68, 0x70EA68 + 0xA); // > mov     byte ptr ds:(dword_70EA68+0Ah)[ebx], cl
-				memory::SetPointer(0x43914B, IntroTextLines, 0x70EA68, 0x70EA68 + 0xA); // > mov     byte ptr ds:(dword_70EA68+0Ah)[ebx], cl
-				memory::SetPointer(0x438C20, IntroTextLines, 0x70EA68, 0x70EA68 + 0xB); // > mov     byte ptr ds:(dword_70EA68+0Bh)[ebx], al
-				memory::SetPointer(0x43916D, IntroTextLines, 0x70EA68, 0x70EA68 + 0xB); // > mov     byte ptr ds:(dword_70EA68+0Bh)[ebx], al
-				memory::SetPointer(0x438C26, IntroTextLines, 0x70EA68, 0x70EA68 + 0xC); // > mov     byte ptr ds:(dword_70EA68+0Ch)[ebx], 0
-				memory::SetPointer(0x439173, IntroTextLines, 0x70EA68, 0x70EA68 + 0xC); // > mov     byte ptr ds:(dword_70EA68+0Ch)[ebx], 0
-				memory::SetPointer(0x4494A9, IntroTextLines, 0x70EA68, 0x70EA68 + 0xC); // > mov     byte ptr ds:(dword_70EA68+0Ch)[eax*4], 1
-				memory::SetPointer(0x4494C0, IntroTextLines, 0x70EA68, 0x70EA68 + 0xC); // > mov     byte ptr ds:(dword_70EA68+0Ch)[eax*4], 0
-				memory::SetPointer(0x508550, IntroTextLines, 0x70EA68, 0x70EA68 + 0xC); // > cmp     byte ptr ss:(dword_70EA68+0Ch)[ebp], 0
-				memory::SetPointer(0x5095CB, IntroTextLines, 0x70EA68, 0x70EA68 + 0xC); // > cmp     byte ptr ss:(dword_70EA68+0Ch)[ebp], 0
-				memory::SetPointer(0x438C34, IntroTextLines, 0x70EA68, 0x70EA68 + 0xD); // > mov     byte ptr ds:(dword_70EA68+0Dh)[ebx], 0
-				memory::SetPointer(0x439181, IntroTextLines, 0x70EA68, 0x70EA68 + 0xD); // > mov     byte ptr ds:(dword_70EA68+0Dh)[ebx], 0
-				memory::SetPointer(0x44950C, IntroTextLines, 0x70EA68, 0x70EA68 + 0xD); // > mov     byte ptr ds:(dword_70EA68+0Dh)[eax*4], 1
-				memory::SetPointer(0x449523, IntroTextLines, 0x70EA68, 0x70EA68 + 0xD); // > mov     byte ptr ds:(dword_70EA68+0Dh)[eax*4], 0
-				memory::SetPointer(0x50857C, IntroTextLines, 0x70EA68, 0x70EA68 + 0xD); // > cmp     byte ptr ss:(dword_70EA68+0Dh)[ebp], 0
-				memory::SetPointer(0x5095FC, IntroTextLines, 0x70EA68, 0x70EA68 + 0xD); // > cmp     byte ptr ss:(dword_70EA68+0Dh)[ebp], 0
-				memory::SetPointer(0x438C3B, IntroTextLines, 0x70EA68, 0x70EA68 + 0xE); // > mov     byte ptr ds:(dword_70EA68+0Eh)[ebx], 0
-				memory::SetPointer(0x439188, IntroTextLines, 0x70EA68, 0x70EA68 + 0xE); // > mov     byte ptr ds:(dword_70EA68+0Eh)[ebx], 0
-				memory::SetPointer(0x4495FF, IntroTextLines, 0x70EA68, 0x70EA68 + 0xE); // > mov     byte ptr ds:(dword_70EA68+0Eh)[eax*4], 1
-				memory::SetPointer(0x449616, IntroTextLines, 0x70EA68, 0x70EA68 + 0xE); // > mov     byte ptr ds:(dword_70EA68+0Eh)[eax*4], 0
-				memory::SetPointer(0x5085CE, IntroTextLines, 0x70EA68, 0x70EA68 + 0xE); // > cmp     byte ptr ss:(dword_70EA68+0Eh)[ebp], 0
-				memory::SetPointer(0x50964E, IntroTextLines, 0x70EA68, 0x70EA68 + 0xE); // > cmp     byte ptr ss:(dword_70EA68+0Eh)[ebp], 0
-				memory::SetPointer(0x438C42, IntroTextLines, 0x70EA68, 0x70EA68 + 0xF); // > mov     byte ptr ds:(dword_70EA68+0Fh)[ebx], 0
-				memory::SetPointer(0x43918F, IntroTextLines, 0x70EA68, 0x70EA68 + 0xF); // > mov     byte ptr ds:(dword_70EA68+0Fh)[ebx], 0
-				memory::SetPointer(0x44972B, IntroTextLines, 0x70EA68, 0x70EA68 + 0xF); // > mov     byte ptr ds:(dword_70EA68+0Fh)[eax*4], 1
-				memory::SetPointer(0x449742, IntroTextLines, 0x70EA68, 0x70EA68 + 0xF); // > mov     byte ptr ds:(dword_70EA68+0Fh)[eax*4], 0
-				memory::SetPointer(0x508601, IntroTextLines, 0x70EA68, 0x70EA68 + 0xF); // > cmp     byte ptr ss:(dword_70EA68+0Fh)[ebp], 0
-				memory::SetPointer(0x50967B, IntroTextLines, 0x70EA68, 0x70EA68 + 0xF); // > cmp     byte ptr ss:(dword_70EA68+0Fh)[ebp], 0
-				memory::SetPointer(0x438C49, IntroTextLines, 0x70EA68, 0x70EA68 + 0x10); // -> mov     ds:(dword_70EA68+10h)[ebx], 43360000h
-				memory::SetPointer(0x439196, IntroTextLines, 0x70EA68, 0x70EA68 + 0x10); // -> mov     ds:(dword_70EA68+10h)[ebx], 43360000h
-				memory::SetPointer(0x449573, IntroTextLines, 0x70EA68, 0x70EA68 + 0x10); // -> fstp    ds:(dword_70EA68+10h)[eax*4]
-				memory::SetPointer(0x5085A4, IntroTextLines, 0x70EA68, 0x70EA68 + 0x10); // -> fmul    ss:(dword_70EA68+10h)[ebp]
-				memory::SetPointer(0x509624, IntroTextLines, 0x70EA68, 0x70EA68 + 0x10); // -> fmul    ss:(dword_70EA68+10h)[ebp]
-				memory::SetPointer(0x438C53, IntroTextLines, 0x70EA68, 0x70EA68 + 0x14); // -> mov     ds:(dword_70EA68+14h)[ebx], 44200000h
-				memory::SetPointer(0x4391A0, IntroTextLines, 0x70EA68, 0x70EA68 + 0x14); // -> mov     ds:(dword_70EA68+14h)[ebx], 44200000h
-				memory::SetPointer(0x4495BB, IntroTextLines, 0x70EA68, 0x70EA68 + 0x14); // -> fstp    ds:(dword_70EA68+14h)[eax*4]
-				memory::SetPointer(0x5085C0, IntroTextLines, 0x70EA68, 0x70EA68 + 0x14); // -> fmul    ss:(dword_70EA68+14h)[ebp]
-				memory::SetPointer(0x509640, IntroTextLines, 0x70EA68, 0x70EA68 + 0x14); // -> fmul    ss:(dword_70EA68+14h)[ebp]
-				memory::SetPointer(0x438C6E, IntroTextLines, 0x70EA68, 0x70EA68 + 0x18); // -> mov     byte ptr ds:(dword_70EA68+18h)[ebx], dl
-				memory::SetPointer(0x4391BB, IntroTextLines, 0x70EA68, 0x70EA68 + 0x18); // -> mov     byte ptr ds:(dword_70EA68+18h)[ebx], dl
-				memory::SetPointer(0x5085E7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x18); // -> mov     ecx, ss:(dword_70EA68+18h)[ebp]
-				memory::SetPointer(0x509667, IntroTextLines, 0x70EA68, 0x70EA68 + 0x18); // -> mov     edx, ss:(dword_70EA68+18h)[ebp]
-				memory::SetPointer(0x438C76, IntroTextLines, 0x70EA68, 0x70EA68 + 0x19); // -> mov     byte ptr ds:(dword_70EA68+19h)[ebx], al
-				memory::SetPointer(0x4391C1, IntroTextLines, 0x70EA68, 0x70EA68 + 0x19); // -> mov     byte ptr ds:(dword_70EA68+19h)[ebx], al
-				memory::SetPointer(0x438C80, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1A); // -> mov     byte ptr ds:(dword_70EA68+1Ah)[ebx], cl
-				memory::SetPointer(0x4391CB, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1A); // -> mov     byte ptr ds:(dword_70EA68+1Ah)[ebx], cl
-				memory::SetPointer(0x438C89, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1B); // -> mov     byte ptr ds:(dword_70EA68+1Bh)[ebx], al
-				memory::SetPointer(0x4391D1, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1B); // -> mov     byte ptr ds:(dword_70EA68+1Bh)[ebx], al
-				memory::SetPointer(0x438C91, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1C); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[ebx], 1
-				memory::SetPointer(0x4391D9, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1C); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[ebx], 1
-				memory::SetPointer(0x44978E, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1C); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[eax*4], 1
-				memory::SetPointer(0x4497A5, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1C); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[eax*4], 0
-				memory::SetPointer(0x508617, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1C); // -> cmp     byte ptr ss:(dword_70EA68+1Ch)[ebp], 0
-				memory::SetPointer(0x509697, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1C); // -> cmp     byte ptr ss:(dword_70EA68+1Ch)[ebp], 0
-				memory::SetPointer(0x438C98, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1D); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[ebx], 0
-				memory::SetPointer(0x4391E2, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1D); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[ebx], 0
-				memory::SetPointer(0x44F7B6, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1D); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[eax*4], 1
-				memory::SetPointer(0x44F7D0, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1D); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[eax*4], 0
-				memory::SetPointer(0x5084F0, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1D); // -> cmp     byte ptr ss:(dword_70EA68+1Dh)[ebp], 0
-				memory::SetPointer(0x509571, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1D); // -> cmp     byte ptr ss:(dword_70EA68+1Dh)[ebp], 0
-				memory::SetPointer(0x438C2D, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1E); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[ebx], 0
-				memory::SetPointer(0x43917A, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1E); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[ebx], 0
-				memory::SetPointer(0x44F8CD, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1E); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[eax*4], 1
-				memory::SetPointer(0x44F8E4, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1E); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[eax*4], 0
-				memory::SetPointer(0x508567, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1E); // -> cmp     byte ptr ss:(dword_70EA68+1Eh)[ebp], 0
-				memory::SetPointer(0x5095E7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x1E); // -> cmp     byte ptr ss:(dword_70EA68+1Eh)[ebp], 0
-				memory::SetPointer(0x438C9F, IntroTextLines, 0x70EA68, 0x70EA68 + 0x20); // -> mov     ds:(dword_70EA68+20h)[ebx], 2
-				memory::SetPointer(0x4391E9, IntroTextLines, 0x70EA68, 0x70EA68 + 0x20); // -> mov     ds:(dword_70EA68+20h)[ebx], 2
-				memory::SetPointer(0x4497F4, IntroTextLines, 0x70EA68, 0x70EA68 + 0x20); // -> mov     ds:(dword_70EA68+20h)[ebx*4], eax
-				memory::SetPointer(0x50862D, IntroTextLines, 0x70EA68, 0x70EA68 + 0x20); // -> mov     ax, word ptr ss:(dword_70EA68+20h)[ebp]
-				memory::SetPointer(0x5096AD, IntroTextLines, 0x70EA68, 0x70EA68 + 0x20); // -> mov     ax, word ptr ss:(dword_70EA68+20h)[ebp]
-				memory::SetPointer(0x438CA9, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> mov     ds:(dword_70EA68+24h)[ebx], 0
-				memory::SetPointer(0x4391F3, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> mov     ds:(dword_70EA68+24h)[ebx], 0
-				memory::SetPointer(0x44923F, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> fstp    ds:(dword_70EA68+24h)[ebx]
-				memory::SetPointer(0x50868B, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> fsub    ss:(dword_70EA68+24h)[ebp]
-				memory::SetPointer(0x50970A, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> fsub    ss:(dword_70EA68+24h)[ebp]
-				memory::SetPointer(0x58A386, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> fstp    ds:(dword_70EA68+24h)[eax]
-				memory::SetPointer(0x58A437, IntroTextLines, 0x70EA68, 0x70EA68 + 0x24); // -> fstp    ds:(dword_70EA68+24h)[eax]
-				memory::SetPointer(0x438CB3, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> mov     ds:(dword_70EA68+28h)[ebx], 0
-				memory::SetPointer(0x4391FD, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> mov     ds:(dword_70EA68+28h)[ebx], 0
-				memory::SetPointer(0x44924B, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> fstp    ds:(dword_70EA68+28h)[ebx]
-				memory::SetPointer(0x50865D, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> fsub    ss:(dword_70EA68+28h)[ebp]
-				memory::SetPointer(0x5096DD, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> fsub    ss:(dword_70EA68+28h)[ebp]
-				memory::SetPointer(0x58A392, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> fstp    ds:(dword_70EA68+28h)[eax]
-				memory::SetPointer(0x58A443, IntroTextLines, 0x70EA68, 0x70EA68 + 0x28); // -> fstp    ds:(dword_70EA68+28h)[eax]
-				memory::SetPointer(0x438CC7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> movq    qword ptr ds:(dword_70EA68+2Ch)[eax*2], mm1
-				memory::SetPointer(0x438D24, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> mov     word ptr ds:(dword_70EA68+2Ch)[edx*2], 0
-				memory::SetPointer(0x43920C, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> mov     word ptr ds:(dword_70EA68+2Ch)[edx*2], 0
-				memory::SetPointer(0x43927B, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> mov     word ptr ds:(dword_70EA68+2Ch)[eax*2], 0
-				memory::SetPointer(0x449288, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> mov     word ptr ds:(dword_70EA68+2Ch)[esi*2], di
-				memory::SetPointer(0x44930A, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> mov     word ptr ds:(dword_70EA68+2Ch)[ebx*2], di
-				memory::SetPointer(0x449328, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> mov     word ptr ds:(dword_70EA68+2Ch)[ebp*2], 0
-				memory::SetPointer(0x5084E3, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> cmp     word ptr ss:(dword_70EA68+2Ch)[ebp], 0
-				memory::SetPointer(0x509564, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2C); // -> cmp     word ptr ss:(dword_70EA68+2Ch)[ebp], 0
-				memory::SetPointer(0x438D2E, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2E); // -> mov     word ptr ds:(dword_70EA68+2Eh)[edx*2], 0
-				memory::SetPointer(0x439216, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2E); // -> mov     word ptr ds:(dword_70EA68+2Eh)[edx*2], 0
-				memory::SetPointer(0x439285, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2E); // -> mov     word ptr ds:(dword_70EA68+2Eh)[eax*2], 0
-				memory::SetPointer(0x449295, IntroTextLines, 0x70EA68, 0x70EA68 + 0x2E); // -> mov     word ptr ds:(dword_70EA68+2Eh)[esi*2], bx
-				memory::SetPointer(0x438D38, IntroTextLines, 0x70EA68, 0x70EA68 + 0x30); // -> mov     word ptr ds:(dword_70EA68+30h)[edx*2], 0
-				memory::SetPointer(0x439220, IntroTextLines, 0x70EA68, 0x70EA68 + 0x30); // -> mov     word ptr ds:(dword_70EA68+30h)[edx*2], 0
-				memory::SetPointer(0x43928F, IntroTextLines, 0x70EA68, 0x70EA68 + 0x30); // -> mov     word ptr ds:(dword_70EA68+30h)[eax*2], 0
-				memory::SetPointer(0x4492A2, IntroTextLines, 0x70EA68, 0x70EA68 + 0x30); // -> mov     word ptr ds:(dword_70EA68+30h)[esi*2], di
-				memory::SetPointer(0x438D42, IntroTextLines, 0x70EA68, 0x70EA68 + 0x32); // -> mov     word ptr ds:(dword_70EA68+32h)[edx*2], 0
-				memory::SetPointer(0x43922A, IntroTextLines, 0x70EA68, 0x70EA68 + 0x32); // -> mov     word ptr ds:(dword_70EA68+32h)[edx*2], 0
-				memory::SetPointer(0x439299, IntroTextLines, 0x70EA68, 0x70EA68 + 0x32); // -> mov     word ptr ds:(dword_70EA68+32h)[eax*2], 0
-				memory::SetPointer(0x4492AF, IntroTextLines, 0x70EA68, 0x70EA68 + 0x32); // -> mov     word ptr ds:(dword_70EA68+32h)[esi*2], bx
-				memory::SetPointer(0x438CCF, IntroTextLines, 0x70EA68, 0x70EA68 + 0x34); // -> movq    qword ptr ds:(dword_70EA68+34h)[eax*2], mm1
-				memory::SetPointer(0x438D4C, IntroTextLines, 0x70EA68, 0x70EA68 + 0x34); // -> mov     word ptr ds:(dword_70EA68+34h)[edx*2], 0
-				memory::SetPointer(0x439234, IntroTextLines, 0x70EA68, 0x70EA68 + 0x34); // -> mov     word ptr ds:(dword_70EA68+34h)[edx*2], 0
-				memory::SetPointer(0x4492BC, IntroTextLines, 0x70EA68, 0x70EA68 + 0x34); // -> mov     word ptr ds:(dword_70EA68+34h)[esi*2], di
-				memory::SetPointer(0x438D56, IntroTextLines, 0x70EA68, 0x70EA68 + 0x36); // -> mov     word ptr ds:(dword_70EA68+36h)[edx*2], 0
-				memory::SetPointer(0x43923E, IntroTextLines, 0x70EA68, 0x70EA68 + 0x36); // -> mov     word ptr ds:(dword_70EA68+36h)[edx*2], 0
-				memory::SetPointer(0x4492C9, IntroTextLines, 0x70EA68, 0x70EA68 + 0x36); // -> mov     word ptr ds:(dword_70EA68+36h)[esi*2], bx
-				memory::SetPointer(0x438D60, IntroTextLines, 0x70EA68, 0x70EA68 + 0x38); // -> mov     word ptr ds:(dword_70EA68+38h)[edx*2], 0
-				memory::SetPointer(0x439248, IntroTextLines, 0x70EA68, 0x70EA68 + 0x38); // -> mov     word ptr ds:(dword_70EA68+38h)[edx*2], 0
-				memory::SetPointer(0x4492D6, IntroTextLines, 0x70EA68, 0x70EA68 + 0x38); // -> mov     word ptr ds:(dword_70EA68+38h)[esi*2], di
-				memory::SetPointer(0x438D6A, IntroTextLines, 0x70EA68, 0x70EA68 + 0x3A); // -> mov     word ptr ds:(dword_70EA68+3Ah)[edx*2], 0
-				memory::SetPointer(0x439252, IntroTextLines, 0x70EA68, 0x70EA68 + 0x3A); // -> mov     word ptr ds:(dword_70EA68+3Ah)[edx*2], 0
-				memory::SetPointer(0x4492E6, IntroTextLines, 0x70EA68, 0x70EA68 + 0x3A); // -> mov     word ptr ds:(dword_70EA68+3Ah)[esi*2], bx
-				memory::SetPointer(0x438CD7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x3C); // -> movq    qword ptr ds:(dword_70EA68+3Ch)[eax*2], mm1
-				memory::SetPointer(0x438D74, IntroTextLines, 0x70EA68, 0x70EA68 + 0x3C); // -> mov     word ptr ds:(dword_70EA68+3Ch)[edx*2], 0
-				memory::SetPointer(0x438D7E, IntroTextLines, 0x70EA68, 0x70EA68 + 0x3E); // -> mov     word ptr ds:(dword_70EA68+3Eh)[edx*2], 0
-				memory::SetPointer(0x438D88, IntroTextLines, 0x70EA68, 0x70EA68 + 0x40); // -> mov     word ptr ds:(dword_70EA68+40h)[edx*2], 0
-				memory::SetPointer(0x438D92, IntroTextLines, 0x70EA68, 0x70EA68 + 0x42); // -> mov     word ptr ds:(dword_70EA68+42h)[edx*2], 0
-				memory::SetPointer(0x438CDF, IntroTextLines, 0x70EA68, 0x70EA68 + 0x44); // -> movq    qword ptr ds:(dword_70EA68+44h)[eax*2], mm1
-				memory::SetPointer(0x438D9C, IntroTextLines, 0x70EA68, 0x70EA68 + 0x44); // -> mov     word ptr ds:(dword_70EA68+44h)[edx*2], 0
-				memory::SetPointer(0x438DA6, IntroTextLines, 0x70EA68, 0x70EA68 + 0x46); // -> mov     word ptr ds:(dword_70EA68+46h)[edx*2], 0
-				memory::SetPointer(0x438DB0, IntroTextLines, 0x70EA68, 0x70EA68 + 0x48); // -> mov     word ptr ds:(dword_70EA68+48h)[edx*2], 0
-				memory::SetPointer(0x438DBA, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4A); // -> mov     word ptr ds:(dword_70EA68+4Ah)[edx*2], 0
-				memory::SetPointer(0x438CE7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4C); // -> movq    qword ptr ds:(dword_70EA68+4Ch)[eax*2], mm1
-				memory::SetPointer(0x438DC4, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4C); // -> mov     word ptr ds:(dword_70EA68+4Ch)[edx*2], 0
-				memory::SetPointer(0x438DCE, IntroTextLines, 0x70EA68, 0x70EA68 + 0x4E); // -> mov     word ptr ds:(dword_70EA68+4Eh)[edx*2], 0
-				memory::SetPointer(0x438DD8, IntroTextLines, 0x70EA68, 0x70EA68 + 0x50); // -> mov     word ptr ds:(dword_70EA68+50h)[edx*2], 0
-				memory::SetPointer(0x438DE2, IntroTextLines, 0x70EA68, 0x70EA68 + 0x52); // -> mov     word ptr ds:(dword_70EA68+52h)[edx*2], 0
-				memory::SetPointer(0x438CEF, IntroTextLines, 0x70EA68, 0x70EA68 + 0x54); // -> movq    qword ptr ds:(dword_70EA68+54h)[eax*2], mm1
-				memory::SetPointer(0x438CF7, IntroTextLines, 0x70EA68, 0x70EA68 + 0x5C); // -> movq    qword ptr ds:(dword_70EA68+5Ch)[eax*2], mm1
-				memory::SetPointer(0x438CFF, IntroTextLines, 0x70EA68, 0x70EA68 + 0x64); // -> movq    qword ptr ds:(dword_70EA68+64h)[eax*2], mm1
-				injector::WriteMemory<char>(0x438D1D + 2, MAX_NUM_INTRO_TEXT_LINES, true);
-				injector::WriteMemory<char>(0x5086AD + 3, MAX_NUM_INTRO_TEXT_LINES, true);
-				injector::WriteMemory<char>(0x439273 + 3, MAX_NUM_INTRO_TEXT_LINES, true);
-				injector::WriteMemory<char>(0x50972C + 3, MAX_NUM_INTRO_TEXT_LINES, true);
+				//memory::SetPointer(0x43EBEC, IntroTextLines); // > push    offset dword_70EA68
+				//memory::SetPointer(0x43ECDD, IntroTextLines); // > push    offset dword_70EA68
+				memory::SetPointer(0x44943B, IntroTextLines); // > add     esi, offset dword_70EA68
+				memory::SetPointer(0x4496BD, IntroTextLines); // > add     edi, offset dword_70EA68
+				memory::SetPointer(0x5084DB, IntroTextLines); // > mov     esi, offset dword_70EA68
+				memory::SetPointer(0x50955D, IntroTextLines); // > mov     esi, offset dword_70EA68
+				memory::SetPointer(0x58A3B1, IntroTextLines); // > add     eax, offset dword_70EA68
+				memory::SetPointer(0x58A468, IntroTextLines); // > add     eax, offset dword_70EA68
+				memory::SetPointer(0x438BB9, &IntroTextLines->m_fScaleX); // > mov     ds:dword_70EA68[ebx], 3EF5C28Fh
+				memory::SetPointer(0x439106, &IntroTextLines->m_fScaleX); // > mov     ds:dword_70EA68[ebx], 3EF5C28Fh
+				memory::SetPointer(0x449390, &IntroTextLines->m_fScaleX); // > fstp    ds:dword_70EA68[eax]
+				memory::SetPointer(0x508526, &IntroTextLines->m_fScaleX); // > fmul    ss:dword_70EA68[ebp]
+				memory::SetPointer(0x5095A7, &IntroTextLines->m_fScaleX); // > fmul    ss:dword_70EA68[ebp]
+				memory::SetPointer(0x438BD7, &IntroTextLines->m_fScaleY); // > mov     ds:(dword_70EA68+4)[ebx], 3F8F5C29h
+				memory::SetPointer(0x439124, &IntroTextLines->m_fScaleY); // > mov     ds:(dword_70EA68+4)[ebx], 3F8F5C29h
+				memory::SetPointer(0x44939C, &IntroTextLines->m_fScaleY); // > fstp    ds:(dword_70EA68+4)[eax]
+				memory::SetPointer(0x50850A, &IntroTextLines->m_fScaleY); // > fmul    ss:(dword_70EA68+4)[ebp]
+				memory::SetPointer(0x50958B, &IntroTextLines->m_fScaleY); // > fmul    ss:(dword_70EA68+4)[ebp]
+				memory::SetPointer(0x508534, &IntroTextLines->m_sColor); // > mov     edx, ss:(dword_70EA68+8)[ebp]
+				memory::SetPointer(0x5095B7, &IntroTextLines->m_sColor); // > mov     ecx, ss:(dword_70EA68+8)[ebp]
+				memory::SetPointer(0x438BF2, &IntroTextLines->m_sColor.r); // > mov     byte ptr ds:(dword_70EA68+8)[ebx], dl
+				memory::SetPointer(0x43913F, &IntroTextLines->m_sColor.r); // > mov     byte ptr ds:(dword_70EA68+8)[ebx], dl
+				memory::SetPointer(0x438BF8, &IntroTextLines->m_sColor.g); // > mov     byte ptr ds:(dword_70EA68+9)[ebx], al
+				memory::SetPointer(0x439145, &IntroTextLines->m_sColor.g); // > mov     byte ptr ds:(dword_70EA68+9)[ebx], al
+				memory::SetPointer(0x438BFE, &IntroTextLines->m_sColor.b); // > mov     byte ptr ds:(dword_70EA68+0Ah)[ebx], cl
+				memory::SetPointer(0x43914B, &IntroTextLines->m_sColor.b); // > mov     byte ptr ds:(dword_70EA68+0Ah)[ebx], cl
+				memory::SetPointer(0x438C20, &IntroTextLines->m_sColor.a); // > mov     byte ptr ds:(dword_70EA68+0Bh)[ebx], al
+				memory::SetPointer(0x43916D, &IntroTextLines->m_sColor.a); // > mov     byte ptr ds:(dword_70EA68+0Bh)[ebx], al
+				memory::SetPointer(0x438C26, &IntroTextLines->m_bJustify); // > mov     byte ptr ds:(dword_70EA68+0Ch)[ebx], 0
+				memory::SetPointer(0x439173, &IntroTextLines->m_bJustify); // > mov     byte ptr ds:(dword_70EA68+0Ch)[ebx], 0
+				memory::SetPointer(0x4494A9, &IntroTextLines->m_bJustify); // > mov     byte ptr ds:(dword_70EA68+0Ch)[eax*4], 1
+				memory::SetPointer(0x4494C0, &IntroTextLines->m_bJustify); // > mov     byte ptr ds:(dword_70EA68+0Ch)[eax*4], 0
+				memory::SetPointer(0x508550, &IntroTextLines->m_bJustify); // > cmp     byte ptr ss:(dword_70EA68+0Ch)[ebp], 0
+				memory::SetPointer(0x5095CB, &IntroTextLines->m_bJustify); // > cmp     byte ptr ss:(dword_70EA68+0Ch)[ebp], 0
+				memory::SetPointer(0x438C34, &IntroTextLines->m_bCentered); // > mov     byte ptr ds:(dword_70EA68+0Dh)[ebx], 0
+				memory::SetPointer(0x439181, &IntroTextLines->m_bCentered); // > mov     byte ptr ds:(dword_70EA68+0Dh)[ebx], 0
+				memory::SetPointer(0x44950C, &IntroTextLines->m_bCentered); // > mov     byte ptr ds:(dword_70EA68+0Dh)[eax*4], 1
+				memory::SetPointer(0x449523, &IntroTextLines->m_bCentered); // > mov     byte ptr ds:(dword_70EA68+0Dh)[eax*4], 0
+				memory::SetPointer(0x50857C, &IntroTextLines->m_bCentered); // > cmp     byte ptr ss:(dword_70EA68+0Dh)[ebp], 0
+				memory::SetPointer(0x5095FC, &IntroTextLines->m_bCentered); // > cmp     byte ptr ss:(dword_70EA68+0Dh)[ebp], 0
+				memory::SetPointer(0x438C3B, &IntroTextLines->m_bBackground); // > mov     byte ptr ds:(dword_70EA68+0Eh)[ebx], 0
+				memory::SetPointer(0x439188, &IntroTextLines->m_bBackground); // > mov     byte ptr ds:(dword_70EA68+0Eh)[ebx], 0
+				memory::SetPointer(0x4495FF, &IntroTextLines->m_bBackground); // > mov     byte ptr ds:(dword_70EA68+0Eh)[eax*4], 1
+				memory::SetPointer(0x449616, &IntroTextLines->m_bBackground); // > mov     byte ptr ds:(dword_70EA68+0Eh)[eax*4], 0
+				memory::SetPointer(0x5085CE, &IntroTextLines->m_bBackground); // > cmp     byte ptr ss:(dword_70EA68+0Eh)[ebp], 0
+				memory::SetPointer(0x50964E, &IntroTextLines->m_bBackground); // > cmp     byte ptr ss:(dword_70EA68+0Eh)[ebp], 0
+				memory::SetPointer(0x438C42, &IntroTextLines->m_bBackgroundOnly); // > mov     byte ptr ds:(dword_70EA68+0Fh)[ebx], 0
+				memory::SetPointer(0x43918F, &IntroTextLines->m_bBackgroundOnly); // > mov     byte ptr ds:(dword_70EA68+0Fh)[ebx], 0
+				memory::SetPointer(0x44972B, &IntroTextLines->m_bBackgroundOnly); // > mov     byte ptr ds:(dword_70EA68+0Fh)[eax*4], 1
+				memory::SetPointer(0x449742, &IntroTextLines->m_bBackgroundOnly); // > mov     byte ptr ds:(dword_70EA68+0Fh)[eax*4], 0
+				memory::SetPointer(0x508601, &IntroTextLines->m_bBackgroundOnly); // > cmp     byte ptr ss:(dword_70EA68+0Fh)[ebp], 0
+				memory::SetPointer(0x50967B, &IntroTextLines->m_bBackgroundOnly); // > cmp     byte ptr ss:(dword_70EA68+0Fh)[ebp], 0
+				memory::SetPointer(0x438C49, &IntroTextLines->m_fWrapX); // -> mov     ds:(dword_70EA68+10h)[ebx], 43360000h
+				memory::SetPointer(0x439196, &IntroTextLines->m_fWrapX); // -> mov     ds:(dword_70EA68+10h)[ebx], 43360000h
+				memory::SetPointer(0x449573, &IntroTextLines->m_fWrapX); // -> fstp    ds:(dword_70EA68+10h)[eax*4]
+				memory::SetPointer(0x5085A4, &IntroTextLines->m_fWrapX); // -> fmul    ss:(dword_70EA68+10h)[ebp]
+				memory::SetPointer(0x509624, &IntroTextLines->m_fWrapX); // -> fmul    ss:(dword_70EA68+10h)[ebp]
+				memory::SetPointer(0x438C53, &IntroTextLines->m_fCenterSize); // -> mov     ds:(dword_70EA68+14h)[ebx], 44200000h
+				memory::SetPointer(0x4391A0, &IntroTextLines->m_fCenterSize); // -> mov     ds:(dword_70EA68+14h)[ebx], 44200000h
+				memory::SetPointer(0x4495BB, &IntroTextLines->m_fCenterSize); // -> fstp    ds:(dword_70EA68+14h)[eax*4]
+				memory::SetPointer(0x5085C0, &IntroTextLines->m_fCenterSize); // -> fmul    ss:(dword_70EA68+14h)[ebp]
+				memory::SetPointer(0x509640, &IntroTextLines->m_fCenterSize); // -> fmul    ss:(dword_70EA68+14h)[ebp]
+				memory::SetPointer(0x5085E7, &IntroTextLines->m_sBackgroundColor); // -> mov     ecx, ss:(dword_70EA68+18h)[ebp]
+				memory::SetPointer(0x509667, &IntroTextLines->m_sBackgroundColor); // -> mov     edx, ss:(dword_70EA68+18h)[ebp]
+				memory::SetPointer(0x438C6E, &IntroTextLines->m_sBackgroundColor.r); // -> mov     byte ptr ds:(dword_70EA68+18h)[ebx], dl
+				memory::SetPointer(0x4391BB, &IntroTextLines->m_sBackgroundColor.r); // -> mov     byte ptr ds:(dword_70EA68+18h)[ebx], dl
+				memory::SetPointer(0x438C76, &IntroTextLines->m_sBackgroundColor.g); // -> mov     byte ptr ds:(dword_70EA68+19h)[ebx], al
+				memory::SetPointer(0x4391C1, &IntroTextLines->m_sBackgroundColor.g); // -> mov     byte ptr ds:(dword_70EA68+19h)[ebx], al
+				memory::SetPointer(0x438C80, &IntroTextLines->m_sBackgroundColor.b); // -> mov     byte ptr ds:(dword_70EA68+1Ah)[ebx], cl
+				memory::SetPointer(0x4391CB, &IntroTextLines->m_sBackgroundColor.b); // -> mov     byte ptr ds:(dword_70EA68+1Ah)[ebx], cl
+				memory::SetPointer(0x438C89, &IntroTextLines->m_sBackgroundColor.a); // -> mov     byte ptr ds:(dword_70EA68+1Bh)[ebx], al
+				memory::SetPointer(0x4391D1, &IntroTextLines->m_sBackgroundColor.a); // -> mov     byte ptr ds:(dword_70EA68+1Bh)[ebx], al
+				memory::SetPointer(0x438C91, &IntroTextLines->m_bTextProportional); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[ebx], 1
+				memory::SetPointer(0x4391D9, &IntroTextLines->m_bTextProportional); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[ebx], 1
+				memory::SetPointer(0x44978E, &IntroTextLines->m_bTextProportional); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[eax*4], 1
+				memory::SetPointer(0x4497A5, &IntroTextLines->m_bTextProportional); // -> mov     byte ptr ds:(dword_70EA68+1Ch)[eax*4], 0
+				memory::SetPointer(0x508617, &IntroTextLines->m_bTextProportional); // -> cmp     byte ptr ss:(dword_70EA68+1Ch)[ebp], 0
+				memory::SetPointer(0x509697, &IntroTextLines->m_bTextProportional); // -> cmp     byte ptr ss:(dword_70EA68+1Ch)[ebp], 0
+				memory::SetPointer(0x438C98, &IntroTextLines->m_bTextBeforeFade); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[ebx], 0
+				memory::SetPointer(0x4391E2, &IntroTextLines->m_bTextBeforeFade); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[ebx], 0
+				memory::SetPointer(0x44F7B6, &IntroTextLines->m_bTextBeforeFade); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[eax*4], 1
+				memory::SetPointer(0x44F7D0, &IntroTextLines->m_bTextBeforeFade); // -> mov     byte ptr ds:(dword_70EA68+1Dh)[eax*4], 0
+				memory::SetPointer(0x5084F0, &IntroTextLines->m_bTextBeforeFade); // -> cmp     byte ptr ss:(dword_70EA68+1Dh)[ebp], 0
+				memory::SetPointer(0x509571, &IntroTextLines->m_bTextBeforeFade); // -> cmp     byte ptr ss:(dword_70EA68+1Dh)[ebp], 0
+				memory::SetPointer(0x438C2D, &IntroTextLines->m_bRightJustify); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[ebx], 0
+				memory::SetPointer(0x43917A, &IntroTextLines->m_bRightJustify); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[ebx], 0
+				memory::SetPointer(0x44F8CD, &IntroTextLines->m_bRightJustify); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[eax*4], 1
+				memory::SetPointer(0x44F8E4, &IntroTextLines->m_bRightJustify); // -> mov     byte ptr ds:(dword_70EA68+1Eh)[eax*4], 0
+				memory::SetPointer(0x508567, &IntroTextLines->m_bRightJustify); // -> cmp     byte ptr ss:(dword_70EA68+1Eh)[ebp], 0
+				memory::SetPointer(0x5095E7, &IntroTextLines->m_bRightJustify); // -> cmp     byte ptr ss:(dword_70EA68+1Eh)[ebp], 0
+				memory::SetPointer(0x438C9F, &IntroTextLines->m_nFont); // -> mov     ds:(dword_70EA68+20h)[ebx], 2
+				memory::SetPointer(0x4391E9, &IntroTextLines->m_nFont); // -> mov     ds:(dword_70EA68+20h)[ebx], 2
+				memory::SetPointer(0x4497F4, &IntroTextLines->m_nFont); // -> mov     ds:(dword_70EA68+20h)[ebx*4], eax
+				memory::SetPointer(0x50862D, &IntroTextLines->m_nFont); // -> mov     ax, word ptr ss:(dword_70EA68+20h)[ebp]
+				memory::SetPointer(0x5096AD, &IntroTextLines->m_nFont); // -> mov     ax, word ptr ss:(dword_70EA68+20h)[ebp]
+				memory::SetPointer(0x438CA9, &IntroTextLines->m_fAtX); // -> mov     ds:(dword_70EA68+24h)[ebx], 0
+				memory::SetPointer(0x4391F3, &IntroTextLines->m_fAtX); // -> mov     ds:(dword_70EA68+24h)[ebx], 0
+				memory::SetPointer(0x44923F, &IntroTextLines->m_fAtX); // -> fstp    ds:(dword_70EA68+24h)[ebx]
+				memory::SetPointer(0x50868B, &IntroTextLines->m_fAtX); // -> fsub    ss:(dword_70EA68+24h)[ebp]
+				memory::SetPointer(0x50970A, &IntroTextLines->m_fAtX); // -> fsub    ss:(dword_70EA68+24h)[ebp]
+				memory::SetPointer(0x58A386, &IntroTextLines->m_fAtX); // -> fstp    ds:(dword_70EA68+24h)[eax]
+				memory::SetPointer(0x58A437, &IntroTextLines->m_fAtX); // -> fstp    ds:(dword_70EA68+24h)[eax]
+				memory::SetPointer(0x438CB3, &IntroTextLines->m_fAtY); // -> mov     ds:(dword_70EA68+28h)[ebx], 0
+				memory::SetPointer(0x4391FD, &IntroTextLines->m_fAtY); // -> mov     ds:(dword_70EA68+28h)[ebx], 0
+				memory::SetPointer(0x44924B, &IntroTextLines->m_fAtY); // -> fstp    ds:(dword_70EA68+28h)[ebx]
+				memory::SetPointer(0x50865D, &IntroTextLines->m_fAtY); // -> fsub    ss:(dword_70EA68+28h)[ebp]
+				memory::SetPointer(0x5096DD, &IntroTextLines->m_fAtY); // -> fsub    ss:(dword_70EA68+28h)[ebp]
+				memory::SetPointer(0x58A392, &IntroTextLines->m_fAtY); // -> fstp    ds:(dword_70EA68+28h)[eax]
+				memory::SetPointer(0x58A443, &IntroTextLines->m_fAtY); // -> fstp    ds:(dword_70EA68+28h)[eax]
+				memory::SetPointer(0x438CC7, &IntroTextLines->text); // -> movq    qword ptr ds:(dword_70EA68+2Ch)[eax*2], mm1
+				memory::SetPointer(0x438CCF, &IntroTextLines->text[8]); // -> movq    qword ptr ds:(dword_70EA68+34h)[eax*2], mm1
+				memory::SetPointer(0x438CD7, &IntroTextLines->text[16]); // -> movq    qword ptr ds:(dword_70EA68+3Ch)[eax*2], mm1
+				memory::SetPointer(0x438CDF, &IntroTextLines->text[24]); // -> movq    qword ptr ds:(dword_70EA68+44h)[eax*2], mm1
+				memory::SetPointer(0x438CE7, &IntroTextLines->text[32]); // -> movq    qword ptr ds:(dword_70EA68+4Ch)[eax*2], mm1
+				memory::SetPointer(0x438CEF, &IntroTextLines->text[40]); // -> movq    qword ptr ds:(dword_70EA68+54h)[eax*2], mm1
+				memory::SetPointer(0x438CF7, &IntroTextLines->text[48]); // -> movq    qword ptr ds:(dword_70EA68+5Ch)[eax*2], mm1
+				memory::SetPointer(0x438CFF, &IntroTextLines->text[56]); // -> movq    qword ptr ds:(dword_70EA68+64h)[eax*2], mm1
+				memory::SetPointer(0x438D24, &IntroTextLines->text); // -> mov     word ptr ds:(dword_70EA68+2Ch)[edx*2], 0
+				memory::SetPointer(0x438D2E, &IntroTextLines->text[2]); // -> mov     word ptr ds:(dword_70EA68+2Eh)[edx*2], 0
+				memory::SetPointer(0x438D38, &IntroTextLines->text[4]); // -> mov     word ptr ds:(dword_70EA68+30h)[edx*2], 0
+				memory::SetPointer(0x438D42, &IntroTextLines->text[6]); // -> mov     word ptr ds:(dword_70EA68+32h)[edx*2], 0
+				memory::SetPointer(0x438D4C, &IntroTextLines->text[8]); // -> mov     word ptr ds:(dword_70EA68+34h)[edx*2], 0
+				memory::SetPointer(0x438D56, &IntroTextLines->text[10]); // -> mov     word ptr ds:(dword_70EA68+36h)[edx*2], 0
+				memory::SetPointer(0x438D60, &IntroTextLines->text[12]); // -> mov     word ptr ds:(dword_70EA68+38h)[edx*2], 0
+				memory::SetPointer(0x438D6A, &IntroTextLines->text[14]); // -> mov     word ptr ds:(dword_70EA68+3Ah)[edx*2], 0
+				memory::SetPointer(0x438D74, &IntroTextLines->text[16]); // -> mov     word ptr ds:(dword_70EA68+3Ch)[edx*2], 0
+				memory::SetPointer(0x438D7E, &IntroTextLines->text[18]); // -> mov     word ptr ds:(dword_70EA68+3Eh)[edx*2], 0
+				memory::SetPointer(0x438D88, &IntroTextLines->text[20]); // -> mov     word ptr ds:(dword_70EA68+40h)[edx*2], 0
+				memory::SetPointer(0x438D92, &IntroTextLines->text[22]); // -> mov     word ptr ds:(dword_70EA68+42h)[edx*2], 0
+				memory::SetPointer(0x438D9C, &IntroTextLines->text[24]); // -> mov     word ptr ds:(dword_70EA68+44h)[edx*2], 0
+				memory::SetPointer(0x438DA6, &IntroTextLines->text[26]); // -> mov     word ptr ds:(dword_70EA68+46h)[edx*2], 0
+				memory::SetPointer(0x438DB0, &IntroTextLines->text[28]); // -> mov     word ptr ds:(dword_70EA68+48h)[edx*2], 0
+				memory::SetPointer(0x438DBA, &IntroTextLines->text[30]); // -> mov     word ptr ds:(dword_70EA68+4Ah)[edx*2], 0
+				memory::SetPointer(0x438DC4, &IntroTextLines->text[32]); // -> mov     word ptr ds:(dword_70EA68+4Ch)[edx*2], 0
+				memory::SetPointer(0x438DCE, &IntroTextLines->text[34]); // -> mov     word ptr ds:(dword_70EA68+4Eh)[edx*2], 0
+				memory::SetPointer(0x438DD8, &IntroTextLines->text[36]); // -> mov     word ptr ds:(dword_70EA68+50h)[edx*2], 0
+				memory::SetPointer(0x438DE2, &IntroTextLines->text[38]); // -> mov     word ptr ds:(dword_70EA68+52h)[edx*2], 0
+				memory::SetPointer(0x43920C, &IntroTextLines->text); // -> mov     word ptr ds:(dword_70EA68+2Ch)[edx*2], 0
+				memory::SetPointer(0x439216, &IntroTextLines->text[2]); // -> mov     word ptr ds:(dword_70EA68+2Eh)[edx*2], 0
+				memory::SetPointer(0x439220, &IntroTextLines->text[4]); // -> mov     word ptr ds:(dword_70EA68+30h)[edx*2], 0
+				memory::SetPointer(0x43922A, &IntroTextLines->text[6]); // -> mov     word ptr ds:(dword_70EA68+32h)[edx*2], 0
+				memory::SetPointer(0x439234, &IntroTextLines->text[8]); // -> mov     word ptr ds:(dword_70EA68+34h)[edx*2], 0
+				memory::SetPointer(0x43923E, &IntroTextLines->text[10]); // -> mov     word ptr ds:(dword_70EA68+36h)[edx*2], 0
+				memory::SetPointer(0x439248, &IntroTextLines->text[12]); // -> mov     word ptr ds:(dword_70EA68+38h)[edx*2], 0
+				memory::SetPointer(0x439252, &IntroTextLines->text[14]); // -> mov     word ptr ds:(dword_70EA68+3Ah)[edx*2], 0
+				memory::SetPointer(0x43927B, &IntroTextLines->text); // -> mov     word ptr ds:(dword_70EA68+2Ch)[eax*2], 0
+				memory::SetPointer(0x439285, &IntroTextLines->text[2]); // -> mov     word ptr ds:(dword_70EA68+2Eh)[eax*2], 0
+				memory::SetPointer(0x43928F, &IntroTextLines->text[4]); // -> mov     word ptr ds:(dword_70EA68+30h)[eax*2], 0
+				memory::SetPointer(0x439299, &IntroTextLines->text[6]); // -> mov     word ptr ds:(dword_70EA68+32h)[eax*2], 0
+				memory::SetPointer(0x449288, &IntroTextLines->text); // -> mov     word ptr ds:(dword_70EA68+2Ch)[esi*2], di
+				memory::SetPointer(0x449295, &IntroTextLines->text[2]); // -> mov     word ptr ds:(dword_70EA68+2Eh)[esi*2], bx
+				memory::SetPointer(0x4492A2, &IntroTextLines->text[4]); // -> mov     word ptr ds:(dword_70EA68+30h)[esi*2], di
+				memory::SetPointer(0x4492AF, &IntroTextLines->text[6]); // -> mov     word ptr ds:(dword_70EA68+32h)[esi*2], bx
+				memory::SetPointer(0x4492BC, &IntroTextLines->text[8]); // -> mov     word ptr ds:(dword_70EA68+34h)[esi*2], di
+				memory::SetPointer(0x4492C9, &IntroTextLines->text[10]); // -> mov     word ptr ds:(dword_70EA68+36h)[esi*2], bx
+				memory::SetPointer(0x4492D6, &IntroTextLines->text[12]); // -> mov     word ptr ds:(dword_70EA68+38h)[esi*2], di
+				memory::SetPointer(0x4492E6, &IntroTextLines->text[14]); // -> mov     word ptr ds:(dword_70EA68+3Ah)[esi*2], bx
+				memory::SetPointer(0x44930A, &IntroTextLines->text); // -> mov     word ptr ds:(dword_70EA68+2Ch)[ebx*2], di
+				memory::SetPointer(0x449328, &IntroTextLines->text); // -> mov     word ptr ds:(dword_70EA68+2Ch)[ebp*2], 0
+				memory::SetPointer(0x5084E3, &IntroTextLines->text); // -> cmp     word ptr ss:(dword_70EA68+2Ch)[ebp], 0
+				memory::SetPointer(0x509564, &IntroTextLines->text); // -> cmp     word ptr ss:(dword_70EA68+2Ch)[ebp], 0
+				memory::SetChar(0x438D1F, MAX_NUM_INTRO_TEXT_LINES); // jl!
+				memory::SetChar(0x438DE9, 0x82);					 // jl -> jb
+				memory::SetChar(0x5086B0, MAX_NUM_INTRO_TEXT_LINES); // jb
+				memory::SetChar(0x439276, MAX_NUM_INTRO_TEXT_LINES); // jb
+				memory::SetChar(0x50972F, MAX_NUM_INTRO_TEXT_LINES); // jb
 				Text.pIntroTextLines = IntroTextLines;
 
+				//memory::SetPointer(0x43EC1B, IntroRectangles);				// -> push    offset byte_72D108
+				//memory::SetPointer(0x43EC9A, IntroRectangles);				// -> push    offset byte_72D108
+				memory::SetPointer(0x44D48D, IntroRectangles);					// -> add     edi, offset byte_72D108
+				memory::SetPointer(0x44D58B, IntroRectangles);					// -> add     edi, offset byte_72D108
+				memory::SetPointer(0x5086BC, IntroRectangles);					// -> mov     esi, offset byte_72D108
+				memory::SetPointer(0x50973B, IntroRectangles);					// -> mov     esi, offset byte_72D108
 				memory::SetPointer(0x438E0A, &IntroRectangles->m_bIsUsed); // -> mov     ds:byte_72D108[ebx], 0
 				memory::SetPointer(0x4392B6, &IntroRectangles->m_bIsUsed); // -> mov     ds:byte_72D108[eax], 0
 				memory::SetPointer(0x4392D7, &IntroRectangles->m_bIsUsed); // -> mov     ds:byte_72D108[ebx], 0
@@ -450,15 +457,9 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::SetPointer(0x439350, &IntroRectangles->m_bIsUsed); // -> mov     ds:byte_72D108[ecx], 0
 				memory::SetPointer(0x43936F, &IntroRectangles->m_bIsUsed); // -> mov     ss:byte_72D108[ebp], 0
 				memory::SetPointer(0x439394, &IntroRectangles->m_bIsUsed); // -> mov     ds:byte_72D108[ebx], 0
-				//memory::SetPointer(0x43EC1B, IntroRectangles);				// -> push    offset byte_72D108
-				//memory::SetPointer(0x43EC9A, IntroRectangles);				// -> push    offset byte_72D108
 				memory::SetPointer(0x44D421, &IntroRectangles->m_bIsUsed);		// -> mov     ss:byte_72D108[ebp], 1
-				memory::SetPointer(0x44D48D, IntroRectangles);					// -> add     edi, offset byte_72D108
 				memory::SetPointer(0x44D525, &IntroRectangles->m_bIsUsed);		// -> mov     ds:byte_72D108[eax], 1
-				memory::SetPointer(0x44D58B, IntroRectangles);					// -> add     edi, offset byte_72D108
-				memory::SetPointer(0x5086BC, IntroRectangles);					// -> mov     esi, offset byte_72D108
 				memory::SetPointer(0x5086C2, &IntroRectangles->m_bIsUsed);		// -> cmp     ss:byte_72D108[ebp], 0
-				memory::SetPointer(0x50973B, IntroRectangles);					// -> mov     esi, offset byte_72D108
 				memory::SetPointer(0x509742, &IntroRectangles->m_bIsUsed);		// -> cmp     ss:byte_72D108[ebp], 0
 				memory::SetPointer(0x438E25, &IntroRectangles->m_bBeforeFade); // -> mov     ds:(byte_72D108+1)[ebx], 0
 				memory::SetPointer(0x4392BE, &IntroRectangles->m_bBeforeFade); // -> mov     ds:(byte_72D108+1)[eax], 0
@@ -512,18 +513,18 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::SetPointer(0x438E74, &IntroRectangles->m_sColor.g); //  -> mov     ds:(byte_72D108+15h)[ebx], al
 				memory::SetPointer(0x438E7E, &IntroRectangles->m_sColor.b); //  -> mov     ds:(byte_72D108+16h)[ebx], cl
 				memory::SetPointer(0x438E84, &IntroRectangles->m_sColor.a); //  -> mov     ds:(byte_72D108+17h)[ebx], al
-				injector::WriteMemory<char>(0x438E8B + 2, MAX_NUM_INTRO_RECTANGLES, true);
-				injector::WriteMemory<char>(0x439384 + 3, MAX_NUM_INTRO_RECTANGLES, true);
-				injector::WriteMemory<char>(0x5097D6 + 3, MAX_NUM_INTRO_RECTANGLES, true);
+				memory::SetChar(0x438E8D, MAX_NUM_INTRO_RECTANGLES); // jl!
+				memory::SetChar(0x438E8F, 0x82);					 // jl -> jb
+				memory::SetChar(0x439387, MAX_NUM_INTRO_RECTANGLES); // jb
+				memory::SetChar(0x508762, MAX_NUM_INTRO_RECTANGLES); // jb
+				memory::SetChar(0x5097D9, MAX_NUM_INTRO_RECTANGLES); // jb
 
-				//memory::SetPointer(0x43EC4A, ScriptSprites, 0x72B090, 0x72B090 + 0x0); // -> push    offset unk_72B090
-				//memory::SetPointer(0x43EC7A, ScriptSprites, 0x72B090, 0x72B090 + 0x0); // -> push    offset unk_72B090
-				memory::SetPointer(0x44D65B, ScriptSprites, 0x72B090, 0x72B090 + 0x0); // -> add     ecx, offset unk_72B090
-				memory::SetPointer(0x44D709, ScriptSprites, 0x72B090, 0x72B090 + 0x0); // -> mov     esi, offset unk_72B090
-				memory::SetPointer(0x50874F, ScriptSprites, 0x72B090, 0x72B090 + 0x0); // -> add     ecx, offset unk_72B090
-				memory::SetPointer(0x5097C6, ScriptSprites, 0x72B090, 0x72B090 + 0x0); // -> add     ecx, offset unk_72B090
-				injector::WriteMemory<char>(0x50875F + 3, MAX_NUM_SCRIPT_SRPITES, true);
-				injector::WriteMemory<char>(0x5097D6 + 3, MAX_NUM_SCRIPT_SRPITES, true);
+				//memory::SetPointer(0x43EC4A, ScriptSprites); // -> push    offset unk_72B090
+				//memory::SetPointer(0x43EC7A, ScriptSprites); // -> push    offset unk_72B090
+				memory::SetPointer(0x44D65B, ScriptSprites); // -> add     ecx, offset unk_72B090
+				memory::SetPointer(0x44D709, ScriptSprites); // -> mov     esi, offset unk_72B090
+				memory::SetPointer(0x50874F, ScriptSprites); // -> add     ecx, offset unk_72B090
+				memory::SetPointer(0x5097C6, ScriptSprites); // -> add     ecx, offset unk_72B090
 		}
 }
 
