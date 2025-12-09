@@ -5,68 +5,41 @@
 #include <cstring>
 
 void
-Write(void* dest, const void* src, size_t count)
+memory::Write(void* dest, const void* src, size_t count, bool vp)
 {
         if (dest < 0x401000)
                 return;
 
         uint oldProtect;
-        VirtualProtect(dest, count, PAGE_EXECUTE_READWRITE, &oldProtect);
+        if (vp)
+                VirtualProtect(dest, count, PAGE_EXECUTE_READWRITE, &oldProtect);
 
-        if (src)
+        if (count == 1 || count == 2 || count == 4) {
                 std::memcpy(dest, src, count);
-        else
-                std::memset(dest, 0x90, count);
+        } else {
+                std::memset(dest, *(char*)scr, count);
+        }
 
-        VirtualProtect(dest, count, oldProtect, &oldProtect);
+        if (vp)
+                VirtualProtect(dest, count, oldProtect, &oldProtect);
 }
 
 void
-memory::Nop(uchar* dest, size_t count)
+memory::RedirectCall(uchar* dest, uchar* addr)
 {
-        Write(dest, nullptr, count);
+        uchar op = 0xE8;
+        Write(dest, &op, sizeof(op), true);
+
+        ptrdiff_t offset = addr - (dest + 5);
+        Write(dest + 1, &offset, sizeof(offset), true);
 }
 
 void
-memory::SetChar(uchar* dest, char value)
+memory::RedirectJump(uchar* dest, uchar* addr)
 {
-        Write(dest, &value, sizeof(value));
-}
+        uchar op = 0xE9;
+        Write(dest, &op, sizeof(op), true);
 
-void
-memory::SetShort(uchar* dest, short value)
-{
-        Write(dest, &value, sizeof(value));
-}
-
-void
-SetInt(uchar* dest, int value)
-{
-        Write(dest, &value, sizeof(value));
-}
-
-void
-memory::SetFloat(uchar* dest, float value)
-{
-        Write(dest, &value, sizeof(value));
-}
-
-void
-memory::SetPointer(uchar* dest, void* value)
-{        
-        Write(dest, &value, sizeof(value));
-}
-
-void
-memory::RedirectCall(uchar* dest, uchar* func)
-{
-        SetChar(dest, 0xE8);
-    	SetInt(dest + 1, func - (dest + 5));
-}
-
-void
-memory::RedirectJump(uchar* dest, uchar* func)
-{
-    	SetChar(dest, 0xE9);
-    	SetInt(dest + 1, func - (dest + 5));
+        ptrdiff_t offset = addr - (dest + 5);
+        Write(dest + 1, &offset, sizeof(offset), true);
 }
