@@ -4,8 +4,6 @@
 
 #include <cstring>
 
-using namespace memory;
-
 void
 Write(void* dest, const void* src, size_t count)
 {
@@ -24,19 +22,19 @@ Write(void* dest, const void* src, size_t count)
 }
 
 void
-Nop(uchar* dest, size_t count)
+memory::Nop(uchar* dest, size_t count)
 {
         Write(dest, nullptr, count);
 }
 
 void
-SetChar(uchar* dest, char value)
+memory::SetChar(uchar* dest, char value)
 {
         Write(dest, &value, sizeof(value));
 }
 
 void
-SetShort(uchar* dest, short value)
+memory::SetShort(uchar* dest, short value)
 {
         Write(dest, &value, sizeof(value));
 }
@@ -48,26 +46,26 @@ SetInt(uchar* dest, int value)
 }
 
 void
-SetFloat(uchar* dest, float value)
+memory::SetFloat(uchar* dest, float value)
 {
         Write(dest, &value, sizeof(value));
 }
 
 void
-SetPointer(uchar* dest, void* value)
+memory::SetPointer(uchar* dest, void* value)
 {        
         Write(dest, &value, sizeof(value));
 }
 
 void
-RedirectCall(uchar* dest, uchar* func)
+memory::RedirectCall(uchar* dest, uchar* func)
 {
         SetChar(dest, 0xE8);
     	SetInt(dest + 1, func - (dest + 5));
 }
 
 void
-RedirectJump(uchar* dest, uchar* func)
+memory::RedirectJump(uchar* dest, uchar* func)
 {
     	SetChar(dest, 0xE9);
     	SetInt(dest + 1, func - (dest + 5));
