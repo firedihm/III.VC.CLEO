@@ -1,7 +1,7 @@
 ﻿#include "CustomOpcodes.h"
 #include "Game.h"
 #include "OpcodesSystem.h"
-#include "CPatch.h"
+#include "Memory.h"
 #include "ScriptManager.h"
 #include "Log.h"
 #include "Fxt.h"
@@ -233,16 +233,20 @@ void CustomOpcodes::Register()
 	Opcodes::RegisterOpcode(0x0DD5, GET_PLATFORM);
 }
 
-eOpcodeResult CustomOpcodes::DUMMY(Script *script)
+eOpcodeResult
+CustomOpcodes::DUMMY(Script* script)
 {
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GOTO(Script *script)
+eOpcodeResult
+CustomOpcodes::GOTO(Script* script)
 {
-	script->Collect(1);
-	script->JumpTo(game.Scripts.pScriptParams[0].nVar);
-	return OR_CONTINUE;
+		script->Collect(1);
+
+		script->JumpTo(game.Scripts.pScriptParams[0].nVar);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::GOTO_IF_TRUE(Script *script)
@@ -340,33 +344,14 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(Script *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MEMORY_WRITE(Script *script)
+eOpcodeResult
+CustomOpcodes::MEMORY_WRITE(Script* script)
 {
-	script->Collect(4);
-	if (game.Scripts.pScriptParams[0].pVar)
-	{
-		DWORD flOldProtect;
-		if (game.Scripts.pScriptParams[3].nVar) 
-			VirtualProtect(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[1].nVar, PAGE_EXECUTE_READWRITE, &flOldProtect);
-		switch (game.Scripts.pScriptParams[1].nVar)
-		{
-		case 1:
-			*(char*)game.Scripts.pScriptParams[0].pVar = game.Scripts.pScriptParams[2].nVar;
-			break;
-		case 2:
-			*(short*)game.Scripts.pScriptParams[0].pVar = game.Scripts.pScriptParams[2].nVar;
-			break;
-		case 4:
-			*(int*)game.Scripts.pScriptParams[0].pVar = game.Scripts.pScriptParams[2].nVar;
-			break;
-		default:
-			memset(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[1].nVar);
-			break;
-		}
-		if (game.Scripts.pScriptParams[3].nVar)
-			VirtualProtect(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[1].nVar, flOldProtect, &flOldProtect);
-	}
-	return OR_CONTINUE;
+		script->Collect(4);
+
+		memory::Write(game.Scripts.pScriptParams[0].pVar, &game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[3].nVar);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::MEMORY_READ(Script *script)
@@ -2487,11 +2472,13 @@ eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_SCRIPT(Script *script)
 }
 
 //0DD5=1,%1d% = get_platform
-eOpcodeResult __stdcall CustomOpcodes::GET_PLATFORM(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_PLATFORM(Script* script)
 {
-	game.Scripts.pScriptParams[0].nVar = PLATFORM_WINDOWS;
-	script->Store(1);
-	return OR_CONTINUE;
+		game.Scripts.pScriptParams[0].nVar = PLATFORM_WINDOWS;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 // perform 'sprintf'-operation for parameters, passed through SCM
