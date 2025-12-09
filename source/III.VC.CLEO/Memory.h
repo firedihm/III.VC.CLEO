@@ -1,15 +1,16 @@
 #pragma once
 
+// wrapper over memory patching to keep <Windows.h> isolated
 namespace memory
 {
-		void Nop(uchar* dest, size_t count);
+		void Write(void* dest, const void* src, size_t count, bool vp);
 
-		void SetChar(uchar* dest, char value);
-		void SetShort(uchar* dest, short value);
-		void SetInt(uchar* dest, int value);
-		void SetFloat(uchar* dest, float value);
-		void SetPointer(uchar* dest, void* value);
+		template <typename T>
+		void Write(uchar* dest, T value, size_t count = sizeof(value), bool vp = true)
+		{
+				Write(dest, &value, count, vp);
+		}
 
-		void RedirectCall(uchar* dest, uchar* func);
-		void RedirectJump(uchar* dest, uchar* func);
+		void RedirectCall(uchar* dest, uchar* addr);
+		void RedirectJump(uchar* dest, uchar* addr);
 }
