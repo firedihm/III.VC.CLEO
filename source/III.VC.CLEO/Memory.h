@@ -13,8 +13,7 @@ namespace memory
 
 		void Intercept(uchar op, uchar* dest, uchar* addr);
 
-		template <uchar OP>
-		requires (OP == 0xE8 || OP == 0xE9)
+		template <uchar OP> requires (OP == 0xE8 || OP == 0xE9)
 		void Intercept(uchar* dest, uchar* addr)
 		{
 				Intercept(OP, dest, addr);
