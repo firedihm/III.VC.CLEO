@@ -87,10 +87,10 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		memory::Write<void*>(lut[MA_SCRIPTS_ARRAY_2], &ScriptsArray->m_pPrev);
 		memory::Write<size_t>(lut[MA_SIZEOF_CRUNNINGSCRIPT_0], sizeof(Script));
 		memory::Write<size_t>(lut[MA_SIZEOF_CRUNNINGSCRIPT_1], sizeof(Script));
-		memory::RedirectJump(lut[CA_INIT_SCRIPT], Script::Init);
-		memory::RedirectJump(lut[CA_PROCESS_ONE_COMMAND], Script::ProcessOneCommand);
-		memory::RedirectJump(lut[CA_COLLECT_PARAMETERS], Script::CollectParameters);
-		memory::RedirectJump(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], Script::CollectNextParameterWithoutIncreasingPC);
+		memory::Intercept<Jump>(lut[CA_INIT_SCRIPT], Script::Init);
+		memory::Intercept<Jump>(lut[CA_PROCESS_ONE_COMMAND], Script::ProcessOneCommand);
+		memory::Intercept<Jump>(lut[CA_COLLECT_PARAMETERS], Script::CollectParameters);
+		memory::Intercept<Jump>(lut[CA_COLLECT_NEXT_PARAMETER_WITHOUT_INCREASING_PC], Script::CollectNextParameterWithoutIncreasingPC);
 		Scripts.pfAddScriptToList = (void (__thiscall*)(Script*, Script**))lut[MA_ADD_SCRIPT_TO_LIST];
 		Scripts.pfRemoveScriptFromList = (void (__thiscall*)(Script*, Script**))lut[MA_REMOVE_SCRIPT_FROM_LIST];
 		Scripts.pfStoreParameters = (void (__thiscall*)(Script*, uint*, short))lut[MA_STORE_PARAMETERS];
@@ -121,7 +121,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		memory::Write<uint>(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
 		memory::Write<uint>(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
 		memory::Write<uint>(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
-		memory::RedirectJump(lut[CA_GET_TEXT], CustomText::GetText);
+		memory::Intercept<Jump>(lut[CA_GET_TEXT], CustomText::GetText);
 		Text.pTheText = (void*)lut[MA_THE_TEXT];
 		Text.pIntroTextLines = (intro_text_line*)lut[MA_INTRO_TEXT_LINES];
 		Text.pNumberOfIntroTextLinesThisFrame = (ushort*)lut[MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME];
@@ -152,13 +152,13 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Pools.pfObjectPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[MA_OBJECT_POOL_GET_HANDLE];
 
 		Events.pfInitScripts = (void (__cdecl*)())lut[MA_INIT_SCRIPTS];
-		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_GAME_START], scriptMgr::OnGameStart);
-		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_GAME_LOAD], scriptMgr::OnGameLoad);
-		memory::RedirectCall(lut[CA_INIT_SCRIPTS_ON_GAME_RELOAD], scriptMgr::OnGameReload);
+		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_START], scriptMgr::OnGameStart);
+		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_LOAD], scriptMgr::OnGameLoad);
+		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_RELOAD], scriptMgr::OnGameReload);
 		Events.pfSaveAllScripts = (void (__cdecl*)(uchar*, uint*))lut[MA_SAVE_ALL_SCRIPTS];
-		memory::RedirectCall(lut[CA_SAVE_ALL_SCRIPTS], scriptMgr::OnGameSaveAllScripts);
+		memory::Intercept<Call>(lut[CA_SAVE_ALL_SCRIPTS], scriptMgr::OnGameSaveAllScripts);
 		Events.pfCdStreamRemoveImages = (void (__cdecl*)())lut[MA_CD_STREAM_REMOVE_IMAGES];
-		memory::RedirectCall(lut[CA_CD_STREAM_REMOVE_IMAGES], scriptMgr::OnGameShutdown);
+		memory::Intercept<Call>(lut[CA_CD_STREAM_REMOVE_IMAGES], scriptMgr::OnGameShutdown);
 
 		Shadows.pfStoreShadowToBeRendered = (float(__cdecl*)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool))lut[MA_STORE_SHADOW_TO_BE_RENDERED];
 		Shadows.ppShadowCarTex = (void**)lut[MA_SHADOW_CAR_TEX];
