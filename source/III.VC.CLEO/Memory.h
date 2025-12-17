@@ -11,6 +11,15 @@ namespace memory
 				Write(dest, &value, count, vp);
 		}
 
-		void RedirectCall(uchar* dest, uchar* addr);
-		void RedirectJump(uchar* dest, uchar* addr);
+		void Intercept(uchar op, uchar* dest, uchar* addr);
+
+		template <uchar OP>
+		requires (OP == 0xE8 || OP == 0xE9)
+		void Intercept(uchar* dest, uchar* addr)
+		{
+				Intercept(OP, dest, addr);
+		}
 }
+
+constexpr uchar Call = 0xE8;
+constexpr uchar Jump = 0xE9;
