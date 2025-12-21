@@ -14,10 +14,10 @@ namespace memory
 				Write(dest, &value, count, vp);
 		}
 
-		void Intercept(uchar op, uchar* dest, uchar* addr);
+		void Intercept(uchar op, void* dest, void* addr);
 
 		template <uchar OP> requires (OP == Call || OP == Jump)
-		void Intercept(uchar* dest, uchar* addr)
+		void Intercept(void* dest, void* addr)
 		{
 				Intercept(OP, dest, addr);
 		}
