@@ -29,7 +29,7 @@ memory::Write(void* dest, const void* src, size_t count, bool vp)
 void
 memory::Intercept(uchar op, uchar* dest, uchar* addr)
 {
-        assert(op == 0xE8 || op == 0xE9);
+        assert(op == Call || op == Jump);
 
         Write(dest, &op, sizeof(op), true);
         ptrdiff_t offset = addr - (dest + 5);
