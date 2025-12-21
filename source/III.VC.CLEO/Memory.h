@@ -1,5 +1,8 @@
 #pragma once
 
+constexpr uchar Call = 0xE8;
+constexpr uchar Jump = 0xE9;
+
 // wrapper over memory patching to keep <Windows.h> isolated
 namespace memory
 {
@@ -13,12 +16,9 @@ namespace memory
 
 		void Intercept(uchar op, uchar* dest, uchar* addr);
 
-		template <uchar OP> requires (OP == 0xE8 || OP == 0xE9)
+		template <uchar OP> requires (OP == Call || OP == Jump)
 		void Intercept(uchar* dest, uchar* addr)
 		{
 				Intercept(OP, dest, addr);
 		}
 }
-
-constexpr uchar Call = 0xE8;
-constexpr uchar Jump = 0xE9;
