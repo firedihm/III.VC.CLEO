@@ -2,7 +2,6 @@
 
 #include <Windows.h>
 
-#include <cassert>
 #include <cstring>
 
 void
@@ -15,10 +14,15 @@ memory::Write(void* dest, const void* src, size_t count, bool vp)
         if (vp)
                 VirtualProtect(dest, count, PAGE_EXECUTE_READWRITE, &oldProtect);
 
-        if (count == 1 || count == 2 || count == 4) {
+        switch (count) {
+        case 1:
+        case 2:
+        case 4:
                 std::memcpy(dest, src, count);
-        } else {
+                break;
+        default:
                 std::memset(dest, *(char*)scr, count);
+                break;
         }
 
         if (vp)
@@ -32,6 +36,6 @@ memory::Intercept(uchar op, void* dest, void* addr)
                 return;
 
         Write(dest, &op, sizeof(op), true);
-        uint offset = (uint)addr - ((uint)dest + 5);
-        Write((uint)dest + 1, &offset, sizeof(offset), true);
+        ptrdiff_t offset = (uchar*)addr - ((uchar*)dest + 5); // (uchar*) cast allows us to perform bytewise arithmetic on ptrs
+        Write((uchar*)dest + 1, &offset, sizeof(offset), true);
 }
