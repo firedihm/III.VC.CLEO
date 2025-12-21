@@ -8,8 +8,7 @@
 void
 memory::Write(void* dest, const void* src, size_t count, bool vp)
 {
-        // practically, if nullptr is passed, then call is skipped
-        if (dest < 0x401000)
+        if (!dest)
                 return;
 
         uint oldProtect;
@@ -27,11 +26,12 @@ memory::Write(void* dest, const void* src, size_t count, bool vp)
 }
 
 void
-memory::Intercept(uchar op, uchar* dest, uchar* addr)
+memory::Intercept(uchar op, void* dest, void* addr)
 {
-        assert(op == Call || op == Jump);
+        if (!dest)
+                return;
 
         Write(dest, &op, sizeof(op), true);
-        ptrdiff_t offset = addr - (dest + 5);
-        Write(dest + 1, &offset, sizeof(offset), true);
+        uint offset = (uint)addr - ((uint)dest + 5);
+        Write((uint)dest + 1, &offset, sizeof(offset), true);
 }
