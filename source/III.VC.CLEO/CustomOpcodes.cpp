@@ -354,35 +354,27 @@ CustomOpcodes::MEMORY_WRITE(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MEMORY_READ(Script *script)
+eOpcodeResult
+CustomOpcodes::MEMORY_READ(Script* script)
 {
-	script->Collect(3);
-	if (game.Scripts.pScriptParams[0].pVar)
-	{
-		DWORD flOldProtect;
-		void* pMemory = game.Scripts.pScriptParams[0].pVar;
-		if (game.Scripts.pScriptParams[2].nVar)
-			VirtualProtect(pMemory, game.Scripts.pScriptParams[1].nVar, PAGE_EXECUTE_READWRITE, &flOldProtect);
-		switch (game.Scripts.pScriptParams[1].nVar)
-		{
-		case 1:
-			game.Scripts.pScriptParams[0].nVar = *(unsigned char*)pMemory;
-			break;
-		case 2:
-			game.Scripts.pScriptParams[0].nVar = *(unsigned short*)pMemory;
-			break;
-		case 4:
-			game.Scripts.pScriptParams[0].nVar = *(int*)pMemory;
-			break;
+		script->Collect(3);
+
+		switch (game.Scripts.pScriptParams[1].nVar) {
 		default:
-			game.Scripts.pScriptParams[0].nVar = 0;
-			break;
+		case 1:
+				game.Scripts.pScriptParams[0].nVar = *(char*)game.Scripts.pScriptParams[0].pVar;
+				break;
+		case 2:
+				game.Scripts.pScriptParams[0].nVar = *(short*)game.Scripts.pScriptParams[0].pVar;
+				break;
+		case 4:
+				game.Scripts.pScriptParams[0].nVar = *(int*)game.Scripts.pScriptParams[0].pVar;
+				break;
 		}
-		if (game.Scripts.pScriptParams[2].nVar)
-			VirtualProtect(pMemory, game.Scripts.pScriptParams[1].nVar, flOldProtect, &flOldProtect);
-	}
-	script->Store(1);
-	return OR_CONTINUE;
+
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::CALL(Script *script)
