@@ -9,7 +9,7 @@ namespace memory
 		void Write(void* dest, void* src, size_t count, bool vp);
 
 		template <typename T>
-		void Write(uchar* dest, T value, size_t count = sizeof(value), bool vp = true)
+		void Write(void* dest, T value, size_t count = sizeof(value), bool vp = true)
 		{
 				Write(dest, &value, count, vp);
 		}
