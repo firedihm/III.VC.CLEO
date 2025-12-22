@@ -5,7 +5,7 @@
 #include <cstring>
 
 void
-memory::Write(void* dest, const void* src, size_t count, bool vp)
+memory::Write(void* dest, void* src, size_t count, bool vp)
 {
         if (!dest)
                 return;
@@ -16,12 +16,16 @@ memory::Write(void* dest, const void* src, size_t count, bool vp)
 
         switch (count) {
         case 1:
+                *(uchar*)dest = *(uchar*)src;
+                break;
         case 2:
+                *(ushort*)dest = *(ushort*)src;
+                break;
         case 4:
-                std::memcpy(dest, src, count);
+                *(uint*)dest = *(uint*)src;
                 break;
         default:
-                std::memset(dest, *(char*)scr, count);
+                std::memset(dest, *(uchar*)scr, count);
                 break;
         }
 
