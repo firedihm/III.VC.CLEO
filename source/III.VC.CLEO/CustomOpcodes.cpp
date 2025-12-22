@@ -349,7 +349,7 @@ CustomOpcodes::MEMORY_WRITE(Script* script)
 {
 		script->Collect(4);
 
-		memory::Write(game.Scripts.pScriptParams[0].pVar, &game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[3].nVar);
+		memory::Write(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[3].nVar);
 
 		return OR_CONTINUE;
 }
@@ -359,19 +359,7 @@ CustomOpcodes::MEMORY_READ(Script* script)
 {
 		script->Collect(3);
 
-		switch (game.Scripts.pScriptParams[1].nVar) {
-		default:
-		case 1:
-				game.Scripts.pScriptParams[0].nVar = *(char*)game.Scripts.pScriptParams[0].pVar;
-				break;
-		case 2:
-				game.Scripts.pScriptParams[0].nVar = *(short*)game.Scripts.pScriptParams[0].pVar;
-				break;
-		case 4:
-				game.Scripts.pScriptParams[0].nVar = *(int*)game.Scripts.pScriptParams[0].pVar;
-				break;
-		}
-
+		game.Scripts.pScriptParams[0].nVar = memory::Read(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[2].nVar);
 		script->Store(1);
 
 		return OR_CONTINUE;
@@ -465,84 +453,91 @@ eOpcodeResult CustomOpcodes::CALL_FUNCTION_METHOD(Script *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_GAME_VERSION(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_GAME_VERSION(Script* script)
 {
-	game.Scripts.pScriptParams[0].nVar = game.Version - 1;
-	script->Store(1);
-	return OR_CONTINUE;
+		int result = (game.Version == GAME_GTAVC_V1_0 || game.Version == GAME_GTA3_V1_0) ? 0 :
+					 (game.Version == GAME_GTAVC_V1_1 || game.Version == GAME_GTA3_V1_1) ? 1 : 2;
+
+		game.Scripts.pScriptParams[0].nVar = result;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
 CustomOpcodes::GET_CHAR_STRUCT(Script* script)
 {
-	script->Collect(1);
+		script->Collect(1);
 
-	game.Scripts.pScriptParams[0].pVar = game.Pools.pfPedPoolGetAt(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].nVar);
-	script->Store(1);
+		game.Scripts.pScriptParams[0].pVar = game.Pools.pfPedPoolGetAt(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].nVar);
+		script->Store(1);
 
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
 CustomOpcodes::GET_CAR_STRUCT(Script* script)
 {
-	script->Collect(1);
+		script->Collect(1);
 
-	game.Scripts.pScriptParams[0].pVar = game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar);
-	script->Store(1);
+		game.Scripts.pScriptParams[0].pVar = game.Pools.pfVehiclePoolGetAt(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].nVar);
+		script->Store(1);
 
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
 CustomOpcodes::GET_OBJECT_STRUCT(Script* script)
 {
-	script->Collect(1);
+		script->Collect(1);
 
-	game.Scripts.pScriptParams[0].pVar = game.Pools.pfObjectPoolGetAt(*game.Pools.ppObjectPool, game.Scripts.pScriptParams[0].nVar);
-	script->Store(1);
+		game.Scripts.pScriptParams[0].pVar = game.Pools.pfObjectPoolGetAt(*game.Pools.ppObjectPool, game.Scripts.pScriptParams[0].nVar);
+		script->Store(1);
 
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
 CustomOpcodes::GET_CHAR_HANDLE(Script* script)
 {
-	script->Collect(1);
+		script->Collect(1);
 
-	game.Scripts.pScriptParams[0].nVar = game.Pools.pfPedPoolGetIndex(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].pVar);
-	script->Store(1);
+		game.Scripts.pScriptParams[0].nVar = game.Pools.pfPedPoolGetIndex(*game.Pools.ppPedPool, game.Scripts.pScriptParams[0].pVar);
+		script->Store(1);
 
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
 CustomOpcodes::GET_CAR_HANDLE(Script* script)
 {
-	script->Collect(1);
+		script->Collect(1);
 
-	game.Scripts.pScriptParams[0].nVar = game.Pools.pfVehiclePoolGetIndex(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].pVar);
-	script->Store(1);
+		game.Scripts.pScriptParams[0].nVar = game.Pools.pfVehiclePoolGetIndex(*game.Pools.ppVehiclePool, game.Scripts.pScriptParams[0].pVar);
+		script->Store(1);
 
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
 CustomOpcodes::GET_OBJECT_HANDLE(Script* script)
 {
-	script->Collect(1);
+		script->Collect(1);
 
-	game.Scripts.pScriptParams[0].nVar = game.Pools.pfObjectPoolGetIndex(*game.Pools.ppObjectPool, game.Scripts.pScriptParams[0].pVar);
-	script->Store(1);
+		game.Scripts.pScriptParams[0].nVar = game.Pools.pfObjectPoolGetIndex(*game.Pools.ppObjectPool, game.Scripts.pScriptParams[0].pVar);
+		script->Store(1);
 
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_THREAD_POINTER(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_THREAD_POINTER(Script* script)
 {
-	game.Scripts.pScriptParams[0].pVar = script;
-	script->Store(1);
-	return OR_CONTINUE;
+		game.Scripts.pScriptParams[0].pVar = script;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::GET_NAMED_THREAD_POINTER(Script *script)
@@ -1057,7 +1052,7 @@ CustomOpcodes::GET_LABEL_OFFSET(Script* script)
 				if (script->m_bIsCustom)
 						result = &script->m_pCodeData[-address];
 				else
-						result = &game.Scripts.pScriptSpace[SIZE_MAIN_SCRIPT + (-address)];
+						result = &game.Scripts.pScriptSpace[game.kMainSize + (-address)];
 		}
 
 		game.Scripts.pScriptParams[0].pVar = result;
