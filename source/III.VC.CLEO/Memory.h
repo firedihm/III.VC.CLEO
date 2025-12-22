@@ -6,6 +6,8 @@ constexpr uchar Jump = 0xE9;
 // wrapper over memory patching to keep <Windows.h> isolated
 namespace memory
 {
+		int Read(void* dest, size_t count, bool vp = false);
+
 		void Write(void* dest, void* src, size_t count, bool vp);
 
 		template <typename T>
