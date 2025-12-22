@@ -4,6 +4,24 @@
 
 #include <cstring>
 
+int
+memory::Read(void* dest, size_t count, bool vp)
+{
+        if (!dest)
+                return;
+
+	switch (count) {
+	case 1:
+	        return *(char*)dest;
+	case 2:
+		return *(short*)dest;
+	case 4:
+		return *(int*)dest;
+	default:
+		return 0;
+	}
+}
+
 void
 memory::Write(void* dest, void* src, size_t count, bool vp)
 {
