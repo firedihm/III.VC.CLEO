@@ -121,7 +121,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		memory::Write<uint>(lut[MA_VC_ASM_0], 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
 		memory::Write<uint>(lut[MA_VC_ASM_1], 0xE940EC83); // sub esp,40
 		memory::Write<uint>(lut[MA_VC_ASM_2], 0x00000189); // jmp 584F37
-		memory::Intercept<Jump>(lut[CA_GET_TEXT], CustomText::GetText);
+		memory::Intercept<Jump>(lut[CA_GET_TEXT], fxt::Get);
 		Text.pTheText = (void*)lut[MA_THE_TEXT];
 		Text.pIntroTextLines = (intro_text_line*)lut[MA_INTRO_TEXT_LINES];
 		Text.pNumberOfIntroTextLinesThisFrame = (ushort*)lut[MA_NUMBER_OF_INTRO_TEXT_LINES_THIS_FRAME];
