@@ -6,6 +6,11 @@
 #include <cstring>
 #include <ifstream>
 
+Script::Script()
+{
+		Init();
+}
+
 Script::Script(const char* filepath)
 {
 		Init();
