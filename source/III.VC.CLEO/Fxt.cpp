@@ -1,35 +1,39 @@
 #include "Fxt.h"
-#include <stdio.h>
-#include <Windows.h>
-#include "Log.h"
 #include "Game.h"
+#include "Log.h"
 
-CustomTextEntry *CustomText::pCustomTextList;
+#include <cstring>
+#include <filesystem>
 
-CustomTextEntry::CustomTextEntry(char *key, char *text)
+namespace fs = std::filesystem;
+
+FxtEntry* pFxtEntries;
+
+FxtEntry::FxtEntry(char* key, char* text)
 {
-	size_t len = strlen(text);
-	this->m_pText = new wchar16_t[len + 1];
-	if (GtaGame::IsChinese())
-	{
-		CustomText::Utf8ToUtf16(text, this->m_pText, len, len + 1);
-	}
-	else
-	{
-		for (size_t i = 0; i < len; i++) 
-			this->m_pText[i] = (unsigned char)text[i];
-	}
-	this->m_pText[len] = 0;
-	strncpy(m_key, key, 7);
-	this->m_key[7] = '\0';
-	this->m_pNext = nullptr;
-	LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Registered custom text: \"%s\", \"%s\"", this->m_key, text);
+		size_t len = std::strlen(text);
+		m_pText = new wchar_t[len + 1];
+
+		if (game.bIsChinese) {
+				CustomText::Utf8ToUtf16(text, m_pText, len, len + 1);
+		} else {
+				// copy with char to wchar extension
+				for (size_t i = 0; i < len; ++i) 
+						m_pText[i] = (uchar)text[i];
+		}
+
+		m_pText[len] = '\0';
+		std::strncpy(m_key, key, 8);
+		m_key[7] = '\0';
+		m_pNext = nullptr;
+
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Registered custom text: \"%s\", \"%s\"", this->m_key, text);
 }
 
-CustomTextEntry::~CustomTextEntry()
+FxtEntry::~FxtEntry()
 {
-	delete[] this->m_pText;
-	this->m_pText = nullptr;
+		delete[] m_pText;
+		m_pText = nullptr;
 }
 
 void CustomText::Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len, size_t utf16_len)
@@ -162,37 +166,28 @@ void CustomText::LoadFxtFile(char *filepath)
 	}
 }
 
-void CustomText::Load()
+void
+fxt::Load()
 {
-	WIN32_FIND_DATA FindFileData;
-	memset(&FindFileData, 0, sizeof(WIN32_FIND_DATA));
-	HANDLE hFind = FindFirstFile("CLEO\\CLEO_TEXT\\*.fxt", &FindFileData);
-	if(hFind != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if(!(FindFileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY))
-			{
-				char filename[MAX_PATH];
-				strcpy(filename, "CLEO\\CLEO_TEXT\\");
-				strcat(filename, FindFileData.cFileName);
-				LoadFxtFile(filename);
-			}
+		fs::path dir(game.Misc.szRootDirName);
+		dir /= "CLEO/CLEO_TEXT";
+
+		for (const auto& entry : fs::directory_iterator(dir)) {
+				if (entry.is_regular_file() && entry.path().extension().string() == ".fxt") {
+						LoadFxtFile(entry.path().c_str());
+				}
 		}
-		while(FindNextFile(hFind, &FindFileData) );
-		FindClose(hFind);
-	}
 }
 
-void CustomText::Unload()
+void
+fxt::Unload()
 {
-	CustomTextEntry *entry = pCustomTextList;
-	while(entry)
-	{
-		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloaded custom text \"%s\"", entry->m_key);
-		CustomTextEntry *next = entry->m_pNext;
-		delete entry;
-		entry = next;
-	}
-	pCustomTextList = 0;
+		FxtEntry* entry = pFxtEntries;
+		while (entry) {
+				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", entry->m_key);
+				FxtEntry* next = entry->m_pNext;
+				delete entry;
+				entry = next;
+		}
+		pFxtEntries = nullptr;
 }
