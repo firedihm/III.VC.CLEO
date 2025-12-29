@@ -72,7 +72,7 @@ class Script : protected CCustomScript
 public:
 		Script();
 		Script(const char* filepath);
-		~Script();
+		~Script() = delete;
 
 		void Init();
 
