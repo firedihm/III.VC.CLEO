@@ -1,32 +1,24 @@
 #pragma once
-#include <cstdint>
 
-typedef uint16_t wchar16_t;
-
-class CustomTextEntry
+class FxtEntry
 {
 public:
-	wchar16_t *m_pText;
-	char m_key[8];
-	CustomTextEntry *m_pNext;
+		wchar_t* m_pText;
+		char m_key[8];
+		FxtEntry* m_pNext;
 
-	CustomTextEntry(char *key, char *text);
-
-	~CustomTextEntry();
+		FxtEntry(char* key, char* text);
+		~FxtEntry() = delete;
 };
 
-class CustomText
+namespace fxt
 {
-public:
-	static void Load();
+	void Load();
+	void Unload();
 
-	static void Unload();
+	wchar_t* __fastcall GetText(void* pTheText, int, const char* key);
 
-	static wchar_t * __fastcall GetText(void* pTheText, int, const char* key);
+	void LoadFxtFile(char* filepath);
 
-	static void LoadFxtFile(char *filepath);
-
-	static void Utf8ToUtf16(const char* utf8, wchar16_t* utf16, size_t utf8_len, size_t utf16_len);
-
-	static CustomTextEntry *pCustomTextList;
+	void Utf8ToUtf16(const char* utf8, wchar_t* utf16, size_t utf8_len, size_t utf16_len);
 };
