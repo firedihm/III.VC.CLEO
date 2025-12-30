@@ -2282,11 +2282,7 @@ CustomOpcodes::OPCODE_0ADF(Script* script)
 {
 		script->Collect(2);
 
-		FxtEntry* entry = new FxtEntry(game.Scripts.pScriptParams[0].szVar, game.Scripts.pScriptParams[1].szVar);
-		if (entry) {
-				entry->m_pNext = CustomText::pFxtList;
-				CustomText::pFxtList = entry;
-		}
+		fxt::Add(game.Scripts.pScriptParams[0].szVar, game.Scripts.pScriptParams[1].szVar);
 
 		return OR_CONTINUE;
 }
@@ -2297,53 +2293,7 @@ CustomOpcodes::OPCODE_0AE0(Script* script)
 {
 		script->Collect(1);
 
-		for (FxtEntry* prev = nullptr, curr = CustomText::pFxtList; curr; prev = curr, curr = curr->m_pNext) {
-				if (std::strcmp(curr->m_key, game.Scripts.pScriptParams[0].szVar) == 0) {
-						// is list's head being deleted?
-						if (!prev)
-								CustomText::pFxtList = curr->m_pNext;
-						else
-								prev->m_pNext = curr->m_pNext;
-
-						LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", curr->m_key);
-						delete curr;
-				}
-		}
-
-		FxtEntry* entry = CustomText::pFxtList;
-		if (entry)
-		{
-			if (strcmp(game.Scripts.pScriptParams[0].szVar, entry->m_key) == 0)
-			{
-				CustomText::pCustomTextList = entry->m_pNext;
-				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloaded custom text \"%s\"", entry->m_key);
-				delete entry;
-				return OR_CONTINUE;
-			}
-			else
-			{
-				CustomTextEntry *next = entry->m_pNext;
-				while (next)
-				{
-					if (strcmp(game.Scripts.pScriptParams[0].szVar, next->m_key) == 0)
-					{
-						break;
-					}
-					else
-					{
-						entry = next;
-						next = next->m_pNext;
-					}
-				}
-				if (next)
-				{
-					LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloaded custom text \"%s\"", next->m_key);
-					entry->m_pNext = next->m_pNext;
-					delete next;
-					return OR_CONTINUE;
-				}
-			}
-		}
+		fxt::Remove(game.Scripts.pScriptParams[0].szVar);
 
 		return OR_CONTINUE;
 }
