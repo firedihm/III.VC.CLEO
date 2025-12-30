@@ -1,24 +1,13 @@
 #pragma once
 
-class FxtEntry
-{
-public:
-		wchar_t* m_pText;
-		char m_key[8];
-		FxtEntry* m_pNext;
-
-		FxtEntry(char* key, char* text);
-		~FxtEntry() = delete;
-};
-
 namespace fxt
 {
-	void Load();
-	void Unload();
+		void Add(const char* key, const wchar_t* text);
+		void Remove(const char* key);
 
-	wchar_t* __fastcall GetText(void* pTheText, int, const char* key);
+		void LoadEntries();
+		void UnloadEntries();
 
-	void LoadFxtFile(char* filepath);
-
-	void Utf8ToUtf16(const char* utf8, wchar_t* utf16, size_t utf8_len, size_t utf16_len);
+		// this is never called; instead, we jump here from CText::Get(const char* key), which is a __thiscall 
+		wchar_t* __thiscall Get(void* pTheText, const char* key);
 };
