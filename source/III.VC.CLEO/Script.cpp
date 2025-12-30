@@ -4,7 +4,7 @@
 #include "Script.h"
 
 #include <cstring>
-#include <ifstream>
+#include <fstream>
 
 Script::Script()
 {
