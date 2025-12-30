@@ -15,7 +15,7 @@ Script::Script(const char* filepath)
 {
 		Init();
 
-		std::ifstream file(filepath, std::ios_base::in || std::ios_base::binary);
+		std::ifstream file(filepath, std::ios_base::in | std::ios_base::binary);
 
 		size_t filesize = file.seekg(0, std::ios::end).tellg();
 		if (!file || !filesize)
