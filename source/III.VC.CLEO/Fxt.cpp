@@ -2,41 +2,17 @@
 #include "Game.h"
 #include "Log.h"
 
-#include <cstring>
 #include <filesystem>
+#include <fstream>
+#include <string>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
-FxtEntry* pFxtEntries;
+std::unordered_map<std::string, std::wstring> FxtEntries;
 
-FxtEntry::FxtEntry(char* key, char* text)
-{
-		size_t len = std::strlen(text);
-		m_pText = new wchar_t[len + 1];
-
-		if (game.bIsChinese) {
-				CustomText::Utf8ToUtf16(text, m_pText, len, len + 1);
-		} else {
-				// copy with char to wchar extension
-				for (size_t i = 0; i < len; ++i) 
-						m_pText[i] = (uchar)text[i];
-		}
-
-		m_pText[len] = '\0';
-		std::strncpy(m_key, key, 8);
-		m_key[7] = '\0';
-		m_pNext = nullptr;
-
-		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Registered custom text: \"%s\", \"%s\"", this->m_key, text);
-}
-
-FxtEntry::~FxtEntry()
-{
-		delete[] m_pText;
-		m_pText = nullptr;
-}
-
-void CustomText::Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len, size_t utf16_len)
+void
+Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len, size_t utf16_len)
 {
 	static auto get_utf8_bytes = [](uint8_t utf8) -> uint8_t
 	{
@@ -70,124 +46,80 @@ void CustomText::Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len
 	utf16[len] = 0;
 }
 
-wchar_t* CustomText::GetText(void* pTheText, int, const char* key)
+void
+fxt::Add(const char* key, const wchar_t* text)
 {
-	wchar_t* result = nullptr;
-	CustomTextEntry* entry = pCustomTextList;
-	while(entry)
-	{
-		if(!_stricmp(entry->m_key, key))
-		{
-			result = reinterpret_cast<wchar_t*>(entry->m_pText);
-			break;
-		}
-		entry = entry->m_pNext;
-	}
-	if(!result)
-		result = game.Text.pfGet(pTheText, key);
-	if(!result)
-		return nullptr;
-	return result;
-}
 
-char *StrFindKeyBegin(char *str)
-{
-	while(*str && *str != '\n' && *str != '\r' && *str != ';' && *str != '#')
-	{
-		if(*str != ' ' && *str != '\t')
-			return str;
-		str++;
-	}
-	return nullptr;
-}
-
-char *StrFindKeyEnd(char *str)
-{
-	while(*str && *str != '\n' && *str != '\r' && *str != ';' && *str != '#')
-	{
-		if(*str == ' ' || *str == '\t')
-			return str;
-		str++;
-	}
-	return nullptr;
-}
-
-char *StrFindTextBegin(char *str)
-{
-	while(*str && *str != '\n' && *str != '\r')
-	{
-		if(str[0] == '\\' && str[1] == '$')
-			return str + 2;
-		if(*str != ' ' && *str != '\t')
-			return str;
-		str++;
-	}
-	return nullptr;
-}
-
-char *StrFindTextEnd(char *str)
-{
-	while(*str != '\0' && *str != '\n' && *str != '\r')
-		str++;
-	return str;
-}
-
-void CustomText::LoadFxtFile(char *filepath)
-{
-	FILE *fxt = fopen(filepath, "rt");
-	char line[512];
-	if(fgets(line, 512, fxt))
-	{
-		do
-		{
-			char *keyBegin = StrFindKeyBegin(line);
-			if(keyBegin)
-			{
-				char *keyEnd = StrFindKeyEnd(&keyBegin[1]);
-				if(keyEnd)
-				{
-					*keyEnd = '\0';
-					char *textBegin = StrFindTextBegin(&keyEnd[1]);
-					if(textBegin)
-					{
-						char *textEnd = StrFindTextEnd(&textBegin[1]);
-						*textEnd = '\0';
-						CustomTextEntry *entry = new CustomTextEntry(keyBegin, textBegin);
-						if(entry)
-						{
-							entry->m_pNext = CustomText::pCustomTextList;
-							CustomText::pCustomTextList = entry;
-						}
-					}
-				}
-			}
-		}
-		while(fgets(line, 512, fxt));
-	}
 }
 
 void
-fxt::Load()
+fxt::Remove(const char* key)
+{
+		for (FxtEntry* prev = nullptr, curr = fxt::pFxtEntries; curr; prev = curr, curr = curr->m_pNext) {
+				if (std::strcmp(&curr->m_key, game.Scripts.pScriptParams[0].szVar) == 0) {
+						// is list's head being deleted?
+						if (!prev)
+								fxt::pFxtEntries = curr->m_pNext;
+						else
+								prev->m_pNext = curr->m_pNext;
+
+						LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", &curr->m_key);
+						delete curr;
+				}
+		}
+}
+
+wchar_t*
+fxt::Get(void* pTheText, const char* key)
+{
+		if (auto iter = FxtEntries.find(key); iter != FxtEntries.end())
+				return iter->second.c_str();
+		else
+				return game.Text.pfGet(pTheText, key);
+}
+
+void
+fxt::LoadEntries()
 {
 		fs::path dir(game.Misc.szRootDirName);
 		dir /= "CLEO/CLEO_TEXT";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".fxt") {
-						LoadFxtFile(entry.path().c_str());
+						std::ifstream file(entry.path().string());
+
+						for (std::string line(512, '\0'); std::getline(file, line); ) {
+								const char* whitespaces = " \f\n\r\t\v";
+
+								size_t key_start = line.find_first_not_of(whitespaces);
+								size_t key_end = line.find_first_of(whitespaces, key_start);
+								size_t text_start = line.find_first_not_of(whitespaces, key_end);
+								size_t text_end = line.find_first_of(whitespaces, text_start);
+
+								if (key_start == line.npos || text_start == line.npos)
+										continue;
+
+								if (line[key_start] == ';' || line[key_start] == '#')
+										continue;
+
+								// what is this?
+								if (line[text_start] == '\\' && line[text_start + 1] == '$')
+										text_start += 2;
+
+								std::string key(line.substr(key_start, key_end));
+								std::wstring text(line.substr(text_start, text_end));
+
+								;
+								if (auto [iter, result] = FxtEntries.emplace(key, text); result)
+										LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loaded fxt entry: \"%s\"", iter->second.c_str());
+						}
 				}
 		}
 }
 
 void
-fxt::Unload()
+fxt::UnloadEntries()
 {
-		FxtEntry* entry = pFxtEntries;
-		while (entry) {
-				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", entry->m_key);
-				FxtEntry* next = entry->m_pNext;
-				delete entry;
-				entry = next;
-		}
-		pFxtEntries = nullptr;
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+		FxtEntries.clear();
 }
