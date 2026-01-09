@@ -49,33 +49,20 @@ Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len, size_t utf16_le
 void
 fxt::Add(const char* key, const wchar_t* text)
 {
+		if (game.bIsChinese)
+				std::wstring text(line.substr(text_start, text_end));
+		else
+				;
 
+		if (auto [iter, result] = FxtEntries.emplace(key, text); result)
+				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loaded fxt entry: \"%s\"", iter->second.c_str());
 }
 
 void
 fxt::Remove(const char* key)
 {
-		for (FxtEntry* prev = nullptr, curr = fxt::pFxtEntries; curr; prev = curr, curr = curr->m_pNext) {
-				if (std::strcmp(&curr->m_key, game.Scripts.pScriptParams[0].szVar) == 0) {
-						// is list's head being deleted?
-						if (!prev)
-								fxt::pFxtEntries = curr->m_pNext;
-						else
-								prev->m_pNext = curr->m_pNext;
-
-						LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", &curr->m_key);
-						delete curr;
-				}
-		}
-}
-
-wchar_t*
-fxt::Get(void* pTheText, const char* key)
-{
-		if (auto iter = FxtEntries.find(key); iter != FxtEntries.end())
-				return iter->second.c_str();
-		else
-				return game.Text.pfGet(pTheText, key);
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", key);
+		FxtEntries.erase(key);
 }
 
 void
@@ -87,8 +74,9 @@ fxt::LoadEntries()
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".fxt") {
 						std::ifstream file(entry.path().string());
+						std::string line(512, '\0');
 
-						for (std::string line(512, '\0'); std::getline(file, line); ) {
+						while (std::getline(file, line)) {
 								const char* whitespaces = " \f\n\r\t\v";
 
 								size_t key_start = line.find_first_not_of(whitespaces);
@@ -106,12 +94,7 @@ fxt::LoadEntries()
 								if (line[text_start] == '\\' && line[text_start + 1] == '$')
 										text_start += 2;
 
-								std::string key(line.substr(key_start, key_end));
-								std::wstring text(line.substr(text_start, text_end));
-
-								;
-								if (auto [iter, result] = FxtEntries.emplace(key, text); result)
-										LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loaded fxt entry: \"%s\"", iter->second.c_str());
+								Add(line.substr(key_start, key_end).c_str(), line.substr(text_start, text_end).c_str());
 						}
 				}
 		}
@@ -122,4 +105,13 @@ fxt::UnloadEntries()
 {
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
 		FxtEntries.clear();
+}
+
+wchar_t*
+fxt::Get(void* pTheText, const char* key)
+{
+		if (auto iter = FxtEntries.find(key); iter != FxtEntries.end())
+				return iter->second.c_str();
+		else
+				return game.Text.pfGet(pTheText, key);
 }
