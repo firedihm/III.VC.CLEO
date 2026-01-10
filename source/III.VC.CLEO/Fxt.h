@@ -2,7 +2,7 @@
 
 namespace fxt
 {
-		void Add(const char* key, const wchar_t* text);
+		void Add(const char* key, const char* text);
 		void Remove(const char* key);
 
 		void LoadEntries();
