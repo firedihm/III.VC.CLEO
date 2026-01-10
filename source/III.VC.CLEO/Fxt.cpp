@@ -2,8 +2,10 @@
 #include "Game.h"
 #include "Log.h"
 
+#include <codecvt>
 #include <filesystem>
 #include <fstream>
+#include <locale>
 #include <string>
 #include <unordered_map>
 
@@ -12,49 +14,18 @@ namespace fs = std::filesystem;
 std::unordered_map<std::string, std::wstring> FxtEntries;
 
 void
-Utf8ToUtf16(const char *utf8, wchar16_t *utf16, size_t utf8_len, size_t utf16_len)
+fxt::Add(const char* key, const char* text)
 {
-	static auto get_utf8_bytes = [](uint8_t utf8) -> uint8_t
-	{
-			for (uint8_t i = 0; i < 6; i++)
-			{
-				if ((utf8 & (0x80 >> i)) == 0)
-					return i == 0 ? 1 : i;
-			}
-			return 1;
-	};
-	
-	size_t len = 0;
-	for (size_t i = 0; i < utf8_len && len < utf16_len; i++, len++)
-	{
-		uint8_t bytes = get_utf8_bytes(static_cast<uint8_t>(utf8[i]));
-		if (bytes > 1)
-		{
-			utf16[len] = utf8[i] & (0xFF >> (bytes + 1));
-			for (uint8_t j = 1; j < bytes; j++)
-			{
-				i++;
-				utf16[len] <<= 6;
-				utf16[len] += utf8[i] & 0x3F;
-			}
-		}
-		else
-		{
-			utf16[len] = utf8[i];
-		}
-	}
-	utf16[len] = 0;
-}
-
-void
-fxt::Add(const char* key, const wchar_t* text)
-{
-		if (game.bIsChinese)
-				std::wstring text(line.substr(text_start, text_end));
-		else
+		// chinese plugin actually makes game text Unicode; they are Extended ASCII by default
+		std::wstring wide_text;
+		if (game.bIsChinese) {
+				std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+				wide_text = converter.from_bytes(text);
+		} else {
 				;
+		}
 
-		if (auto [iter, result] = FxtEntries.emplace(key, text); result)
+		if (auto [iter, result] = FxtEntries.emplace(key, std::move(wide_text)); result)
 				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loaded fxt entry: \"%s\"", iter->second.c_str());
 }
 
