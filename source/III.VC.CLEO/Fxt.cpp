@@ -3,6 +3,7 @@
 #include "Log.h"
 
 #include <codecvt>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <locale>
@@ -16,13 +17,13 @@ std::unordered_map<std::string, std::wstring> FxtEntries;
 void
 fxt::Add(const char* key, const char* text)
 {
-		// chinese plugin actually makes game text Unicode; they are Extended ASCII by default
+		// chinese plugin actually makes game text Unicode; they are Extended ASCII with custom encoding by default
 		std::wstring wide_text;
 		if (game.bIsChinese) {
 				std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 				wide_text = converter.from_bytes(text);
 		} else {
-				;
+				wide_text = std::wstring(text, text + std::strlen(text));
 		}
 
 		if (auto [iter, result] = FxtEntries.emplace(key, std::move(wide_text)); result)
