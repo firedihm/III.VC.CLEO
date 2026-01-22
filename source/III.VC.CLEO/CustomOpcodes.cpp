@@ -273,48 +273,39 @@ eOpcodeResult CustomOpcodes::GOSUB(Script *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::TERMINATE_CUSTOM_THREAD(Script *script)
+eOpcodeResult
+CustomOpcodes::TERMINATE_CUSTOM_THREAD(Script* script)
 {
-	game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
-	script->RemoveFromCustomList(&scriptMgr.pCusomScripts);
-	LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_CUSTOM_THREAD: Terminating custom script \"%s\"", script->m_acName);
-	delete script;
-	return OR_TERMINATE;
+		scriptMgr::TerminateScript(script);
+
+		return OR_TERMINATE;
 }
 
-eOpcodeResult CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(Script *script)
+eOpcodeResult
+CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(Script* script)
 {
-	char name[8];
-	script->ReadShortString(name);
-	Script *search = scriptMgr.pCusomScripts;
-	eOpcodeResult result = OR_CONTINUE;
-	bool found = false;
-	while(search)
-	{
-		Script *next = search->m_pNextCustom;
-		if(!_stricmp(search->m_acName, name))
-		{
-			if(search == script)
-				result = OR_TERMINATE;
-			game.Scripts.pfRemoveScriptFromList(search, game.Scripts.ppActiveScripts);
-			search->RemoveFromCustomList(&scriptMgr.pCusomScripts);
-			LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_NAMED_CUSTOM_THREAD: Terminating custom script with name \"%s\"", search->m_acName);
-			delete search;
-			found = true;
+		char name[KEY_LENGTH_IN_SCRIPT];
+		script->ReadShortString(&name);
+
+		if (Script* found = scriptMgr::FindScriptNamed(&name); found) {
+				script->UpdateCompareFlag(true);
+
+				scriptMgr::TerminateScript(found);
+
+				return (found == script) ? OR_TERMINATE : OR_CONTINUE;
+		} else {
+				script->UpdateCompareFlag(false);
+
+				return OR_CONTINUE;
 		}
-		search = next;
-	}
-	if(found)
-		script->UpdateCompareFlag(true);
-	else
-		script->UpdateCompareFlag(false);
-	return result;
 }
 
-eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(Script *script)
+eOpcodeResult
+CustomOpcodes::START_CUSTOM_THREAD(Script* script)
 {
-	char name[8];
-	script->ReadShortString(name);
+	char name[KEY_LENGTH_IN_SCRIPT];
+	script->ReadShortString(&name);
+
 	char filepath[MAX_PATH];
 	sprintf(filepath, "%s%.8s", "cleo\\", name);
 	Script *newScript = new Script(filepath);
@@ -324,7 +315,7 @@ eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD(Script *script)
 		game.Scripts.pfAddScriptToList(newScript, game.Scripts.ppActiveScripts);
 		newScript->m_bIsActive = true;
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Started new script \"%s\"", name);
-		for(int i = 0; (*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type; i++)
+		for(int i = 0; (*(ScriptParamType*)(&game.Scripts.pScriptSpace[script->m_dwIp])).type; i++)
 		{
 			script->Collect(1);
 			newScript->m_aLVars[i].nVar = game.Scripts.pScriptParams[0].nVar;
