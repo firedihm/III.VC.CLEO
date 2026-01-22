@@ -24,6 +24,10 @@ Script::Script(const char* filepath)
 		m_pCodeData = new uchar[filesize];
 		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
+
+		m_bIsCustom = true;
+		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
+				m_bIsPersistent = true;
 }
 
 Script::~Script()
