@@ -39,7 +39,7 @@ void
 Script::Init()
 {
 		std::memset(this, 0, sizeof(Script));
-		std::strcpy(&m_acName, "noname");
+		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
 		m_bDeathArrestCheckEnabled = true;
 
 		m_pLocalArray = new ScriptParam[0xFF];
