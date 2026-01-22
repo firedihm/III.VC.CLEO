@@ -3,6 +3,7 @@
 #include "Script.h"
 #include "ScriptManager.h"
 
+#include <cstring>
 #include <filesystem>
 #include <set>
 
@@ -12,7 +13,29 @@ std::set<const void*> AllocatedMemory;
 std::set<const std::FILE*> FileStreams;
 std::set<const fs::directory_iterator*> FileSearchHandles;
 
-ScriptManager scriptMgr;
+// CLEO sripts lists; c-styled to match mission scripts lists style
+Script* pCusomScripts;
+Script* pPersistentScripts;
+
+Script*
+scriptMgr::StartScript(const char* filepath)
+{
+		Script* script = new Script(filepath);
+
+		game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
+		script->AddToCustomList(&pCusomScripts);
+		script->m_bIsActive = true;
+}
+
+void
+scriptMgr::TerminateScript(Script* script)
+{
+		Script** list = script->m_bIsPersistent ? &pPersistentScripts : &pCusomScripts;
+		script->RemoveFromCustomList(list);
+		game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
+		LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_CUSTOM_THREAD: Terminating custom script \"%s\"", script->m_acName);
+		delete script;
+}
 
 void
 ScriptManager::LoadScripts()
@@ -23,12 +46,7 @@ ScriptManager::LoadScripts()
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".cs") {
 						try {
-								Script* script = new Script(entry.path().c_str());
-
-								game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
-								script->AddToCustomList(&pCusomScripts);
-								script->m_bIsActive = true;
-								script->m_bIsCustom = true;
+								StartScript(entry.path().c_str());
 
 								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Loaded custom script \"%s\"", &script->m_acName);
 						} catch (const char* e) {
@@ -78,6 +96,28 @@ ScriptManager::DisableScripts()
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", &script->m_acName);
 				script = script->m_pNextCustom;
 		}
+}
+
+Script*
+scriptMgr::FindScriptNamed(char* name)
+{
+		Script* script = pCusomScripts;
+		while (script) {
+				if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
+						return script;
+
+				script = script->m_pNextCustom;
+		}
+
+		script = pPersistentScripts;
+		while (script) {
+				if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
+						return script;
+
+				script = script->m_pNextCustom;
+		}
+
+		return nullptr;
 }
 
 void
