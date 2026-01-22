@@ -4,18 +4,18 @@ class Script;
 class std::FILE;
 class std::filesystem::directory_iterator;
 
-// manages custom .cs scripts in separate lists
-class ScriptManager
+namespace scriptMgr
 {
-	public:
-		Script* pCusomScripts = nullptr;
-		Script* pPersistentScripts = nullptr;
+		Script* StartScript(const char* filepath);
+		void TerminateScript(Script* script);
 
 		void LoadScripts();
 		void UnloadScripts();
 
 		void EnableScripts();
 		void DisableScripts();
+
+		Script* FindScriptNamed(char* name);
 
 		// hooks
 		void OnGameStart();
@@ -32,5 +32,3 @@ class ScriptManager
 		static void SaveFileSearchHandle(const std::filesystem::directory_iterator* handle);
 		static void	DeleteFileSearchHandle(const std::filesystem::directory_iterator* handle);
 };
-
-extern ScriptManager scriptMgr;
