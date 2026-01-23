@@ -1,3 +1,4 @@
+#include "Fxt.h"
 #include "Game.h"
 #include "Log.h"
 #include "Script.h"
@@ -14,7 +15,7 @@ std::set<const std::FILE*> FileStreams;
 std::set<const fs::directory_iterator*> FileSearchHandles;
 
 // CLEO sripts lists; c-styled to match mission scripts lists style
-Script* pCusomScripts;
+Script* pCustomScripts;
 Script* pPersistentScripts;
 
 Script*
@@ -23,47 +24,47 @@ scriptMgr::StartScript(const char* filepath)
 		Script* script = new Script(filepath);
 
 		game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
-		script->AddToCustomList(&pCusomScripts);
+		script->AddToCustomList(script->m_bIsPersistent ? &pPersistentScripts : &pCustomScripts);
 		script->m_bIsActive = true;
+
+		return script;
 }
 
 void
 scriptMgr::TerminateScript(Script* script)
 {
-		Script** list = script->m_bIsPersistent ? &pPersistentScripts : &pCusomScripts;
-		script->RemoveFromCustomList(list);
+		script->RemoveFromCustomList(script->m_bIsPersistent ? &pPersistentScripts : &pCustomScripts);
 		game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
-		LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_CUSTOM_THREAD: Terminating custom script \"%s\"", script->m_acName);
+
 		delete script;
 }
 
 void
-ScriptManager::LoadScripts()
+scriptMgr::LoadScripts()
 {
-		fs::path dir(game.Misc.szRootDirName);
-		dir /= "CLEO";
+		fs::path dir = fs::path(game.Misc.szRootDirName) / "CLEO";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
-				if (entry.is_regular_file() && entry.path().extension().string() == ".cs") {
+				if (entry.is_regular_file() && (entry.path().extension().string() == ".cs" || entry.path().extension().string() == ".csp")) {
 						try {
 								StartScript(entry.path().c_str());
 
 								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Loaded custom script \"%s\"", &script->m_acName);
 						} catch (const char* e) {
-								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), e);
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to load custom script \"%s\". %s", entry.filename().c_str(), e);
 						} catch (const std::bad_alloc& e) {
-								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), e.what());
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to load custom script \"%s\". %s", entry.filename().c_str(), e.what());
 						} catch (...) {
-								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to allocate custom script \"%s\". %s", entry.filename().c_str(), "Unknown exception");
+								LOGL(LOG_PRIORITY_MEMORY_ALLOCATION, "Failed to load custom script \"%s\". %s", entry.filename().c_str(), "Unknown exception");
 						}
 				}
 		}
 }
 
 void
-ScriptManager::UnloadScripts()
+scriptMgr::UnloadScripts()
 {
-		Script* script = pCusomScripts;
+		Script* script = pCustomScripts;
 		while (script) {
 				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 
@@ -73,13 +74,13 @@ ScriptManager::UnloadScripts()
 				delete script;
 				script = next;
 		}
-		pCusomScripts = nullptr;
+		pCustomScripts = nullptr;
 }
 
 void
 ScriptManager::EnableScripts()
 {
-		Script* script = pCusomScripts;
+		Script* script = pCustomScripts;
 		while (script) {
 				game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", &script->m_acName);
@@ -90,7 +91,7 @@ ScriptManager::EnableScripts()
 void
 ScriptManager::DisableScripts()
 {
-		Script* script = pCusomScripts;
+		Script* script = pCustomScripts;
 		while (script) {
 				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", &script->m_acName);
@@ -99,9 +100,9 @@ ScriptManager::DisableScripts()
 }
 
 Script*
-scriptMgr::FindScriptNamed(char* name)
+scriptMgr::FindScriptNamed(char* name, bool search_mission)
 {
-		Script* script = pCusomScripts;
+		Script* script = pCustomScripts;
 		while (script) {
 				if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
 						return script;
@@ -117,6 +118,16 @@ scriptMgr::FindScriptNamed(char* name)
 				script = script->m_pNextCustom;
 		}
 
+		if (search_mission) {
+				script = *game.Scripts.ppActiveScripts;
+				while (script) {
+						if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
+								return script;
+
+						script = script->m_pNext;
+				}
+		}
+
 		return nullptr;
 }
 
@@ -126,12 +137,14 @@ ScriptManager::OnGameStart()
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Start--");
 
 		UnloadScripts();
-		CustomText::Unload();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+		fxt::UnloadEntries();
 
 		game.Events.pfInitScripts();
 
 		LoadScripts();
-		CustomText::Load();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
+		fxt::LoadEntries();
 }
 
 void
@@ -140,12 +153,14 @@ ScriptManager::OnGameLoad()
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Load--");
 
 		UnloadScripts();
-		CustomText::Unload();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+		fxt::UnloadEntries();
 
 		game.Events.pfInitScripts();
 
 		LoadScripts();
-		CustomText::Load();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
+		fxt::LoadEntries();
 
 		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
 		Misc.openedFiles->clear();
@@ -161,12 +176,14 @@ ScriptManager::OnGameReload()
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Game Reload--");
 
 		UnloadScripts();
-		CustomText::Unload();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+		fxt::UnloadEntries();
 
 		game.Events.pfInitScripts();
 
 		LoadScripts();
-		CustomText::Load();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
+		fxt::LoadEntries();
 
 		std::for_each(Misc.openedFiles->begin(), Misc.openedFiles->end(), fclose);
 		Misc.openedFiles->clear();
@@ -194,7 +211,8 @@ ScriptManager::OnGameShutdown()
 		game.Events.pfCdStreamRemoveImages();
 
 		UnloadScripts();
-		CustomText::Unload();
+		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+		fxt::UnloadEntries();
 
 		std::for_each(Misc.openedFiles->begin(),.Misc.openedFiles->end(), fclose);
 		Misc.openedFiles->clear();
