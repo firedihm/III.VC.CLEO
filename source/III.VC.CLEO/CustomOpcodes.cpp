@@ -276,6 +276,7 @@ eOpcodeResult CustomOpcodes::GOSUB(Script *script)
 eOpcodeResult
 CustomOpcodes::TERMINATE_CUSTOM_THREAD(Script* script)
 {
+		LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_CUSTOM_THREAD: Terminating custom script \"%s\"", &script->m_acName);
 		scriptMgr::TerminateScript(script);
 
 		return OR_TERMINATE;
@@ -290,11 +291,14 @@ CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(Script* script)
 		if (Script* found = scriptMgr::FindScriptNamed(&name); found) {
 				script->UpdateCompareFlag(true);
 
+				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_NAMED_CUSTOM_THREAD: Terminating custom script \"%s\"", found->m_acName);
 				scriptMgr::TerminateScript(found);
 
 				return (found == script) ? OR_TERMINATE : OR_CONTINUE;
 		} else {
 				script->UpdateCompareFlag(false);
+
+				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_NAMED_CUSTOM_THREAD: Found no scripts named \"%s\"", &name);
 
 				return OR_CONTINUE;
 		}
@@ -303,36 +307,40 @@ CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(Script* script)
 eOpcodeResult
 CustomOpcodes::START_CUSTOM_THREAD(Script* script)
 {
-	char name[KEY_LENGTH_IN_SCRIPT];
-	script->ReadShortString(&name);
+		// there's START_CUSTOM_THREAD_VSTRING that accepts strings instead of labels
+		char filename[KEY_LENGTH_IN_SCRIPT];
+		script->ReadShortString(&filename);
 
-	char filepath[MAX_PATH];
-	sprintf(filepath, "%s%.8s", "cleo\\", name);
-	Script *newScript = new Script(filepath);
-	if(newScript && newScript->Loaded())
-	{
-		newScript->AddToCustomList(&scriptMgr.pCusomScripts);
-		game.Scripts.pfAddScriptToList(newScript, game.Scripts.ppActiveScripts);
-		newScript->m_bIsActive = true;
-		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Started new script \"%s\"", name);
-		for(int i = 0; (*(ScriptParamType*)(&game.Scripts.pScriptSpace[script->m_dwIp])).type; i++)
-		{
-			script->Collect(1);
-			newScript->m_aLVars[i].nVar = game.Scripts.pScriptParams[0].nVar;
+		fs::path filepath = fs::path(game.Misc.szRootDirName) / "CLEO" / &filename;
+
+		try {
+				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Starting new script \"%s\"", filepath.c_str());
+				Script* new_script = scriptMgr::StartScript(filepath.c_str());
+
+				for (int i = 0; script->GetNextParamType(); ++i) {
+						script->Collect(1);
+						new_script->m_aLVars[i].nVar = game.Scripts.pScriptParams[0].nVar;
+				}
+				script->m_dwIp++;
+
+				script->UpdateCompareFlag(true);
+
+				return OR_CONTINUE;
+		} catch (const char* e) {
+				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", e);
+		} catch (...) {
+				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", "Unknown exception");
 		}
-		script->UpdateCompareFlag(true);
-	}
-	else
-	{
-		while((*(ScriptParamType *)(&game.Scripts.pScriptSpace[script->m_dwIp])).type)
-			script->Collect(1);
-		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", name);
-		if(newScript)
-			delete newScript;
+
+		// just skip all params if we fail
+		while (script->GetNextParamType()) {
+				script->Collect(1);
+		}
+		script->m_dwIp++;
+
 		script->UpdateCompareFlag(false);
-	}
-	script->m_dwIp++;
-	return OR_CONTINUE;
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -531,39 +539,18 @@ CustomOpcodes::GET_THREAD_POINTER(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_NAMED_THREAD_POINTER(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_NAMED_THREAD_POINTER(Script* script)
 {
-	char name[8];
-	script->ReadShortString(name);
-	Script *result_ptr = 0;
-	Script *search = scriptMgr.pCusomScripts;
-	while(search)
-	{
-		if(!_stricmp(search->m_acName, name))
-		{
-			result_ptr = search;
-			break;
-		}
-		search = search->m_pNextCustom;
-	}
-	if(!result_ptr)
-	{
-		for(int i = 0; i < 128; i++)
-		{
-			if(!_stricmp(scriptMgr.gameScripts[i].m_acName, name))
-			{
-				result_ptr = &scriptMgr.gameScripts[i];
-				break;
-			}
-		}
-	}
-	game.Scripts.pScriptParams[0].pVar = result_ptr;
-	if(result_ptr)
-		script->UpdateCompareFlag(true);
-	else
-		script->UpdateCompareFlag(false);
-	script->Store(1);
-	return OR_CONTINUE;
+		char name[KEY_LENGTH_IN_SCRIPT];
+		script->ReadShortString(name);
+
+		Script* found = scriptMgr::FindScriptNamed(&name, true);
+		script->UpdateCompareFlag(found != nullptr);
+		game.Scripts.pScriptParams[0].pVar = found;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::IS_KEY_PRESSED(Script *script)
@@ -1311,49 +1298,59 @@ CustomOpcodes::PLAYER_DRIVING_A_MOTORBIKE(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::IS_PC_VERSION(Script *script)
+eOpcodeResult
+CustomOpcodes::IS_PC_VERSION(Script* script)
 {
-	script->UpdateCompareFlag(true);
-	return OR_CONTINUE;
-}
-
-eOpcodeResult CustomOpcodes::IS_AUSTRALIAN_GAME(Script *script)
-{
-	script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
-}
-
-eOpcodeResult CustomOpcodes::START_CUSTOM_THREAD_VSTRING(Script *script)
-{
-	script->Collect(1);
-	char filepath[MAX_PATH];
-	strcpy(filepath, "cleo\\");
-	strcat(filepath, game.Scripts.pScriptParams[0].szVar);
-	Script *newScript = new Script(filepath);
-	if(newScript && newScript->Loaded())
-	{
-		newScript->AddToCustomList(&scriptMgr.pCusomScripts);
-		game.Scripts.pfAddScriptToList(newScript, game.Scripts.ppActiveScripts);
-		newScript->m_bIsActive = true;
-		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Started new script \"%s\"", script->m_acName);
-		for(int i = 0; script->GetNextParamType(); i++)
-		{
-			script->Collect(1);
-			newScript->m_aLVars[i].nVar = game.Scripts.pScriptParams[0].nVar;
-		}
 		script->UpdateCompareFlag(true);
-	}
-	else
-	{
-		while(script->GetNextParamType())
-			script->Collect(1);
-		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", script->m_acName);
-		if(newScript)
-			delete newScript;
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+CustomOpcodes::IS_AUSTRALIAN_GAME(Script* script)
+{
 		script->UpdateCompareFlag(false);
-	}
-	script->m_dwIp++;
-	return OR_CONTINUE;
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+CustomOpcodes::START_CUSTOM_THREAD_VSTRING(Script* script)
+{
+		script->Collect(1);
+
+		fs::path filepath = fs::path(game.Misc.szRootDirName) / "CLEO" / game.Scripts.pScriptParams[0].szVar;
+
+		Script* new_script = new Script(filepath.c_str());
+
+		try {
+				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Starting new script \"%s\"", filepath.c_str());
+				Script* new_script = scriptMgr::StartScript(filepath.c_str());
+
+				for (int i = 0; script->GetNextParamType(); ++i) {
+						script->Collect(1);
+						new_script->m_aLVars[i].nVar = game.Scripts.pScriptParams[0].nVar;
+				}
+				script->m_dwIp++;
+
+				script->UpdateCompareFlag(true);
+
+				return OR_CONTINUE;
+		} catch (const char* e) {
+				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", e);
+		} catch (...) {
+				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD: Script loading failed, \"%s\"", "Unknown exception");
+		}
+
+		// just skip all params if we fail
+		while (script->GetNextParamType()) {
+				script->Collect(1);
+		}
+		script->m_dwIp++;
+
+		script->UpdateCompareFlag(false);
+
+		return OR_CONTINUE;
 }
 
 //0601=2, is_button_pressed_on_pad %1d% with_sensitivity %2d%
