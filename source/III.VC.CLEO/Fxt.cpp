@@ -1,18 +1,17 @@
 #include "Fxt.h"
 #include "Game.h"
-#include "Log.h"
 
 #include <codecvt>
 #include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <locale>
+#include <map>
 #include <string>
-#include <unordered_map>
 
 namespace fs = std::filesystem;
 
-std::unordered_map<std::string, std::wstring> FxtEntries;
+std::map<std::string, std::wstring> FxtEntries;
 
 void
 fxt::Add(const char* key, const char* text)
@@ -26,14 +25,12 @@ fxt::Add(const char* key, const char* text)
 				wide_text = std::wstring(text, text + std::strlen(text));
 		}
 
-		if (auto [iter, result] = FxtEntries.emplace(key, std::move(wide_text)); result)
-				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loaded fxt entry: \"%s\"", iter->second.c_str());
+		FxtEntries.emplace(key, std::move(wide_text))
 }
 
 void
 fxt::Remove(const char* key)
 {
-		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading custom text \"%s\"", key);
 		FxtEntries.erase(key);
 }
 
@@ -74,7 +71,6 @@ fxt::LoadEntries()
 void
 fxt::UnloadEntries()
 {
-		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
 		FxtEntries.clear();
 }
 
