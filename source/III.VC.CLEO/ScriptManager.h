@@ -15,7 +15,7 @@ namespace scriptMgr
 		void EnableScripts();
 		void DisableScripts();
 
-		Script* FindScriptNamed(char* name);
+		Script* FindScriptNamed(char* name, bool search_mission = false);
 
 		// hooks
 		void OnGameStart();
