@@ -40,8 +40,7 @@ fxt::Remove(const char* key)
 void
 fxt::LoadEntries()
 {
-		fs::path dir(game.Misc.szRootDirName);
-		dir /= "CLEO/CLEO_TEXT";
+		fs::path dir = fs::path(game.Misc.szRootDirName) / "CLEO" / "CLEO_TEXT";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".fxt") {
