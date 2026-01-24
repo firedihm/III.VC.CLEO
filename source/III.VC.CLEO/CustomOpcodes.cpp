@@ -980,7 +980,7 @@ CustomOpcodes::CALL_SCM_FUNCTION(Script* script)
 
 		/*
 			We didn't actually read all params this opcode provides just yet: after we read values that caller 
-			passes to callee with script->Collect(), there are indexes of vars where callee's retvals should be stored. 
+			passes to callee with script->Collect(), there are indexes of m_aLVars where callee's retvals should be stored. 
 			We will continue reading them after returning from callee.
 		*/
 		script->PushStackFrame();
@@ -1004,13 +1004,10 @@ CustomOpcodes::SCM_FUNCTION_RET(Script* script)
 		// return to caller
 		script->PopStackFrame();
 
-		// continue reading indexes of vars to store callee's retvals
+		// continue reading indexes of m_aLVars to store callee's retvals
 		script->Store(paramCount);
 
-		/*
-			Variable-param-count opcodes like 0AB1: CLEO_CALL end with PARAM_TYPE_END_OF_PARAMS: that's 
-			because we actually get paramCount from callee. We skip it manually here.
-		*/
+		// variadic opcodes like 0AB1: CLEO_CALL end with PARAM_TYPE_END_OF_PARAMS; we skip it manually here.
 		script->m_dwIp += 1;
 
 		return OR_CONTINUE;
@@ -1039,11 +1036,14 @@ CustomOpcodes::GET_LABEL_OFFSET(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_VAR_OFFSET(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_VAR_OFFSET(Script* script)
 {
-	game.Scripts.pScriptParams[0].pVar = script->GetPointerToScriptVariable();
-	script->Store(1);
-	return OR_CONTINUE;
+		// we don't collect params here, because we simply call native function 
+		game.Scripts.pScriptParams[0].pVar = script->GetPointerToScriptVariable();
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::BIT_AND(Script *script)
@@ -1359,7 +1359,7 @@ CustomOpcodes::IS_BUTTON_PRESSED_ON_PAD(Script* script)
 {
 		script->Collect(2);
 
-		script->UpdateCompareFlag(*(game.Scripts.pScriptParams[0].nVar + game.Misc.pPadNewState) == (short)game.Scripts.pScriptParams[1].nVar);
+		script->UpdateCompareFlag(*(game.Misc.pPadNewState + game.Scripts.pScriptParams[0].nVar) == (short)game.Scripts.pScriptParams[1].nVar);
 
 		return OR_CONTINUE;
 }
@@ -1370,7 +1370,7 @@ CustomOpcodes::EMULATE_BUTTON_PRESS_ON_PAD(Script* script)
 {
 		script->Collect(2);
 
-		*(game.Scripts.pScriptParams[0].nVar + game.Misc.pPadNewState) = (short)game.Scripts.pScriptParams[1].nVar;
+		*(game.Misc.pPadNewState + game.Scripts.pScriptParams[0].nVar) = (short)game.Scripts.pScriptParams[1].nVar;
 
 		return OR_CONTINUE;
 }
@@ -1385,49 +1385,50 @@ CustomOpcodes::IS_CAMERA_IN_WIDESCREEN_MODE(Script* script)
 }
 
 //0604=2, %2d% = weapon %1d% model
-eOpcodeResult CustomOpcodes::GET_MODEL_ID_FROM_WEAPON_ID(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_MODEL_ID_FROM_WEAPON_ID(Script* script)
 {
-	script->Collect(1);
-	unsigned int wID = game.Misc.pfModelForWeapon(game.Scripts.pScriptParams[0].nVar);
-	game.Scripts.pScriptParams[0].nVar = wID ? wID : -1;
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Collect(1);
+
+		int weaponMI = game.Misc.pfModelForWeapon(game.Scripts.pScriptParams[0].nVar);
+		game.Scripts.pScriptParams[0].nVar = weaponMI ? weaponMI : -1;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0605=2, %2d% = model %1d% weapon id
-eOpcodeResult CustomOpcodes::GET_WEAPON_ID_FROM_MODEL_ID(Script *script)
+eOpcodeResult
+CustomOpcodes::GET_WEAPON_ID_FROM_MODEL_ID(Script* script)
 {
-	script->Collect(1);
-	int mID = game.Scripts.pScriptParams[0].nVar;
-	if (mID < 0) 
-		mID = game.Scripts.pUsedObjectArray[-mID].index;
-	for (size_t i = 0; i < 37; i++)
-	{
-		if (mID == game.Misc.pfModelForWeapon(i))
-		{
-			game.Scripts.pScriptParams[0].nVar = i;
-			script->Store(1);
-			return OR_CONTINUE;
+		script->Collect(1);
+		int weaponMI = game.Scripts.pScriptParams[0].nVar;
+
+		if (weaponMI < 0) 
+				weaponMI = game.Scripts.pUsedObjectArray[-weaponMI].index;
+
+		// CPickups::WeaponForModel() exits only in III, so we do this manually for VC compatability
+		int result = -1;
+		for (size_t i = 0; i < 37; ++i) {
+				if (weaponMI == game.Misc.pfModelForWeapon(i))
+						break;
 		}
-	}
-	game.Scripts.pScriptParams[0].nVar = -1;
-	script->Store(1);
-	return OR_CONTINUE;
+
+		game.Scripts.pScriptParams[0].nVar = result;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0606=3, set_memory_offset memory_pointer %1d% memory_to_point %2d% virtual_protect %3d%
-eOpcodeResult CustomOpcodes::SET_MEM_OFFSET(Script *script)
+eOpcodeResult
+CustomOpcodes::SET_MEM_OFFSET(Script* script)
 {
-	script->Collect(3);
-	DWORD flOldProtect;
-	if (game.Scripts.pScriptParams[2].nVar)
-		VirtualProtect(game.Scripts.pScriptParams[0].pVar, sizeof(void*), PAGE_EXECUTE_READWRITE, &flOldProtect);
+		script->Collect(3);
 
-	*(int *)game.Scripts.pScriptParams[0].pVar = game.Scripts.pScriptParams[1].nVar - (game.Scripts.pScriptParams[0].nVar + 4);
+		memory::Write(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[1].nVar - (game.Scripts.pScriptParams[0].nVar + 4));
 
-	if (game.Scripts.pScriptParams[2].nVar)
-		VirtualProtect(game.Scripts.pScriptParams[0].pVar, sizeof(void*), flOldProtect, &flOldProtect);
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 //0607=1, %1d% = get_current_weather
