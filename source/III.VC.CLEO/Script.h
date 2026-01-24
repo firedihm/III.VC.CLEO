@@ -52,8 +52,6 @@ protected:
 				uint retAddr;
 		};
 
-		CCustomScript* m_pNextCustom;
-		CCustomScript* m_pPrevCustom;
 		uchar* m_pCodeData;
 		uint m_dwBaseIp;
 		bool m_bIsCustom;
