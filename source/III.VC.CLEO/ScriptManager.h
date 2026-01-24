@@ -9,13 +9,14 @@ namespace scriptMgr
 		Script* StartScript(const char* filepath);
 		void TerminateScript(Script* script);
 
-		void LoadScripts();
-		void UnloadScripts();
+		void LoadScripts(bool game_start);
+		void UnloadScripts(bool game_shutdown);
 
+		// temporarily disables custom scripts to prevent them from being saved during saving
 		void EnableScripts();
 		void DisableScripts();
 
-		Script* FindScriptNamed(char* name, bool search_mission = false);
+		Script* FindScriptNamed(char* name, bool search_generic = false);
 
 		// hooks
 		void OnGameStart();
@@ -25,10 +26,10 @@ namespace scriptMgr
 		void OnGameShutdown();
 
 		// keep track of objects that scripts create, so we won't lose them if scripts get terminated prematurely
-		static void SaveMemoryAddress(const void* memory);
-		static void DeleteMemoryAddress(const void* memory);
-		static void SaveFileStream(const std::FILE* stream);
-		static void DeleteFileStream(const std::FILE* stream);
-		static void SaveFileSearchHandle(const std::filesystem::directory_iterator* handle);
-		static void	DeleteFileSearchHandle(const std::filesystem::directory_iterator* handle);
+		void SaveMemoryAddress(const void* memory);
+		void DeleteMemoryAddress(const void* memory);
+		void SaveFileStream(const std::FILE* stream);
+		void DeleteFileStream(const std::FILE* stream);
+		void SaveFileSearchHandle(const std::filesystem::directory_iterator* handle);
+		void DeleteFileSearchHandle(const std::filesystem::directory_iterator* handle);
 };
