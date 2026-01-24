@@ -50,30 +50,30 @@ Script::Init()
 		std::memset(m_pLocalArray, 0, sizeof(ScriptParam) * 0xFF);
 }
 
-void
-Script::AddToCustomList(Script** list)
+eOpcodeResult
+Script::ProcessOneCommand()
 {
-		// push_front()
-		Script* first = *list;
-		m_pNextCustom = first;
-		m_pPrevCustom = nullptr;
+		// highest bit of opcode denotes notFlag: reversing conditional result
+		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_dwIp];
+		m_bNotFlag = (op & 0x8000) ? true : false;
+		op &= 0x7FFF;
+		m_dwIp += 2;
 
-		if (first)
-				first->m_pPrevCustom = (CCustomScript*)this;
-
-		first = this;
-}
-
-void
-Script::RemoveFromCustomList(Script** list)
-{
-		if (m_pPrevCustom)
-				m_pPrevCustom->m_pNextCustom = m_pNextCustom;
-		else
-				*list = (Script*)m_pNextCustom;
-
-		if (m_pNextCustom)
-				m_pNextCustom->m_pPrevCustom = m_pPrevCustom;
+		if (Opcodes::functions[op]) { // call opcode registered as custom
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
+				eOpcodeResult result = Opcodes::functions[op](this);
+				*game.Scripts.pNumOpcodesExecuted += 1;
+				return result;
+		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
+				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", &m_acName, op);
+				Error("Incorrect opcode ID: %04X", op);
+				return OR_UNDEFINED;
+		} else { // call default opcode
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
+				eOpcodeResult result = game.Scripts.apfOpcodeHandlers[op / 100](this, op);
+				*game.Scripts.pNumOpcodesExecuted += 1;
+				return result;
+		}
 }
 
 void
@@ -100,32 +100,6 @@ Script::PopStackFrame()
 		StackFrame* prev = m_pCleoCallStack->prev;
 		delete m_pCleoCallStack;
 		m_pCleoCallStack = prev;
-}
-
-eOpcodeResult
-Script::ProcessOneCommand()
-{
-		// highest bit of opcode denotes notFlag: reversing conditional result
-		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_dwIp];
-		m_bNotFlag = (op & 0x8000) ? true : false;
-		op &= 0x7FFF;
-		m_dwIp += 2;
-
-		if (Opcodes::functions[op]) { // call opcode registered as custom
-				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
-				eOpcodeResult result = Opcodes::functions[op](this);
-				*game.Scripts.pNumOpcodesExecuted += 1;
-				return result;
-		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
-				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", &m_acName, op);
-				Error("Incorrect opcode ID: %04X", op);
-				return OR_UNDEFINED;
-		} else { // call default opcode
-				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
-				eOpcodeResult result = game.Scripts.apfOpcodeHandlers[op / 100](this, op);
-				*game.Scripts.pNumOpcodesExecuted += 1;
-				return result;
-		}
 }
 
 eParamType
