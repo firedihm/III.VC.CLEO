@@ -76,13 +76,10 @@ public:
 
 		void Init();
 
-		void AddToCustomList(Script** list);
-		void RemoveFromCustomList(Script** list);
+		eOpcodeResult ProcessOneCommand();
 
 		void PushStackFrame();
 		void PopStackFrame();
-
-		eOpcodeResult ProcessOneCommand();
 
 		// exports
 		CLEOAPI eParamType GetNextParamType();
