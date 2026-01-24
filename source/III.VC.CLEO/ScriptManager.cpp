@@ -6,46 +6,57 @@
 
 #include <cstring>
 #include <filesystem>
+#include <list>
 #include <set>
 
 namespace fs = std::filesystem;
+
+std::list<Script> CustomScripts;
+std::list<Script> PersistentScripts;
 
 std::set<const void*> AllocatedMemory;
 std::set<const std::FILE*> FileStreams;
 std::set<const fs::directory_iterator*> FileSearchHandles;
 
-// CLEO sripts lists; c-styled to match mission scripts lists style
-Script* pCustomScripts;
-Script* pPersistentScripts;
-
 Script*
 scriptMgr::StartScript(const char* filepath)
 {
-		Script* script = new Script(filepath);
+		Script script(filepath);
 
-		game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
-		script->AddToCustomList(script->m_bIsPersistent ? &pPersistentScripts : &pCustomScripts);
-		script->m_bIsActive = true;
+		std::list<Script>& list = script.m_bIsPersistent ? PersistentScripts : CustomScripts;
 
-		return script;
+		list.push_front(std::move(script));
+
+		game.Scripts.pfAddScriptToList(&list.front(), game.Scripts.ppActiveScripts);
+		list.front().m_bIsActive = true;
+
+		return &list.front();
 }
 
 void
 scriptMgr::TerminateScript(Script* script)
 {
-		script->RemoveFromCustomList(script->m_bIsPersistent ? &pPersistentScripts : &pCustomScripts);
 		game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
+		script->m_bIsActive = false;
 
-		delete script;
+		std::list<Script>& list = script->m_bIsPersistent ? PersistentScripts : CustomScripts;
+
+		for (auto it = list.begin(); it != list.end(); ++it) {
+				if (Script& current = *it; &current == script) {
+						list.erase(it);
+						break;
+				}
+		}
 }
 
 void
-scriptMgr::LoadScripts()
+scriptMgr::LoadScripts(bool game_start)
 {
 		fs::path dir = fs::path(game.Misc.szRootDirName) / "CLEO";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
-				if (entry.is_regular_file() && (entry.path().extension().string() == ".cs" || entry.path().extension().string() == ".csp")) {
+				if (entry.is_regular_file() && (entry.path().extension().string() == ".cs" || 
+												entry.path().extension().string() == ".csp" && game_start)) {
 						try {
 								StartScript(entry.path().c_str());
 
@@ -62,69 +73,59 @@ scriptMgr::LoadScripts()
 }
 
 void
-scriptMgr::UnloadScripts()
+scriptMgr::UnloadScripts(bool game_shutdown)
 {
-		Script* script = pCustomScripts;
-		while (script) {
-				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
+		auto unload_list = [](std::list<Script>& list) {
+				for (auto it = list.begin(); it != list.end(); ) {
+						game.Scripts.pfRemoveScriptFromList(&(*it), game.Scripts.ppActiveScripts);
+						it->m_bIsActive = false;
 
-				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom script \"%s\"", &script->m_acName);
+						it = list.erase(it);
+				}
+		};
 
-				Script* next = script->m_pNextCustom;
-				delete script;
-				script = next;
-		}
-		pCustomScripts = nullptr;
+		unload_list(CustomScripts);
+		if (game_shutdown)
+				unload_list(PersistentScripts);
 }
 
 void
-ScriptManager::EnableScripts()
+scriptMgr::EnableScripts()
 {
-		Script* script = pCustomScripts;
-		while (script) {
-				game.Scripts.pfAddScriptToList(script, game.Scripts.ppActiveScripts);
-				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Enabled script \"%s\"", &script->m_acName);
-				script = script->m_pNextCustom;
-		}
+		for (Script& script : CustomScripts)
+				game.Scripts.pfAddScriptToList(&script, game.Scripts.ppActiveScripts);
+
+		for (Script& script : PersistentScripts)
+				game.Scripts.pfAddScriptToList(&script, game.Scripts.ppActiveScripts);
 }
 
 void
-ScriptManager::DisableScripts()
+scriptMgr::DisableScripts()
 {
-		Script* script = pCustomScripts;
-		while (script) {
-				game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
-				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Disabled script \"%s\"", &script->m_acName);
-				script = script->m_pNextCustom;
-		}
+		for (Script& script : CustomScripts)
+				game.Scripts.pfRemoveScriptFromList(&script, game.Scripts.ppActiveScripts);
+
+		for (Script& script : PersistentScripts)
+				game.Scripts.pfRemoveScriptFromList(&script, game.Scripts.ppActiveScripts);
 }
 
 Script*
-scriptMgr::FindScriptNamed(char* name, bool search_mission)
+scriptMgr::FindScriptNamed(char* name, bool search_generic)
 {
-		Script* script = pCustomScripts;
-		while (script) {
-				if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
-						return script;
-
-				script = script->m_pNextCustom;
+		for (Script& script : CustomScripts) {
+				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
+						return &script;
 		}
 
-		script = pPersistentScripts;
-		while (script) {
-				if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
-						return script;
-
-				script = script->m_pNextCustom;
+		for (Script& script : PersistentScripts) {
+				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
+						return &script;
 		}
 
-		if (search_mission) {
-				script = *game.Scripts.ppActiveScripts;
-				while (script) {
+		if (search_generic) {
+				for (Script* script = *game.Scripts.ppActiveScripts; script; script = script->m_pNext) {
 						if (!std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
 								return script;
-
-						script = script->m_pNext;
 				}
 		}
 
