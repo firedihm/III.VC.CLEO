@@ -77,8 +77,8 @@ fxt::UnloadEntries()
 wchar_t*
 fxt::Get(void* pTheText, const char* key)
 {
-		if (auto iter = FxtEntries.find(key); iter != FxtEntries.end())
-				return iter->second.c_str();
+		if (auto it = FxtEntries.find(key); it != FxtEntries.end())
+				return it->second.c_str();
 		else
 				return game.Text.pfGet(pTheText, key);
 }
