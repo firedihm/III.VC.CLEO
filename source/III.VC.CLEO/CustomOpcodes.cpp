@@ -1617,7 +1617,7 @@ CustomOpcodes::OPCODE_0A9A(Script* script)
 
 		std::FILE* file = std::fopen(game.Scripts.pScriptParams[0].szVar, game.Scripts.pScriptParams[1].szVar);
 		if (file)
-				ScriptManager::SaveFileStream(file);
+				scriptMgr::SaveFileStream(file);
 		else
 				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", game.Scripts.pScriptParams[0].szVar);
 
@@ -1636,7 +1636,7 @@ CustomOpcodes::OPCODE_0A9B(Script* script)
 		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 
 		std::fclose(file);
-		ScriptManager::DeleteFileStream(file);
+		scriptMgr::DeleteFileStream(file);
 
 		return OR_CONTINUE;
 }
@@ -1901,7 +1901,7 @@ CustomOpcodes::OPCODE_0AC8(Script* script)
 
 		void* mem = std::calloc(1, game.Scripts.pScriptParams[0].nVar);
 		if (mem)
-				ScriptManager::SaveMemoryAddress(mem);
+				scriptMgr::SaveMemoryAddress(mem);
 		else
 				LOGL(LOG_PRIORITY_DEFAULT, "Failed to allocate memory");
 
@@ -1920,7 +1920,7 @@ CustomOpcodes::OPCODE_0AC9(Script* script)
 		void* mem = game.Scripts.pScriptParams[0].pVar;
 
 		std::free(mem);
-		ScriptManager::DeleteMemoryAddress(mem);
+		scriptMgr::DeleteMemoryAddress(mem);
 
 		return OR_CONTINUE;
 };
@@ -2322,7 +2322,7 @@ CustomOpcodes::OPCODE_0AE6(Script* script)
 		fs::directory_iterator* handle = new fs::directory_iterator(game.Scripts.pScriptParams[0].szVar);
 		bool result = (*handle != end(*handle)) ? true : false;
 		if (result)
-				ScriptManager::SaveFileSearchHandle(handle);
+				scriptMgr::SaveFileSearchHandle(handle);
 
 		script->UpdateCompareFlag(result);
 		game.Scripts.pScriptParams[0].pVar = handle;
@@ -2360,7 +2360,7 @@ CustomOpcodes::OPCODE_0AE8(Script* script)
 		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.pScriptParams[0].pVar;
 
 		delete handle;
-		ScriptManager::DeleteFileSearchHandle(handle);
+		scriptMgr::DeleteFileSearchHandle(handle);
 
 		return OR_CONTINUE;
 }
