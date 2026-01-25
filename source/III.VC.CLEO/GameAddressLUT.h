@@ -109,7 +109,7 @@ enum eMemoryAddress
         MA_SPAWN_CAR,
         MA_RWV3D_TRANSFORM_POINTS,
         MA_BLEND_ANIMATION,
-        MA_WANTS_TO_RESTART,
+        MA_WANT_TO_RESTART,
 
         NUM_MA
 };
