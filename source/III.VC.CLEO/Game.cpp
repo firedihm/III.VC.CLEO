@@ -1,5 +1,7 @@
+#include "CustomOpcodes.h"
 #include "Fxt.h"
 #include "Game.h"
+#include "Log.h"
 #include "Memory.h"
 #include "Script.h"
 #include "ScriptManager.h"
@@ -12,8 +14,8 @@
 enum : uchar {
 		MAX_NUM_SCRIPTS = 128,
 		MAX_NUM_INTRO_TEXT_LINES = 48, // VC has 48, III has just 2
-		MAX_NUM_INTRO_RECTANGLES = 128,
-		MAX_NUM_SCRIPT_SRPITES = 128
+		MAX_NUM_INTRO_RECTANGLES = 32,
+		MAX_NUM_SCRIPT_SRPITES = 32
 };
 
 Script* ScriptsArray;
@@ -24,6 +26,75 @@ CSprite2d* ScriptSprites;
 void* ChinaLib;
 
 GtaGame game;
+
+namespace hooks {
+		void
+		OnGameStart()
+		{
+				LOGL(LOG_PRIORITY_GAME_EVENT, "--Start New Game--");
+
+				game.Events.pfInitScripts();
+
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
+				scriptMgr::LoadScripts(true);
+				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
+				fxt::LoadEntries();
+		}
+
+		void
+		OnGameLoad()
+		{
+				LOGL(LOG_PRIORITY_GAME_EVENT, "--Load Game--");
+
+				game.Events.pfInitScripts();
+
+				// if game is cold-started by loading a save, then OnGameStart() is called first, then OnGameReload(), and only then OnGameLoad()
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
+				scriptMgr::LoadScripts(false);
+				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
+				fxt::LoadEntries();
+		}
+
+		void
+		OnGameReload()
+		{
+				LOGL(LOG_PRIORITY_GAME_EVENT, "--Shutdown For Load Game--");
+
+				opcodes::ClearCache(false);
+
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
+				scriptMgr::UnloadScripts(false);
+				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+				fxt::UnloadEntries();
+
+				game.Events.pfInitScripts();
+		}
+
+		void
+		OnGameSaveAllScripts(uchar* buf, uint* size)
+		{
+				LOGL(LOG_PRIORITY_GAME_EVENT, "--Disabling Cutom Scripts For Save Game--");
+
+				scriptMgr::DisableScripts();
+				Events.pfSaveAllScripts(buf, size);
+				scriptMgr::EnableScripts();
+		}
+
+		void
+		OnGameShutdown()
+		{
+				LOGL(LOG_PRIORITY_GAME_EVENT, "--Shutdown For New Game Or Exit--");
+
+				game.Events.pfCdStreamRemoveImages();
+
+				opcodes::ClearCache(*game.Misc.pWantToRestart ? false : true);
+
+				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
+				scriptMgr::UnloadScripts(*game.Misc.pWantToRestart ? false : true);
+				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
+				fxt::UnloadEntries();
+		}
+}
 
 eGameVersion
 DetermineGameVersion()
@@ -152,13 +223,13 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Pools.pfObjectPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[MA_OBJECT_POOL_GET_HANDLE];
 
 		Events.pfInitScripts = (void (__cdecl*)())lut[MA_INIT_SCRIPTS];
-		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_START], scriptMgr::OnGameStart);
-		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_LOAD], scriptMgr::OnGameLoad);
-		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_RELOAD], scriptMgr::OnGameReload);
+		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_START], hooks::OnGameStart);
+		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_LOAD], hooks::OnGameLoad);
+		memory::Intercept<Call>(lut[CA_INIT_SCRIPTS_ON_GAME_RELOAD], hooks::OnGameReload);
 		Events.pfSaveAllScripts = (void (__cdecl*)(uchar*, uint*))lut[MA_SAVE_ALL_SCRIPTS];
-		memory::Intercept<Call>(lut[CA_SAVE_ALL_SCRIPTS], scriptMgr::OnGameSaveAllScripts);
+		memory::Intercept<Call>(lut[CA_SAVE_ALL_SCRIPTS], hooks::OnGameSaveAllScripts);
 		Events.pfCdStreamRemoveImages = (void (__cdecl*)())lut[MA_CD_STREAM_REMOVE_IMAGES];
-		memory::Intercept<Call>(lut[CA_CD_STREAM_REMOVE_IMAGES], scriptMgr::OnGameShutdown);
+		memory::Intercept<Call>(lut[CA_CD_STREAM_REMOVE_IMAGES], hooks::OnGameShutdown);
 
 		Shadows.pfStoreShadowToBeRendered = (float(__cdecl*)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool))lut[MA_STORE_SHADOW_TO_BE_RENDERED];
 		Shadows.ppShadowCarTex = (void**)lut[MA_SHADOW_CAR_TEX];
@@ -180,6 +251,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Misc.pfSpawnCar = (void (__cdecl*)(int))lut[MA_SPAWN_CAR];
 		Misc.pfRwV3dTransformPoints = (void (__cdecl*)(CVector*, const CVector*, int, const void*))lut[MA_RWV3D_TRANSFORM_POINTS];
 		Misc.pfBlendAnimation = (int (__cdecl*)(void*, int, int, float))lut[MA_BLEND_ANIMATION];
+		Misc.pWantToRestart = (bool*)lut[MA_WANT_TO_RESTART];
 
 		IntroTextLines = new intro_text_line[MAX_NUM_INTRO_TEXT_LINES];
  		IntroRectangles = new intro_script_rectangle[MAX_NUM_INTRO_RECTANGLES];
@@ -187,8 +259,8 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 
 		// rather messy and incomplete: addresses below only apply to v1.0
 		if (Version == GAME_GTAVC_V1_0) {
-				//memory::Write<void*>(0x451E72, IntroRectangles);
-				//memory::Write<void*>(0x451EFA, IntroRectangles);
+				// memory::Write<void*>(0x451E72, IntroRectangles);
+				// memory::Write<void*>(0x451EFA, IntroRectangles);
 				memory::Write<void*>(0x4591FB, IntroRectangles);
 				memory::Write<void*>(0x459306, IntroRectangles);
 				memory::Write<void*>(0x55690B, IntroRectangles);
@@ -265,18 +337,18 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::Write<void*>(0x450B0E, ScriptSprites);
 				memory::Write<void*>(0x450C85, ScriptSprites);
 				memory::Write<void*>(0x451668, ScriptSprites);
-				//memory::Write<void*>(0x451EA1, ScriptSprites);
-				//memory::Write<void*>(0x451EDA, ScriptSprites);
+				// memory::Write<void*>(0x451EA1, ScriptSprites);
+				// memory::Write<void*>(0x451EDA, ScriptSprites);
 				memory::Write<void*>(0x4593C7, ScriptSprites);
 				memory::Write<void*>(0x5569AD, ScriptSprites);
 				memory::Write<void*>(0x55ADFC, ScriptSprites);
 				memory::Write<uchar>(0x450B20, MAX_NUM_SCRIPT_SRPITES); // jb
 				memory::Write<uchar>(0x450C9E, MAX_NUM_SCRIPT_SRPITES); // jb
-				//memory::Write<uchar>(0x451681, MAX_NUM_SCRIPT_SRPITES); // jb; skipped to keep compatibility with default mission cleanup routines
+				// memory::Write<uchar>(0x451681, MAX_NUM_SCRIPT_SRPITES); // jb; skipped to keep compatibility with default mission cleanup routines
 				memory::Write<uchar>(0x451692, 0xEB); // don't remove 'script' txd slot during mission cleanup routines
 		} else if (Version == GAME_GTA3_V1_0) {
-				//memory::Write<void*>(0x43EBEC, IntroTextLines);
-				//memory::Write<void*>(0x43ECDD, IntroTextLines);
+				// memory::Write<void*>(0x43EBEC, IntroTextLines);
+				// memory::Write<void*>(0x43ECDD, IntroTextLines);
 				memory::Write<void*>(0x44943B, IntroTextLines);
 				memory::Write<void*>(0x4496BD, IntroTextLines);
 				memory::Write<void*>(0x5084DB, IntroTextLines);
@@ -443,8 +515,8 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::Write<uchar>(0x50972F, MAX_NUM_INTRO_TEXT_LINES); // jb
 				Text.pIntroTextLines = IntroTextLines;
 
-				//memory::Write<void*>(0x43EC1B, IntroRectangles);
-				//memory::Write<void*>(0x43EC9A, IntroRectangles);
+				// memory::Write<void*>(0x43EC1B, IntroRectangles);
+				// memory::Write<void*>(0x43EC9A, IntroRectangles);
 				memory::Write<void*>(0x44D48D, IntroRectangles);
 				memory::Write<void*>(0x44D58B, IntroRectangles);
 				memory::Write<void*>(0x5086BC, IntroRectangles);
@@ -520,8 +592,8 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::Write<uchar>(0x508762, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::Write<uchar>(0x5097D9, MAX_NUM_INTRO_RECTANGLES); // jb
 
-				//memory::Write<void*>(0x43EC4A, ScriptSprites);
-				//memory::Write<void*>(0x43EC7A, ScriptSprites);
+				// memory::Write<void*>(0x43EC4A, ScriptSprites);
+				// memory::Write<void*>(0x43EC7A, ScriptSprites);
 				memory::Write<void*>(0x44D65B, ScriptSprites);
 				memory::Write<void*>(0x44D709, ScriptSprites);
 				memory::Write<void*>(0x50874F, ScriptSprites);
