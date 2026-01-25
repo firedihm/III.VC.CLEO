@@ -22,7 +22,7 @@ Script::Script(const char* filepath)
 				throw "File is empty or corrupt";
 
 		m_pCodeData = new uchar[filesize];
-		m_dwIp = m_dwBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
+		m_nIp = m_nBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 
 		m_bIsCustom = true;
@@ -32,6 +32,15 @@ Script::Script(const char* filepath)
 
 Script::~Script()
 {
+		while (m_pAllocatedMemory)
+				ClearCache(&m_pAllocatedMemory, m_pAllocatedMemory->data);
+
+		while (m_pOpenedFiles)
+				ClearCache(&m_pOpenedFiles, m_pOpenedFiles->data);
+
+		while (m_pFileSearchHandles)
+				ClearCache(&m_pFileSearchHandles, m_pFileSearchHandles->data)
+
 		while (m_pCleoCallStack)
 				PopStackFrame();
 
@@ -44,7 +53,7 @@ Script::Init()
 {
 		std::memset(this, 0, sizeof(Script));
 		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
-		m_bDeathArrestCheckEnabled = true;
+		m_bDeatharrestEnabled = true;
 
 		m_pLocalArray = new ScriptParam[0xFF];
 		std::memset(m_pLocalArray, 0, sizeof(ScriptParam) * 0xFF);
@@ -54,10 +63,10 @@ eOpcodeResult
 Script::ProcessOneCommand()
 {
 		// highest bit of opcode denotes notFlag: reversing conditional result
-		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_dwIp];
+		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_nIp];
 		m_bNotFlag = (op & 0x8000) ? true : false;
 		op &= 0x7FFF;
-		m_dwIp += 2;
+		m_nIp += 2;
 
 		if (Opcodes::functions[op]) { // call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
@@ -77,41 +86,66 @@ Script::ProcessOneCommand()
 }
 
 void
+Script::StoreCache(Cache** head, void* data)
+{
+		Cache* cache = new Cache();
+		cache->next = *head;
+		*head = cache;
+
+		cache->data = data;
+}
+
+void
+Script::ClearCache(Cache** head, void* data)
+{
+		for (Cache* previous = nullptr, current = *head; current; previous = current, current = current->next) {
+				if (current->data == data) {
+						if (previous)
+								previous->next = current->next;
+						else
+								*head = current->next;
+
+						delete current->data;
+						delete current;
+						return;
+				}
+		}
+}
+
+void
 Script::PushStackFrame()
 {
-		// push_front()
 		StackFrame* frame = new StackFrame();
-		frame->prev = m_pCleoCallStack;
+		frame->next = m_pCleoCallStack;
 		m_pCleoCallStack = frame;
 
 		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
 
-		frame->retAddr = m_dwIp;
+		frame->retAddr = m_nIp;
 }
 
 void
 Script::PopStackFrame()
 {
-		m_dwIp = m_pCleoCallStack->retAddr;
+		m_nIp = m_pCleoCallStack->retAddr;
 
 		std::memcpy(&m_aLVars, &m_pCleoCallStack->vars, sizeof(m_aLVars));
 
-		// pop_front()
-		StackFrame* prev = m_pCleoCallStack->prev;
+		StackFrame* head_next = m_pCleoCallStack->next;
 		delete m_pCleoCallStack;
-		m_pCleoCallStack = prev;
+		m_pCleoCallStack = head_next;
 }
 
 eParamType
 Script::GetNextParamType()
 {
-		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_dwIp])->type;
+		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_nIp])->type;
 }
 
 void*
 Script::GetPointerToScriptVariable()
 {
-		return game.Scripts.pfGetPointerToScriptVariable(this, &m_dwIp, 1);
+		return game.Scripts.pfGetPointerToScriptVariable(this, &m_nIp, 1);
 }
 
 void
@@ -123,8 +157,8 @@ Script::UpdateCompareFlag(bool result)
 void
 Script::ReadShortString(char* out)
 {
-		std::strncpy(out, &game.Scripts.pScriptSpace[m_dwIp], KEY_LENGTH_IN_SCRIPT);
-		m_dwIp += KEY_LENGTH_IN_SCRIPT;
+		std::strncpy(out, &game.Scripts.pScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
+		m_nIp += KEY_LENGTH_IN_SCRIPT;
 }
 
 void
@@ -132,19 +166,19 @@ Script::JumpTo(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		if (address >= 0)
-				m_dwIp = address;
+				m_nIp = address;
 		else {
 				if (m_bIsCustom)
-						m_dwIp = m_dwBaseIp + (-address);
+						m_nIp = m_nBaseIp + (-address);
 				else
-						m_dwIp = game.kMainSize + (-address);
+						m_nIp = game.kMainSize + (-address);
 		}
 }
 
 void
 Script::Collect(short numParams)
 {
-		CollectParameters(&m_dwIp, numParams);
+		CollectParameters(&m_nIp, numParams);
 }
 
 void
@@ -244,5 +278,5 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 void
 Script::Store(short numParams)
 {
-		game.Scripts.pfStoreParameters(this, &m_dwIp, numParams);
+		game.Scripts.pfStoreParameters(this, &m_nIp, numParams);
 }
