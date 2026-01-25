@@ -114,7 +114,7 @@ uchar* LookUpTable[NUM_MA][NUM_GV] = {
         {0x4AE8F0, 0x4AE7D0, 0x4AE7C0, 0x4AE7C0, /*    */ 0x490EE0, 0x490FA0, 0x490F30, 0x490F30}, // MA_SPAWN_CAR
         {nullptr,  nullptr,  nullptr,  nullptr,  /*    */ 0x5A37D0, 0x5A3A90, 0x5A4570, 0x5A4570}, // MA_RWV3D_TRANSFORM_POINTS
         {0x405640, 0x405640, 0x405640, 0x405640, /*    */ 0x403710, 0x403710, 0x403710, 0x403710}, // MA_BLEND_ANIMATION
-        
+        {0x869669, nullptr,  nullptr,  nullptr,  /*    */ 0x8F5AEC, nullptr,  nullptr,  nullptr }  // WANTS_TO_RESTART
 };
 
 GameAddressLUT::GameAddressLUT(eGameVersion target) : Target(target) {}
