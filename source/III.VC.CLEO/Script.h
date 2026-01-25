@@ -19,25 +19,25 @@ protected:
 		CRunningScript* m_pNext;
 		CRunningScript* m_pPrev;
 		char m_acName[KEY_LENGTH_IN_SCRIPT];
-		uint m_dwIp;
-		uint m_aGosubAddr[MAX_STACK_DEPTH];
-		ushort m_nCurrentGosub;
+		uint m_nIp;
+		uint m_anGosubStack[MAX_STACK_DEPTH];
+		ushort m_nGosubStackPointer;
 		ScriptParam m_aLVars[NUM_LOCAL_VARS];
 		ScriptParam m_aTimers[NUM_TIMERS];
 #ifdef CLEO_VC
-		bool m_bIsActive; 
+		bool m_bSkipWakeTime; 
 		bool m_bCondResult; 
-		bool m_bIsMission;
+		bool m_bIsMissionScript;
 #else
 		bool m_bCondResult;
-		bool m_bIsMission;
-		bool m_bIsActive;
+		bool m_bIsMissionScript;
+		bool m_bSkipWakeTime;
 #endif
-		uint m_dwWakeTime;
-		ushort m_wIfOp;
+		uint m_nWakeTime;
+		ushort m_nAndOrState;
 		bool m_bNotFlag;
-		bool m_bDeathArrestCheckEnabled;
-		bool m_bWastedOrBusted;
+		bool m_bDeatharrestEnabled;
+		bool m_bDeatharrestExecuted;
 		bool m_bMissionFlag;
 
 		CRunningScript();
@@ -46,19 +46,27 @@ protected:
 class CCustomScript : protected CRunningScript
 {
 protected:
+		struct Cache {
+				Cache* next;
+				void* data;
+		};
+
 		struct StackFrame {
-				StackFrame* prev;
+				StackFrame* next;
 				ScriptParam vars[NUM_LOCAL_VARS];
 				uint retAddr;
 		};
 
 		uchar* m_pCodeData;
-		uint m_dwBaseIp;
+		uint m_nBaseIp;
 		bool m_bIsCustom;
 		bool m_bIsPersistent;
 		uint m_nLastPedSearchIndex;
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
+		Cache* m_pAllocatedMemory;
+		Cache* m_pOpenedFiles;
+		Cache* m_pFileSearchHandles;
 		StackFrame* m_pCleoCallStack;
 		ScriptParam* m_pLocalArray;
 
@@ -76,6 +84,8 @@ public:
 
 		eOpcodeResult ProcessOneCommand();
 
+		void StoreCache(Cache** head, void* data);
+		void ClearCache(Cache** head, void* data);
 		void PushStackFrame();
 		void PopStackFrame();
 
