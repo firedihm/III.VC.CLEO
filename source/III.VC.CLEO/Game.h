@@ -121,6 +121,7 @@ public:
 				void (__cdecl* pfSpawnCar)(int); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
 				void (__cdecl* pfRwV3dTransformPoints)(CVector*, CVector const*, int, const void*);
 				void* (__cdecl* pfBlendAnimation)(void*, int, int, float);
+				bool* pWantToRestart;
 		} Misc;
 
 		GtaGame();
