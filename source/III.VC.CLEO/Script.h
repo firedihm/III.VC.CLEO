@@ -73,6 +73,7 @@ protected:
 		ScriptParam* m_pLocalArray;
 
 		CCustomScript();
+		~CCustomScript();
 
 		void StoreCache(Cache** head, void* data);
 		void ClearCache(Cache** head, void* data);
