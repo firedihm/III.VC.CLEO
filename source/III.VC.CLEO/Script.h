@@ -45,7 +45,7 @@ protected:
 
 class CCustomScript : protected CRunningScript
 {
-protected:
+private:
 		struct Cache {
 				Cache* next;
 				void* data;
@@ -57,6 +57,12 @@ protected:
 				uint retAddr;
 		};
 
+		Cache* m_pAllocatedMemory;
+		Cache* m_pOpenedFiles;
+		Cache* m_pFileSearchHandles;
+		StackFrame* m_pCleoCallStack;
+
+protected:
 		uchar* m_pCodeData;
 		uint m_nBaseIp;
 		bool m_bIsCustom;
@@ -64,13 +70,14 @@ protected:
 		uint m_nLastPedSearchIndex;
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
-		Cache* m_pAllocatedMemory;
-		Cache* m_pOpenedFiles;
-		Cache* m_pFileSearchHandles;
-		StackFrame* m_pCleoCallStack;
 		ScriptParam* m_pLocalArray;
 
 		CCustomScript();
+
+		void StoreCache(Cache** head, void* data);
+		void ClearCache(Cache** head, void* data);
+		void PushStackFrame();
+		void PopStackFrame();
 };
 
 class Script : protected CCustomScript
@@ -83,11 +90,6 @@ public:
 		void Init();
 
 		eOpcodeResult ProcessOneCommand();
-
-		void StoreCache(Cache** head, void* data);
-		void ClearCache(Cache** head, void* data);
-		void PushStackFrame();
-		void PopStackFrame();
 
 		// exports
 		CLEOAPI eParamType GetNextParamType();
