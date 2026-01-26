@@ -6,6 +6,58 @@
 #include <cstring>
 #include <fstream>
 
+
+void
+CCustomScript::StoreCache(Cache** head, void* data)
+{
+		Cache* cache = new Cache();
+		cache->next = *head;
+		*head = cache;
+
+		cache->data = data;
+}
+
+void
+CCustomScript::ClearCache(Cache** head, void* data)
+{
+		for (Cache* previous = nullptr, current = *head; current; previous = current, current = current->next) {
+				if (current->data == data) {
+						if (previous)
+								previous->next = current->next;
+						else
+								*head = current->next;
+
+						delete current->data;
+						delete current;
+						return;
+				}
+		}
+}
+
+void
+CCustomScript::PushStackFrame()
+{
+		StackFrame* frame = new StackFrame();
+		frame->next = m_pCleoCallStack;
+		m_pCleoCallStack = frame;
+
+		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
+
+		frame->retAddr = m_nIp;
+}
+
+void
+CCustomScript::PopStackFrame()
+{
+		m_nIp = m_pCleoCallStack->retAddr;
+
+		std::memcpy(&m_aLVars, &m_pCleoCallStack->vars, sizeof(m_aLVars));
+
+		StackFrame* head_next = m_pCleoCallStack->next;
+		delete m_pCleoCallStack;
+		m_pCleoCallStack = head_next;
+}
+
 Script::Script()
 {
 		Init();
@@ -83,57 +135,6 @@ Script::ProcessOneCommand()
 				*game.Scripts.pNumOpcodesExecuted += 1;
 				return result;
 		}
-}
-
-void
-Script::StoreCache(Cache** head, void* data)
-{
-		Cache* cache = new Cache();
-		cache->next = *head;
-		*head = cache;
-
-		cache->data = data;
-}
-
-void
-Script::ClearCache(Cache** head, void* data)
-{
-		for (Cache* previous = nullptr, current = *head; current; previous = current, current = current->next) {
-				if (current->data == data) {
-						if (previous)
-								previous->next = current->next;
-						else
-								*head = current->next;
-
-						delete current->data;
-						delete current;
-						return;
-				}
-		}
-}
-
-void
-Script::PushStackFrame()
-{
-		StackFrame* frame = new StackFrame();
-		frame->next = m_pCleoCallStack;
-		m_pCleoCallStack = frame;
-
-		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
-
-		frame->retAddr = m_nIp;
-}
-
-void
-Script::PopStackFrame()
-{
-		m_nIp = m_pCleoCallStack->retAddr;
-
-		std::memcpy(&m_aLVars, &m_pCleoCallStack->vars, sizeof(m_aLVars));
-
-		StackFrame* head_next = m_pCleoCallStack->next;
-		delete m_pCleoCallStack;
-		m_pCleoCallStack = head_next;
 }
 
 eParamType
