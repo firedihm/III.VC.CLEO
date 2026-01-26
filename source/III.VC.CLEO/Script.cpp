@@ -6,6 +6,23 @@
 #include <cstring>
 #include <fstream>
 
+CCustomScript::~CCustomScript()
+{
+		while (m_pAllocatedMemory)
+				ClearCache(&m_pAllocatedMemory, m_pAllocatedMemory->data);
+
+		while (m_pOpenedFiles)
+				ClearCache(&m_pOpenedFiles, m_pOpenedFiles->data);
+
+		while (m_pFileSearchHandles)
+				ClearCache(&m_pFileSearchHandles, m_pFileSearchHandles->data)
+
+		while (m_pCleoCallStack)
+				PopStackFrame();
+
+		delete[] m_pCodeData;
+		delete[] m_pLocalArray;
+}
 
 void
 CCustomScript::StoreCache(Cache** head, void* data)
@@ -80,24 +97,6 @@ Script::Script(const char* filepath)
 		m_bIsCustom = true;
 		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
 				m_bIsPersistent = true;
-}
-
-Script::~Script()
-{
-		while (m_pAllocatedMemory)
-				ClearCache(&m_pAllocatedMemory, m_pAllocatedMemory->data);
-
-		while (m_pOpenedFiles)
-				ClearCache(&m_pOpenedFiles, m_pOpenedFiles->data);
-
-		while (m_pFileSearchHandles)
-				ClearCache(&m_pFileSearchHandles, m_pFileSearchHandles->data)
-
-		while (m_pCleoCallStack)
-				PopStackFrame();
-
-		delete[] m_pCodeData;
-		delete[] m_pLocalArray;
 }
 
 void
