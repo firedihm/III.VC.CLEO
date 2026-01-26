@@ -8,19 +8,13 @@
 #include "Script.h"
 #include "ScriptManager.h"
 
-#include <cstdio>
-#include <cstdlib>
 #include <cstring>
 #include <filesystem>
-#include <list>
+#include <fstream>
 
 namespace fs = std::filesystem;
 
 #define HELP_MSG_LENGTH 256
-
-std::list<void*> CachedMemory;
-std::list<std::FILE*> CachedFileStreams;
-std::list<fs::directory_iterator*> CachedFileSearchHandles;
 
 int format(Script *script, char *str, size_t len, const char *format);
 
@@ -553,7 +547,7 @@ CustomOpcodes::GET_NAMED_THREAD_POINTER(Script* script)
 		script->ReadShortString(name);
 
 		Script* found = scriptMgr::FindScriptNamed(&name, true);
-		script->UpdateCompareFlag(found != nullptr);
+		script->UpdateCompareFlag(found);
 		game.Scripts.pScriptParams[0].pVar = found;
 		script->Store(1);
 
@@ -1561,39 +1555,51 @@ eOpcodeResult CustomOpcodes::SET_TEXT_DRAW_FONT(Script *script)
 //0A8D=4,%4d% = read_memory %1d% size %2d% virtual_protect %3d% //dup
 
 //0A8E=3,%3d% = %1d% + %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A8E(Script *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A8E(Script* script)
 {
-	script->Collect(2);
-	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar + game.Scripts.pScriptParams[1].nVar;
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Collect(2);
+
+		game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar + game.Scripts.pScriptParams[1].nVar;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0A8F=3,%3d% = %1d% - %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A8F(Script *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A8F(Script* script)
 {
-	script->Collect(2);
-	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar - game.Scripts.pScriptParams[1].nVar;
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Collect(2);
+
+		game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar - game.Scripts.pScriptParams[1].nVar;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0A90=3,%3d% = %1d% * %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A90(Script *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A90(Script* script)
 {
-	script->Collect(2);
-	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar * game.Scripts.pScriptParams[1].nVar;
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Collect(2);
+
+		game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar * game.Scripts.pScriptParams[1].nVar;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0A91=3,%3d% = %1d% / %2d% ; int
-eOpcodeResult CustomOpcodes::OPCODE_0A91(Script *script)
+eOpcodeResult
+CustomOpcodes::OPCODE_0A91(Script* script)
 {
-	script->Collect(2);
-	game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar / game.Scripts.pScriptParams[1].nVar;
-	script->Store(1);
-	return OR_CONTINUE;
+		script->Collect(2);
+
+		game.Scripts.pScriptParams[0].nVar = game.Scripts.pScriptParams[0].nVar / game.Scripts.pScriptParams[1].nVar;
+		script->Store(1);
+
+		return OR_CONTINUE;
 }
 
 //0A92=-1,create_custom_thread %1s% //dup
@@ -1622,14 +1628,19 @@ CustomOpcodes::OPCODE_0A9A(Script* script)
 {
 		script->Collect(2);
 
-		std::FILE* file = std::fopen(game.Scripts.pScriptParams[0].szVar, game.Scripts.pScriptParams[1].szVar);
-		if (file)
-				CachedFileStreams.push_front(std::move(*file));
-		else
-				LOGL(LOG_PRIORITY_DEFAULT, "Failed to open file %s", game.Scripts.pScriptParams[0].szVar);
+		auto openmode_string_to_bitmask = [](const char* openmode) -> std::ios_base::openmode {
+				;
+		};
 
-		script->UpdateCompareFlag(file != nullptr);
-		game.Scripts.pScriptParams[0].pVar = file;
+		try {
+				script->StoreCache(&m_pOpenedFiles, new std::fstream(game.Scripts.pScriptParams[0].szVar, openmode_string_to_bitmask(game.Scripts.pScriptParams[1].szVar)));
+
+				script->UpdateCompareFlag(*(std::fstream*)m_pOpenedFiles->data); // fstream can be ill-formed; bool() reveals it
+				game.Scripts.pScriptParams[0].pVar = m_pOpenedFiles->data;
+		} catch (...) {
+				script->UpdateCompareFlag(false);
+				game.Scripts.pScriptParams[0].pVar = nullptr;
+		}
 		script->Store(1);
 
 		return OR_CONTINUE;
@@ -1640,10 +1651,8 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9B(Script* script)
 {
 		script->Collect(1);
-		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
 
-		std::fclose(file);
-		scriptMgr::DeleteFileStream(file);
+		script->ClearCahce(&m_pOpenedFiles, game.Scripts.pScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 }
@@ -1719,7 +1728,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA2(Script *script)
 	auto libHandle = LoadLibrary(game.Scripts.pScriptParams[0].szVar);
 	game.Scripts.pScriptParams[0].pVar = libHandle;
 	script->Store(1);
-	script->UpdateCompareFlag(libHandle != nullptr);
+	script->UpdateCompareFlag(libHandle);
 	return OR_CONTINUE;
 }
 
@@ -1743,7 +1752,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA4(Script *script)
 	void *funcAddr = (void *)GetProcAddress(libHandle, funcName);
 	game.Scripts.pScriptParams[0].pVar = funcAddr;
 	script->Store(1);
-	script->UpdateCompareFlag(funcAddr != nullptr);
+	script->UpdateCompareFlag(funcAddr);
 	return OR_CONTINUE;
 }
 
@@ -1906,14 +1915,15 @@ CustomOpcodes::OPCODE_0AC8(Script* script)
 {
 		script->Collect(1);
 
-		void* mem = std::calloc(1, game.Scripts.pScriptParams[0].nVar);
-		if (mem)
-				scriptMgr::SaveMemoryAddress(mem);
-		else
-				LOGL(LOG_PRIORITY_DEFAULT, "Failed to allocate memory");
+		try {
+				script->StoreCache(&m_pAllocatedMemory, new(game.Scripts.pScriptParams[0].nVar));
 
-		script->UpdateCompareFlag(mem != nullptr);
-		game.Scripts.pScriptParams[0].pVar = mem;
+				script->UpdateCompareFlag(true);
+				game.Scripts.pScriptParams[0].pVar = m_pAllocatedMemory->data;
+		} catch (...) {
+				script->UpdateCompareFlag(false);
+				game.Scripts.pScriptParams[0].pVar = nullptr;
+		}
 		script->Store(1);
 
 		return OR_CONTINUE;
@@ -1924,10 +1934,8 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AC9(Script* script)
 {
 		script->Collect(1);
-		void* mem = game.Scripts.pScriptParams[0].pVar;
 
-		std::free(mem);
-		scriptMgr::DeleteMemoryAddress(mem);
+		script->ClearCahce(&m_pAllocatedMemory, game.Scripts.pScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 };
