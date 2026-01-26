@@ -86,7 +86,6 @@ class Script : protected CCustomScript
 public:
 		Script();
 		Script(const char* filepath);
-		~Script() = delete;
 
 		void Init();
 
