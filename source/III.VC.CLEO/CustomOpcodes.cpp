@@ -11,6 +11,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
+#include <limits>
 
 namespace fs = std::filesystem;
 
@@ -1628,14 +1629,31 @@ CustomOpcodes::OPCODE_0A9A(Script* script)
 {
 		script->Collect(2);
 
-		auto openmode_string_to_bitmask = [](const char* openmode) -> std::ios_base::openmode {
-				;
+		// cppreference.com/w/cpp/io/basic_filebuf/open
+		auto openmode_string_to_bitmask = [](const char* openmode) -> std::ios::openmode {
+				std::ios::openmode bitmask(0);
+				for (int i = 0; openmode[i]; ++i) {
+						if (openmode[i] == 'r') {
+								bitmask |= std::ios::in;
+						} else if (openmode[i] == 'w') {
+								bitmask |= std::ios::out | std::ios::trunc;
+						} else if (openmode[i] == 'a') {
+								bitmask |= std::ios::out | std::ios::app;
+						} else if (openmode[i] == '+') {
+								bitmask |= std::ios::in | std::ios::out;
+						} else if (openmode[i] == 'b') {
+								bitmask |= std::ios::binary;
+						} else if (openmode[i] == 'x') {
+								bitmask |= std::ios::noreplace;
+						}
+				}
+				return bitmask;
 		};
 
 		try {
 				script->StoreCache(&m_pOpenedFiles, new std::fstream(game.Scripts.pScriptParams[0].szVar, openmode_string_to_bitmask(game.Scripts.pScriptParams[1].szVar)));
 
-				script->UpdateCompareFlag(*(std::fstream*)m_pOpenedFiles->data); // fstream can be ill-formed; bool() reveals it
+				script->UpdateCompareFlag(*(std::fstream*)m_pOpenedFiles->data); // check for ill-formed fstream with bool()
 				game.Scripts.pScriptParams[0].pVar = m_pOpenedFiles->data;
 		} catch (...) {
 				script->UpdateCompareFlag(false);
@@ -1662,14 +1680,14 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9C(Script* script)
 {
 		script->Collect(1);
-		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
-		long savedPos = std::ftell(file);
-		std::fseek(file, 0, SEEK_END);
-		long size = std::ftell(file);
-		std::fseek(file, savedPos, SEEK_SET);
+		auto saved_pos = file->tellg();
+		size_t filesize = file->seekg(0, std::ios::beg).ignore(std::numeric_limits<std::streamsize>::max()).gcount();
+		file->clear();
+		file->seekg(saved_pos);
 
-		game.Scripts.pScriptParams[0].nVar = size;
+		game.Scripts.pScriptParams[0].nVar = filesize;
 		script->Store(1);
 
 		return OR_CONTINUE;
@@ -1680,9 +1698,9 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9D(Script* script)
 {
 		script->Collect(3);
-		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
-		std::fread(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar, 1, file);
+		file->read(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar);
 
 		return OR_CONTINUE;
 }
@@ -1692,10 +1710,10 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9E(Script* script)
 {
 		script->Collect(3);
-		std::FILE* file = (std::FILE*)game.Scripts.pScriptParams[0].pVar;
+		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
-		std::fwrite(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar, 1, file);
-		std::fflush(file);
+		file->write(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar);
+		file->flush();
 
 		return OR_CONTINUE;
 }
