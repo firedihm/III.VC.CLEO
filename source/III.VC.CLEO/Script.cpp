@@ -5,6 +5,13 @@
 
 #include <cstring>
 #include <fstream>
+#include <limits>
+
+namespace fs = std::filesystem;
+
+CCustomScript::CCustomScript() : m_pAllocatedMemory(nullptr), m_pOpenedFiles(nullptr), m_pFileSearchHandles(nullptr), m_pCleoCallStack(nullptr),
+								 m_pCodeData(nullptr), m_nBaseIp(0), m_bIsCustom(true), m_bIsPersistent(false),
+								 m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), m_pLocalArray(new ScriptParam[CLEO_ARRAY_SIZE]) {}
 
 CCustomScript::~CCustomScript()
 {
@@ -44,7 +51,13 @@ CCustomScript::ClearCache(Cache** head, void* data)
 						else
 								*head = current->next;
 
-						delete current->data;
+						if (head == &m_pFileSearchHandles)
+								;
+						else if (head == &m_pOpenedFiles)
+								delete (std::fstream*)current->data;
+						else
+								delete current->data;
+
 						delete current;
 						return;
 				}
@@ -75,26 +88,19 @@ CCustomScript::PopStackFrame()
 		m_pCleoCallStack = head_next;
 }
 
-Script::Script()
-{
-		Init();
-}
-
 Script::Script(const char* filepath)
 {
-		Init();
+		std::ifstream file(filepath, std::ios::binary);
 
-		std::ifstream file(filepath, std::ios_base::binary);
-
-		size_t filesize = file.seekg(0, std::ios::end).tellg();
+		size_t filesize = file.ignore(std::numeric_limits<std::streamsize>::max()).gcount();
 		if (!file || !filesize)
 				throw "File is empty or corrupt";
 
 		m_pCodeData = new uchar[filesize];
-		m_nIp = m_nBaseIp = (uint)m_pCodeData - (uint)game.Scripts.pScriptSpace;
+		m_nIp = m_nBaseIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace);
+		file.clear();
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 
-		m_bIsCustom = true;
 		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
 				m_bIsPersistent = true;
 }
@@ -105,9 +111,7 @@ Script::Init()
 		std::memset(this, 0, sizeof(Script));
 		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
 		m_bDeatharrestEnabled = true;
-
-		m_pLocalArray = new ScriptParam[0xFF];
-		std::memset(m_pLocalArray, 0, sizeof(ScriptParam) * 0xFF);
+		m_pLocalArray = new ScriptParam[CLEO_ARRAY_SIZE];
 }
 
 eOpcodeResult
