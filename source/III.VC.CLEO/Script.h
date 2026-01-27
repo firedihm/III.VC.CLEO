@@ -10,7 +10,8 @@ enum {
 		KEY_LENGTH_IN_SCRIPT = 8,
 		MAX_STACK_DEPTH = 6,
 		NUM_LOCAL_VARS = 16,
-		NUM_TIMERS = 2
+		NUM_TIMERS = 2,
+		CLEO_ARRAY_SIZE = 256
 };
 
 class CRunningScript
@@ -84,10 +85,10 @@ protected:
 class Script : protected CCustomScript
 {
 public:
-		Script();
+		Script() = default;
 		Script(const char* filepath);
 
-		void Init();
+		void Init(); // this is a hook
 
 		eOpcodeResult ProcessOneCommand();
 
