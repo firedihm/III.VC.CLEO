@@ -1,3 +1,4 @@
+#include "CleoVersion"
 #include "CustomOpcodes.h"
 #include "Fxt.h"
 #include "Game.h"
@@ -60,8 +61,6 @@ namespace hooks {
 		{
 				LOGL(LOG_PRIORITY_GAME_EVENT, "--Shutdown For Load Game--");
 
-				opcodes::ClearCache(false);
-
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
 				scriptMgr::UnloadScripts(false);
 				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
@@ -87,8 +86,6 @@ namespace hooks {
 
 				game.Events.pfCdStreamRemoveImages();
 
-				opcodes::ClearCache(*game.Misc.pWantToRestart ? false : true);
-
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
 				scriptMgr::UnloadScripts(*game.Misc.pWantToRestart ? false : true);
 				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
@@ -99,33 +96,31 @@ namespace hooks {
 eGameVersion
 DetermineGameVersion()
 {
-		switch (*(uint*)0x61C11C) {
-		case 0x74FF5064:
+		uint scan = *(uint*)0x61C11C;
+		if (scan == 0x74FF5064)
 				return GAME_GTAVC_V1_0;
-		case 0x00408DC0:
+		if (scan == 0x00408DC0)
 				return GAME_GTAVC_V1_1;
-		case 0x00004824:
+		if (scan == 0x00004824)
 				return GAME_GTAVC_VSTEAM;
-		case 0x24E58287:
+		if (scan == 0x24E58287)
 				return GAME_GTAVC_VSTEAMENC;
-		case 0x00598B80:
+		if (scan == 0x00598B80)
 				return GAME_GTA3_V1_0;
-		case 0x00598E40:
+		if (scan == 0x00598E40)
 				return GAME_GTA3_V1_1;
-		case 0x646E6957:
+		if (scan == 0x646E6957)
 				return GAME_GTA3_VSTEAM;
-		case 0x00FFFFFF:
+		if (scan == 0x00FFFFFF)
 				return GAME_GTA3_VSTEAMENC;
-		default:
-				return NUM_GV;
-		}
+		throw "Unsupported game version";
 }
 
 bool
 DetermineChineseness()
 {
 		// chinese support mod may have any of these names
-		const char* libs[] = {
+		const char* libs[4] = {
 				"wm_vcchs.asi",
 				"wm_vcchs.dll",
 				"wm_lcchs.asi",
@@ -144,11 +139,16 @@ DetermineChineseness()
 GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChineseness()),
 					 kMainSize(IsGta3() ? 128*1024 : 225512), kMissionSize(IsGta3() ? 32*1024 : 35000), kScriptSpaceSize(kMainSize + kMissionSize)
 {
+		Log::Initialise("CLEO.log");
+		LOGL(LOG_PRIORITY_ALWAYS, "CLEO LIBRARY v%d.%d.%d Log File", CLEO_VERSION_MAIN, CLEO_VERSION_MAJOR, CLEO_VERSION_MINOR);
+
 		if (Version == GAME_GTAVC_VSTEAMENC || Version == GAME_GTA3_VSTEAMENC) {
 				do // wait for .exe to decrypt
 						std::this_thread::yield();
-				while (DetermineGameVersion() != GAME_GTAVC_VSTEAM && DetermineGameVersion() != GAME_GTA3_VSTEAM)
+				while (DetermineGameVersion() == GAME_GTAVC_VSTEAM || DetermineGameVersion() == GAME_GTA3_VSTEAM)
 		}
+
+		LOGL(LOG_PRIORITY_GAME_EVENT, "%s %s", IsGta3() ? "GTA III" : "GTA VC", (Version == GAME_GTA3_VSTEAM || Version == GAME_GTAVC_VSTEAM) ? "Steam" : "Retail");
 
 		GameAddressLUT lut(Version);
 
@@ -599,10 +599,16 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::Write<void*>(0x50874F, ScriptSprites);
 				memory::Write<void*>(0x5097C6, ScriptSprites);
 		}
+
+		CustomOpcodes::Register();
+		CleoPlugins::LoadPlugins();
 }
 
 GtaGame::~GtaGame()
 {
+		CleoPlugins::UnloadPlugins();
+		Log::Close();
+
 		delete[] ScriptSprites;
 		delete[] IntroRectangles;
 		delete[] IntroTextLines;
