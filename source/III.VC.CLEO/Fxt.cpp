@@ -50,7 +50,6 @@ fxt::LoadEntries()
 								size_t key_start = line.find_first_not_of(whitespaces);
 								size_t key_end = line.find_first_of(whitespaces, key_start);
 								size_t text_start = line.find_first_not_of(whitespaces, key_end);
-								size_t text_end = line.find_first_of(whitespaces, text_start);
 
 								if (key_start == line.npos || text_start == line.npos)
 										continue;
@@ -62,7 +61,7 @@ fxt::LoadEntries()
 								if (line[text_start] == '\\' && line[text_start + 1] == '$')
 										text_start += 2;
 
-								Add(line.substr(key_start, key_end).c_str(), line.substr(text_start, text_end).c_str());
+								Add(line.substr(key_start, key_end).c_str(), line.substr(text_start).c_str());
 						}
 				}
 		}
