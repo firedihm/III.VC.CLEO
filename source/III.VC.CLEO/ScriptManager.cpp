@@ -1,4 +1,3 @@
-#include "Fxt.h"
 #include "Game.h"
 #include "Script.h"
 #include "ScriptManager.h"
