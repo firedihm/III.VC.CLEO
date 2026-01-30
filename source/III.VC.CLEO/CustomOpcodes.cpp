@@ -267,12 +267,15 @@ eOpcodeResult CustomOpcodes::GOTO_IF_FALSE(Script *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GOSUB(Script *script)
+eOpcodeResult
+CustomOpcodes::GOSUB(Script* script)
 {
-	script->Collect(1);
-	script->m_anGosubStack[script->m_nGosubStackPointer++] = script->m_nIp;
-	script->JumpTo(game.Scripts.pScriptParams[0].nVar);
-	return OR_CONTINUE;
+		script->Collect(1);
+
+		script->m_anGosubStack[script->m_nGosubStackPointer++] = script->m_nIp;
+		script->JumpTo(game.Scripts.pScriptParams[0].nVar);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1627,8 +1630,6 @@ CustomOpcodes::OPCODE_0A99(Script* script)
 eOpcodeResult
 CustomOpcodes::OPCODE_0A9A(Script* script)
 {
-		script->Collect(2);
-
 		// cppreference.com/w/cpp/io/basic_filebuf/open
 		auto openmode_string_to_bitmask = [](const char* openmode) -> std::ios::openmode {
 				std::ios::openmode bitmask(0);
@@ -1649,6 +1650,8 @@ CustomOpcodes::OPCODE_0A9A(Script* script)
 				}
 				return bitmask;
 		};
+
+		script->Collect(2);
 
 		try {
 				script->StoreCache(&m_pOpenedFiles, new std::fstream(game.Scripts.pScriptParams[0].szVar, openmode_string_to_bitmask(game.Scripts.pScriptParams[1].szVar)));
@@ -2341,7 +2344,7 @@ CustomOpcodes::OPCODE_0AE5(Script* script)
 {
 		script->Collect(1);
 
-		script->UpdateCompareFlag(fs::create_directory(game.Scripts.pScriptParams[0].szVar));
+		script->UpdateCompareFlag(fs::create_directories(game.Scripts.pScriptParams[0].szVar));
 
 		return OR_CONTINUE;
 }
@@ -2352,17 +2355,19 @@ CustomOpcodes::OPCODE_0AE6(Script* script)
 {
 		script->Collect(1);
 
-		fs::directory_iterator* handle = new fs::directory_iterator(game.Scripts.pScriptParams[0].szVar);
-		bool result = (*handle != end(*handle)) ? true : false;
-		if (result)
-				scriptMgr::SaveFileSearchHandle(handle);
+		try {
+				script->StoreCache(&m_pFileSearchHandles, new fs::directory_iterator(game.Scripts.pScriptParams[0].szVar));
 
-		script->UpdateCompareFlag(result);
-		game.Scripts.pScriptParams[0].pVar = handle;
+				script->UpdateCompareFlag(*m_pFileSearchHandles->data != end(*m_pFileSearchHandles->data)); // check if directory is not empty
+				game.Scripts.pScriptParams[0].pVar = m_pFileSearchHandles->data;
+		} catch (...) {
+				script->UpdateCompareFlag(false);
+				game.Scripts.pScriptParams[0].pVar = nullptr;
+		}
 		script->Store(1);
 
 		script->Collect(1);
-		const char* src = result ? (*handle)->path().filename().c_str() : "";
+		const char* src = script->m_bCondResult ? *(fs::directory_iterator*)(m_pFileSearchHandles->data)->path().filename().c_str() : "";
 		std::strcpy(game.Scripts.pScriptParams[0].szVar, src);
 
 		return OR_CONTINUE;
@@ -2410,7 +2415,7 @@ CustomOpcodes::OPCODE_0AE8(Script* script)
 eOpcodeResult __stdcall CustomOpcodes::SET_CLEO_ARRAY(Script *script)
 {
 	script->Collect(2);
-	script->m_pLocalArray[game.Scripts.pScriptParams[0].nVar].nVar = game.Scripts.pScriptParams[1].nVar;
+	script->m_pCleoArray[game.Scripts.pScriptParams[0].nVar].nVar = game.Scripts.pScriptParams[1].nVar;
 	return OR_CONTINUE;
 }
 
@@ -2418,7 +2423,7 @@ eOpcodeResult __stdcall CustomOpcodes::SET_CLEO_ARRAY(Script *script)
 eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY(Script *script)
 {
 	script->Collect(1);
-	game.Scripts.pScriptParams[0].nVar = script->m_pLocalArray[game.Scripts.pScriptParams[0].nVar].nVar;
+	game.Scripts.pScriptParams[0].nVar = script->m_pCleoArray[game.Scripts.pScriptParams[0].nVar].nVar;
 	script->Store(1);
 	return OR_CONTINUE;
 }
@@ -2427,7 +2432,7 @@ eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY(Script *script)
 eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_OFFSET(Script *script)
 {
 	script->Collect(1);
-	game.Scripts.pScriptParams[0].pVar = &script->m_pLocalArray[game.Scripts.pScriptParams[0].nVar].nVar;
+	game.Scripts.pScriptParams[0].pVar = &script->m_pCleoArray[game.Scripts.pScriptParams[0].nVar].nVar;
 	script->Store(1);
 	return OR_CONTINUE;
 }
@@ -2439,7 +2444,7 @@ eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_SCRIPT(Script *script)
 	Script *pScript = reinterpret_cast<Script*>(game.Scripts.pScriptParams[0].pVar);
 	if (pScript)
 	{
-		game.Scripts.pScriptParams[0].pVar = &pScript->m_pLocalArray[game.Scripts.pScriptParams[1].nVar].nVar;
+		game.Scripts.pScriptParams[0].pVar = &pScript->m_pCleoArray[game.Scripts.pScriptParams[1].nVar].nVar;
 	}
 	script->Store(1);
 	return OR_CONTINUE;
