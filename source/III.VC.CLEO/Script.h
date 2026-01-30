@@ -71,7 +71,7 @@ protected:
 		uint m_nLastPedSearchIndex;
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
-		ScriptParam* m_pLocalArray;
+		ScriptParam* m_pCleoArray;
 
 		CCustomScript();
 		~CCustomScript();
