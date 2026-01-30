@@ -9,20 +9,15 @@
 namespace fs = std::filesystem;
 
 std::list<Script> CustomScripts;
-std::list<Script> PersistentScripts;
 
 Script*
 scriptMgr::StartScript(const char* filepath)
 {
-		Script script(filepath);
+		Script& new_script = CustomScripts.emplace_front(filepath);
 
-		std::list<Script>& list = script.m_bIsPersistent ? PersistentScripts : CustomScripts;
+		game.Scripts.pfAddScriptToList(&new_script, game.Scripts.ppActiveScripts);
 
-		list.push_front(std::move(script));
-
-		game.Scripts.pfAddScriptToList(&list.front(), game.Scripts.ppActiveScripts);
-
-		return &list.front();
+		return &new_script;
 }
 
 void
@@ -52,21 +47,20 @@ scriptMgr::LoadScripts(bool game_start)
 void
 scriptMgr::UnloadScripts(bool game_shutdown)
 {
-		for (auto it = CustomScripts.begin(); it != CustomScripts.end(); it = CustomScripts.erase(it))
-				game.Scripts.pfRemoveScriptFromList(&(*it), game.Scripts.ppActiveScripts);
-
-		if (game_shutdown)
-				for (auto it = PersistentScripts.begin(); it != PersistentScripts.end(); it = PersistentScripts.erase(it))
+		for (auto it = CustomScripts.begin(); it != CustomScripts.end(); ) {
+				if (!it->m_bIsPersistent || game_shutdown) {
 						game.Scripts.pfRemoveScriptFromList(&(*it), game.Scripts.ppActiveScripts);
+						it = CustomScripts.erase(it);
+				} else {
+						++it;
+				}
+		}
 }
 
 void
 scriptMgr::EnableScripts()
 {
 		for (Script& script : CustomScripts)
-				game.Scripts.pfAddScriptToList(&script, game.Scripts.ppActiveScripts);
-
-		for (Script& script : PersistentScripts)
 				game.Scripts.pfAddScriptToList(&script, game.Scripts.ppActiveScripts);
 }
 
@@ -75,20 +69,12 @@ scriptMgr::DisableScripts()
 {
 		for (Script& script : CustomScripts)
 				game.Scripts.pfRemoveScriptFromList(&script, game.Scripts.ppActiveScripts);
-
-		for (Script& script : PersistentScripts)
-				game.Scripts.pfRemoveScriptFromList(&script, game.Scripts.ppActiveScripts);
 }
 
 Script*
 scriptMgr::FindScriptNamed(char* name, bool search_generic)
 {
 		for (Script& script : CustomScripts) {
-				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
-						return &script;
-		}
-
-		for (Script& script : PersistentScripts) {
 				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
 						return &script;
 		}
