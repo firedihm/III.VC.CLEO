@@ -4,14 +4,14 @@
 #include "Script.h"
 
 #include <cstring>
+#include <filesystem>
 #include <fstream>
-#include <limits>
 
 namespace fs = std::filesystem;
 
 CCustomScript::CCustomScript() : m_pAllocatedMemory(nullptr), m_pOpenedFiles(nullptr), m_pFileSearchHandles(nullptr), m_pCleoCallStack(nullptr),
 								 m_pCodeData(nullptr), m_nBaseIp(0), m_bIsCustom(true), m_bIsPersistent(false),
-								 m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), m_pLocalArray(new ScriptParam[CLEO_ARRAY_SIZE]) {}
+								 m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]) {}
 
 CCustomScript::~CCustomScript()
 {
@@ -28,7 +28,7 @@ CCustomScript::~CCustomScript()
 				PopStackFrame();
 
 		delete[] m_pCodeData;
-		delete[] m_pLocalArray;
+		delete[] m_pCleoArray;
 }
 
 void
@@ -52,7 +52,7 @@ CCustomScript::ClearCache(Cache** head, void* data)
 								*head = current->next;
 
 						if (head == &m_pFileSearchHandles)
-								;
+								delete (fs::directory_iterator*)current->data;
 						else if (head == &m_pOpenedFiles)
 								delete (std::fstream*)current->data;
 						else
@@ -92,14 +92,13 @@ Script::Script(const char* filepath)
 {
 		std::ifstream file(filepath, std::ios::binary);
 
-		size_t filesize = file.ignore(std::numeric_limits<std::streamsize>::max()).gcount();
+		std::uintmax_t filesize = fs::file_size(filepath);
 		if (!file || !filesize)
 				throw "File is empty or corrupt";
 
 		m_pCodeData = new uchar[filesize];
 		m_nIp = m_nBaseIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace);
-		file.clear();
-		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
+		file.read(m_pCodeData, filesize);
 
 		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
 				m_bIsPersistent = true;
@@ -111,7 +110,7 @@ Script::Init()
 		std::memset(this, 0, sizeof(Script));
 		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
 		m_bDeatharrestEnabled = true;
-		m_pLocalArray = new ScriptParam[CLEO_ARRAY_SIZE];
+		m_pCleoArray = new ScriptParam[CLEO_ARRAY_SIZE];
 }
 
 eOpcodeResult
@@ -169,9 +168,9 @@ void
 Script::JumpTo(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
-		if (address >= 0)
+		if (address >= 0) {
 				m_nIp = address;
-		else {
+		} else {
 				if (m_bIsCustom)
 						m_nIp = m_nBaseIp + (-address);
 				else
