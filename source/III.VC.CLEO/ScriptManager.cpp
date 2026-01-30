@@ -30,10 +30,11 @@ scriptMgr::TerminateScript(Script* script)
 {
 		game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
 
-		std::list<Script>& list = script->m_bIsPersistent ? PersistentScripts : CustomScripts;
-		list.remove_if([script](Script& current) {
-				&current == script;
-		});
+		if (!script->m_bIsPersistent) {
+				CustomScripts.remove_if([script](Script& current) {
+						&current == script;
+				});
+		}
 }
 
 void
