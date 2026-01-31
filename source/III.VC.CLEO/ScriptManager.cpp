@@ -13,7 +13,7 @@ std::list<Script> CustomScripts;
 Script*
 scriptMgr::StartScript(const char* filepath)
 {
-		Script& new_script = CustomScripts.emplace_front(filepath);
+		Script& new_script = CustomScripts.emplace_front(filepath, fs::file_size(filepath));
 
 		game.Scripts.pfAddScriptToList(&new_script, game.Scripts.ppActiveScripts);
 
