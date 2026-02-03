@@ -11,7 +11,7 @@
 #include <cstring>
 #include <filesystem>
 #include <fstream>
-#include <limits>
+#include <memory>
 
 namespace fs = std::filesystem;
 
@@ -1686,7 +1686,7 @@ CustomOpcodes::OPCODE_0A9C(Script* script)
 		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
 		auto saved_pos = file->tellg();
-		size_t filesize = file->seekg(0, std::ios::beg).ignore(std::numeric_limits<std::streamsize>::max()).gcount();
+		size_t filesize = file->seekg(0, std::ios::beg).ignore(size_t(-1) >> 1).gcount();
 		file->clear();
 		file->seekg(saved_pos);
 
