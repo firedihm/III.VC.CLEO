@@ -4,45 +4,28 @@
 #include "Script.h"
 
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 
-namespace fs = std::filesystem;
-
-CCustomScript::CCustomScript() : m_pAllocatedMemory(nullptr), m_pOpenedFiles(nullptr), m_pFileSearchHandles(nullptr), m_pCleoCallStack(nullptr),
-								 m_pCodeData(nullptr), m_nBaseIp(0), m_bIsCustom(true), m_bIsPersistent(false),
-								 m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0), m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]) {}
+CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_nBaseIp(0), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
+								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCleoCallStack(nullptr) {}
 
 CCustomScript::~CCustomScript()
 {
-		while (m_pAllocatedMemory)
-				ClearCache(&m_pAllocatedMemory, m_pAllocatedMemory->data);
-
-		while (m_pOpenedFiles)
-				ClearCache(&m_pOpenedFiles, m_pOpenedFiles->data);
-
-		while (m_pFileSearchHandles)
-				ClearCache(&m_pFileSearchHandles, m_pFileSearchHandles->data)
-
 		while (m_pCleoCallStack)
 				PopStackFrame();
 
-		delete[] m_pCodeData;
 		delete[] m_pCleoArray;
+		delete[] m_pCodeData;
 }
 
-void
-CCustomScript::StoreCache(Cache** head, void* data)
+void*
+CCustomScript::StoreCache(std::any&& obj)
 {
-		Cache* cache = new Cache();
-		cache->next = *head;
-		*head = cache;
-
-		cache->data = data;
+		(ObjectCache*)(m_pObjectCache)->push_front(std::move(obj));
 }
 
 void
-CCustomScript::ClearCache(Cache** head, void* data)
+CCustomScript::ClearCache(void* obj)
 {
 		for (Cache* previous = nullptr, current = *head; current; previous = current, current = current->next) {
 				if (current->data == data) {
@@ -92,13 +75,14 @@ Script::Script(const char* filepath)
 {
 		std::ifstream file(filepath, std::ios::binary);
 
-		std::uintmax_t filesize = fs::file_size(filepath);
+		size_t filesize = file.ignore(size_t(-1) >> 1).gcount();
 		if (!file || !filesize)
 				throw "File is empty or corrupt";
 
 		m_pCodeData = new uchar[filesize];
 		m_nIp = m_nBaseIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace);
-		file.read(m_pCodeData, filesize);
+		file->clear();
+		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 
 		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
 				m_bIsPersistent = true;
@@ -137,51 +121,6 @@ Script::ProcessOneCommand()
 				*game.Scripts.pNumOpcodesExecuted += 1;
 				return result;
 		}
-}
-
-eParamType
-Script::GetNextParamType()
-{
-		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_nIp])->type;
-}
-
-void*
-Script::GetPointerToScriptVariable()
-{
-		return game.Scripts.pfGetPointerToScriptVariable(this, &m_nIp, 1);
-}
-
-void
-Script::UpdateCompareFlag(bool result)
-{
-		game.Scripts.pfUpdateCompareFlag(this, result);
-}
-
-void
-Script::ReadShortString(char* out)
-{
-		std::strncpy(out, &game.Scripts.pScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
-		m_nIp += KEY_LENGTH_IN_SCRIPT;
-}
-
-void
-Script::JumpTo(int address)
-{
-		// negated address is a hack that lets us tell custom and mission scripts from regular ones
-		if (address >= 0) {
-				m_nIp = address;
-		} else {
-				if (m_bIsCustom)
-						m_nIp = m_nBaseIp + (-address);
-				else
-						m_nIp = game.kMainSize + (-address);
-		}
-}
-
-void
-Script::Collect(short numParams)
-{
-		CollectParameters(&m_nIp, numParams);
 }
 
 void
@@ -282,4 +221,43 @@ void
 Script::Store(short numParams)
 {
 		game.Scripts.pfStoreParameters(this, &m_nIp, numParams);
+}
+
+eParamType
+Script::GetNextParamType()
+{
+		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_nIp])->type;
+}
+
+void*
+Script::GetPointerToScriptVariable()
+{
+		return game.Scripts.pfGetPointerToScriptVariable(this, &m_nIp, 1);
+}
+
+void
+Script::UpdateCompareFlag(bool result)
+{
+		game.Scripts.pfUpdateCompareFlag(this, result);
+}
+
+void
+Script::ReadShortString(char* out)
+{
+		std::strncpy(out, &game.Scripts.pScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
+		m_nIp += KEY_LENGTH_IN_SCRIPT;
+}
+
+void
+Script::JumpTo(int address)
+{
+		// negated address is a hack that lets us tell custom and mission scripts from regular ones
+		if (address >= 0) {
+				m_nIp = address;
+		} else {
+				if (m_bIsCustom)
+						m_nIp = m_nBaseIp + (-address);
+				else
+						m_nIp = game.kMainSize + (-address);
+		}
 }
