@@ -47,21 +47,11 @@ protected:
 class CCustomScript : protected CRunningScript
 {
 private:
-		struct Cache {
-				Cache* next;
-				void* data;
-		};
-
 		struct StackFrame {
 				StackFrame* next;
 				ScriptParam vars[NUM_LOCAL_VARS];
 				uint retAddr;
 		};
-
-		Cache* m_pAllocatedMemory;
-		Cache* m_pOpenedFiles;
-		Cache* m_pFileSearchHandles;
-		StackFrame* m_pCleoCallStack;
 
 protected:
 		uchar* m_pCodeData;
@@ -72,14 +62,17 @@ protected:
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
 		ScriptParam* m_pCleoArray;
+		StackFrame* m_pCleoCallStack;
 
 		CCustomScript();
 		~CCustomScript();
 
-		void StoreCache(Cache** head, void* data);
-		void ClearCache(Cache** head, void* data);
 		void PushStackFrame();
 		void PopStackFrame();
+
+		template <typename T>
+		void* CacheObject(T&& obj);
+		void EraseCachedObject(void* obj);
 };
 
 class Script : protected CCustomScript
@@ -93,16 +86,16 @@ public:
 		eOpcodeResult ProcessOneCommand();
 
 		// exports
+		CLEOAPI void CollectParameters(uint* pIp, short numParams);
+		CLEOAPI int CollectNextParameterWithoutIncreasingPC(uint ip);
+		CLEOAPI void Collect(short numParams) { CollectParameters(&m_nIp, numParams); }
+		CLEOAPI void Store(short numParams);
+
 		CLEOAPI eParamType GetNextParamType();
 		CLEOAPI void* GetPointerToScriptVariable();
 		CLEOAPI void UpdateCompareFlag(bool result);
 		CLEOAPI void ReadShortString(char* out);
 		CLEOAPI void JumpTo(int address);
-
-		CLEOAPI void Collect(short numParams);
-		CLEOAPI void CollectParameters(uint* pIp, short numParams);
-		CLEOAPI int CollectNextParameterWithoutIncreasingPC(uint ip);
-		CLEOAPI void Store(short numParams);
 };
 
 // CRunningScript's data structure must not be altered!
