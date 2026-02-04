@@ -46,33 +46,20 @@ protected:
 
 class CCustomScript : protected CRunningScript
 {
-private:
-		struct StackFrame {
-				StackFrame* next;
-				ScriptParam vars[NUM_LOCAL_VARS];
-				uint retAddr;
-		};
-
 protected:
+		struct Cache;
+
 		uchar* m_pCodeData;
-		uint m_nBaseIp;
 		bool m_bIsCustom;
 		bool m_bIsPersistent;
 		uint m_nLastPedSearchIndex;
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
 		ScriptParam* m_pCleoArray;
-		StackFrame* m_pCleoCallStack;
+		Cache* m_pCache;
 
 		CCustomScript();
 		~CCustomScript();
-
-		void PushStackFrame();
-		void PopStackFrame();
-
-		template <typename T>
-		void* CacheObject(T&& obj);
-		void EraseCachedObject(void* obj);
 };
 
 class Script : protected CCustomScript
@@ -83,6 +70,13 @@ public:
 
 		void Init(); // this is a hook
 
+		void PushStackFrame();
+		void PopStackFrame();
+
+		template <typename T>
+		void* CacheObject(T&& obj);
+		void EraseCachedObject(void* obj);
+
 		eOpcodeResult ProcessOneCommand();
 
 		// exports
@@ -91,7 +85,7 @@ public:
 		CLEOAPI void Collect(short numParams) { CollectParameters(&m_nIp, numParams); }
 		CLEOAPI void Store(short numParams);
 
-		CLEOAPI eParamType GetNextParamType();
+		CLEOAPI ScriptParamType GetNextParamType();
 		CLEOAPI void* GetPointerToScriptVariable();
 		CLEOAPI void UpdateCompareFlag(bool result);
 		CLEOAPI void ReadShortString(char* out);
