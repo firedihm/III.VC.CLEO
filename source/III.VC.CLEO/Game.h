@@ -57,10 +57,10 @@ public:
 
 		struct Text_t {
 				wchar_t* (__thiscall* pfGet)(void*, const char*);
-				void(__cdecl* pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
-				void(__cdecl* pfAddBigMessageQ)(wchar_t*, uint, ushort);
-				void(__cdecl* pfAddMessage)(wchar_t*, uint, ushort);
-				void(__cdecl* pfAddMessageJumpQ)(wchar_t*, uint, ushort);
+				void (__cdecl* pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
+				void (__cdecl* pfAddBigMessageQ)(wchar_t*, uint, ushort);
+				void (__cdecl* pfAddMessage)(wchar_t*, uint, ushort);
+				void (__cdecl* pfAddMessageJumpQ)(wchar_t*, uint, ushort);
 				void* pTheText;
 				intro_text_line* pIntroTextLines;
 				ushort* pNumberOfIntroTextLinesThisFrame;
