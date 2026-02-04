@@ -3,29 +3,90 @@
 #include "OpcodesSystem.h"
 #include "Script.h"
 
+#include <any>
 #include <cstring>
+#include <forward_list>
 #include <fstream>
 
-CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_nBaseIp(0), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
-								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCleoCallStack(nullptr) {}
+struct CCustomScript::Cache
+{
+        struct StackFrame {
+                uint ret_addr;
+                ScriptParam vars[NUM_LOCAL_VARS];
+        };
+
+        std::forward_list<StackFrame> stack_frames;
+        std::forward_list<std::any> objects;
+}
+
+CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
+								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCache(new Cache()) {}
 
 CCustomScript::~CCustomScript()
 {
-		while (m_pCleoCallStack)
-				PopStackFrame();
-
+		delete m_pCache;
 		delete[] m_pCleoArray;
 		delete[] m_pCodeData;
 }
 
+Script::Script(const char* filepath)
+{
+		std::ifstream file(filepath, std::ios::binary);
+
+		size_t filesize = file.ignore(size_t(-1) >> 1).gcount();
+		if (!file || !filesize)
+				throw "File is empty or corrupt";
+
+		/*
+			We have to remember that game will always add pScriptSpace to m_nIp when processing scripts, because 
+			the latter is an offset. Since custom scripts store code data on heap, and game can't account for this, 
+			we'll have to initialise m_nIp to a difference of heap address and pScriptSpace, so it will even out 
+			when game will be processing this script.
+		*/
+		m_pCodeData = new uchar[filesize];
+		m_nIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace);
+		file->clear();
+		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
+
+		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
+				m_bIsPersistent = true;
+}
+
+void
+Script::Init()
+{
+		std::memset(this, 0, sizeof(Script));
+		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
+		m_bDeatharrestEnabled = true;
+		m_pCleoArray = new ScriptParam[CLEO_ARRAY_SIZE];
+}
+
+void
+Script::PushStackFrame()
+{
+		StackFrame& frame = m_pCache->stack_frames.emplace_front();
+
+		frame.ret_addr = m_nIp;
+		std::memcpy(&frame.vars, &m_aLVars, sizeof(frame.vars));
+}
+
+void
+Script::PopStackFrame()
+{
+		std::memcpy(&m_aLVars, &m_pCache->stack_frames.front().vars, sizeof(m_aLVars));
+		m_nIp = m_pCache->stack_frames.front().ret_addr;
+
+		m_pCache->stack_frames.pop_front();
+}
+
 void*
-CCustomScript::StoreCache(std::any&& obj)
+Script::CacheObject(std::any&& obj)
 {
 		(ObjectCache*)(m_pObjectCache)->push_front(std::move(obj));
 }
 
 void
-CCustomScript::ClearCache(void* obj)
+Script::EraseCachedObject(void* obj)
 {
 		for (Cache* previous = nullptr, current = *head; current; previous = current, current = current->next) {
 				if (current->data == data) {
@@ -45,56 +106,6 @@ CCustomScript::ClearCache(void* obj)
 						return;
 				}
 		}
-}
-
-void
-CCustomScript::PushStackFrame()
-{
-		StackFrame* frame = new StackFrame();
-		frame->next = m_pCleoCallStack;
-		m_pCleoCallStack = frame;
-
-		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
-
-		frame->retAddr = m_nIp;
-}
-
-void
-CCustomScript::PopStackFrame()
-{
-		m_nIp = m_pCleoCallStack->retAddr;
-
-		std::memcpy(&m_aLVars, &m_pCleoCallStack->vars, sizeof(m_aLVars));
-
-		StackFrame* head_next = m_pCleoCallStack->next;
-		delete m_pCleoCallStack;
-		m_pCleoCallStack = head_next;
-}
-
-Script::Script(const char* filepath)
-{
-		std::ifstream file(filepath, std::ios::binary);
-
-		size_t filesize = file.ignore(size_t(-1) >> 1).gcount();
-		if (!file || !filesize)
-				throw "File is empty or corrupt";
-
-		m_pCodeData = new uchar[filesize];
-		m_nIp = m_nBaseIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace);
-		file->clear();
-		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
-
-		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
-				m_bIsPersistent = true;
-}
-
-void
-Script::Init()
-{
-		std::memset(this, 0, sizeof(Script));
-		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
-		m_bDeatharrestEnabled = true;
-		m_pCleoArray = new ScriptParam[CLEO_ARRAY_SIZE];
 }
 
 eOpcodeResult
@@ -223,7 +234,7 @@ Script::Store(short numParams)
 		game.Scripts.pfStoreParameters(this, &m_nIp, numParams);
 }
 
-eParamType
+ScriptParamType
 Script::GetNextParamType()
 {
 		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_nIp])->type;
@@ -256,7 +267,7 @@ Script::JumpTo(int address)
 				m_nIp = address;
 		} else {
 				if (m_bIsCustom)
-						m_nIp = m_nBaseIp + (-address);
+						m_nIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace) + (-address); // see Script ctor for details
 				else
 						m_nIp = game.kMainSize + (-address);
 		}
