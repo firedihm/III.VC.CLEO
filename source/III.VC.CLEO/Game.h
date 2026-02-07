@@ -41,7 +41,7 @@ public:
 		const uint kMissionSize;
 		const uint kScriptSpaceSize;
 
-		struct Scripts_t {
+		struct {
 				uchar* pScriptSpace;
 				ScriptParam* pScriptParams;
 				ushort* pNumOpcodesExecuted;
@@ -55,7 +55,7 @@ public:
 				void* (__thiscall* pfGetPointerToScriptVariable)(Script*, uint*, short); // last param is unused
 		} Scripts;
 
-		struct Text_t {
+		struct {
 				wchar_t* (__thiscall* pfGet)(void*, const char*);
 				void (__cdecl* pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
 				void (__cdecl* pfAddBigMessageQ)(wchar_t*, uint, ushort);
@@ -67,7 +67,7 @@ public:
 				char* szKeyboardCheatString;
 		} Text;
 
-		struct Font_t {
+		struct {
 				void (__cdecl* pfAsciiToUnicode)(const char*, wchar_t*);
 				void (__cdecl* pfPrintString)(float, float, wchar_t*);
 				void (__cdecl* pfSetFontStyle)(short);
@@ -78,7 +78,7 @@ public:
 				void (__cdecl* pfSetPropOn)();
 		} Font;
 
-		struct Pools_t {
+		struct {
 				CPool** ppPedPool;
 				CPool** ppVehiclePool;
 				CPool** ppObjectPool;
@@ -91,14 +91,14 @@ public:
 				int (__thiscall* pfObjectPoolGetIndex)(CPool*, void*);
 		} Pools;
 
-		struct Events_t {
+		struct {
 				void (__cdecl* pfInitScripts)();
 				void (__cdecl* pfSaveAllScripts)(uchar*, uint*);
 				void (__cdecl* pfCdStreamRemoveImages)();
 		} Events;
 
 		// VC only: first void* of func is RwTexture*, second is CCutsceneShadow*; the void** are RwTexture**
-		struct Shadows_t {
+		struct {
 				float (__cdecl* pfStoreShadowToBeRendered)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool);
 				void** ppShadowCarTex;
 				void** ppShadowPedTex;
@@ -110,7 +110,7 @@ public:
 				void** ppBloodPoolTex;
 		} Shadows;
 
-		struct Misc_t {
+		struct {
 				uchar* pVehicleModelStore;
 				short* pPadNewState;
 				bool* pWideScreenOn;
