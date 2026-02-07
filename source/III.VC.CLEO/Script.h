@@ -47,8 +47,6 @@ protected:
 class CCustomScript : protected CRunningScript
 {
 protected:
-		struct Cache;
-
 		uchar* m_pCodeData;
 		bool m_bIsCustom;
 		bool m_bIsPersistent;
@@ -56,10 +54,29 @@ protected:
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
 		ScriptParam* m_pCleoArray;
-		Cache* m_pCache;
 
 		CCustomScript();
 		~CCustomScript();
+
+		void PushStackFrame();
+		void PopStackFrame();
+
+		template <typename T>
+		void* CacheObject(T&& obj);
+		void DestroyObject(void* obj);
+
+private:
+		struct StackFrame {
+				StackFrame* next;
+				uint ret_addr;
+				ScriptParam vars[NUM_LOCAL_VARS];
+		}* m_pCleoCallStack;
+
+		struct ObjectReference {
+				ObjectReference* next;
+				void* object;
+				void (__stdcall* destroy)(void* obj); // non-capturing, dtor-invoking lambda
+		}* m_pObjectReferences;
 };
 
 class Script : protected CCustomScript
@@ -69,13 +86,6 @@ public:
 		Script(const char* filepath);
 
 		void Init(); // this is a hook
-
-		void PushStackFrame();
-		void PopStackFrame();
-
-		template <typename T>
-		void* CacheObject(T&& obj);
-		void EraseCachedObject(void* obj);
 
 		eOpcodeResult ProcessOneCommand();
 
