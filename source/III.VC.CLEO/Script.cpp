@@ -3,30 +3,67 @@
 #include "OpcodesSystem.h"
 #include "Script.h"
 
-#include <any>
 #include <cstring>
-#include <forward_list>
 #include <fstream>
 
-struct CCustomScript::Cache
-{
-        struct StackFrame {
-                uint ret_addr;
-                ScriptParam vars[NUM_LOCAL_VARS];
-        };
-
-        std::forward_list<StackFrame> stack_frames;
-        std::forward_list<std::any> objects;
-}
-
 CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
-								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCache(new Cache()) {}
+								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCleoCallStack(nullptr), m_pObjectReferences(nullptr) {}
 
 CCustomScript::~CCustomScript()
 {
-		delete m_pCache;
+		while (m_pObjectReferences)
+				DestroyObject(m_pObjectReferences);
+
+		while (m_pCleoCallStack)
+				PopStackFrame();
+
 		delete[] m_pCleoArray;
 		delete[] m_pCodeData;
+}
+
+void
+CCustomScript::PushStackFrame()
+{
+		StackFrame* frame = new StackFrame();
+		frame->next = m_pCleoCallStack;
+		m_pCleoCallStack = frame;
+
+		frame->ret_addr = m_nIp;
+		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
+}
+
+void
+CCustomScript::PopStackFrame()
+{
+		std::memcpy(&m_aLVars, &m_pCleoCallStack->vars, sizeof(m_aLVars));
+		m_nIp = m_pCleoCallStack->ret_addr;
+
+		StackFrame* head_next = m_pCleoCallStack->next;
+		delete m_pCleoCallStack;
+		m_pCleoCallStack = head_next;
+}
+
+void*
+CCustomScript::CacheObject(std::any&& obj)
+{
+		(ObjectCache*)(m_pObjectCache)->push_front(std::move(obj));
+}
+
+void
+CCustomScript::DestroyObject(void* obj)
+{
+		for (ObjectReference* previous = nullptr, current = m_pObjectReferences; current; previous = current, current = current->next) {
+				if (current->object == obj) {
+						if (previous)
+								previous->next = current->next;
+						else
+								m_pObjectReferences = current->next;
+
+						current->destroy(current->object);
+						delete current;
+						return;
+				}
+		}
 }
 
 Script::Script(const char* filepath)
@@ -59,53 +96,6 @@ Script::Init()
 		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
 		m_bDeatharrestEnabled = true;
 		m_pCleoArray = new ScriptParam[CLEO_ARRAY_SIZE];
-}
-
-void
-Script::PushStackFrame()
-{
-		StackFrame& frame = m_pCache->stack_frames.emplace_front();
-
-		frame.ret_addr = m_nIp;
-		std::memcpy(&frame.vars, &m_aLVars, sizeof(frame.vars));
-}
-
-void
-Script::PopStackFrame()
-{
-		std::memcpy(&m_aLVars, &m_pCache->stack_frames.front().vars, sizeof(m_aLVars));
-		m_nIp = m_pCache->stack_frames.front().ret_addr;
-
-		m_pCache->stack_frames.pop_front();
-}
-
-void*
-Script::CacheObject(std::any&& obj)
-{
-		(ObjectCache*)(m_pObjectCache)->push_front(std::move(obj));
-}
-
-void
-Script::EraseCachedObject(void* obj)
-{
-		for (Cache* previous = nullptr, current = *head; current; previous = current, current = current->next) {
-				if (current->data == data) {
-						if (previous)
-								previous->next = current->next;
-						else
-								*head = current->next;
-
-						if (head == &m_pFileSearchHandles)
-								delete (fs::directory_iterator*)current->data;
-						else if (head == &m_pOpenedFiles)
-								delete (std::fstream*)current->data;
-						else
-								delete current->data;
-
-						delete current;
-						return;
-				}
-		}
 }
 
 eOpcodeResult
