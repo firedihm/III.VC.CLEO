@@ -61,9 +61,18 @@ protected:
 		void PushStackFrame();
 		void PopStackFrame();
 
-		template <typename T>
-		void* CacheObject(T&& obj);
+		/*
+			ObjectReferences keep track of Script's ownership of objects it 
+			creates (allocated memory, opened files...) to avoid memory leaks: 
+			in case of programmer's fault or Script being prematurely terminated.
+		*/
+		void* AddReference(ObjectReference&& ref);
 		void DestroyObject(void* obj);
+
+		template <typename T>
+		T* AddReference(T* obj) {
+				return (T*)AddReference({ nullptr, obj, [](void* x) { static_cast<T*>(x)->~T(); } });
+		}
 
 private:
 		struct StackFrame {
@@ -75,7 +84,7 @@ private:
 		struct ObjectReference {
 				ObjectReference* next;
 				void* object;
-				void (__stdcall* destroy)(void* obj); // non-capturing, dtor-invoking lambda
+				void (__stdcall* destruct)(void* obj); // non-capturing, dtor-invoking lambda
 		}* m_pObjectReferences;
 };
 
