@@ -84,7 +84,7 @@ private:
 		struct ObjectReference {
 				ObjectReference* next;
 				void* object;
-				void (__stdcall* destruct)(void* obj); // non-capturing, dtor-invoking lambda
+				void (__stdcall* destruct)(void* self); // non-capturing, dtor-invoking lambda
 		}* m_pObjectReferences;
 };
 
