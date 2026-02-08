@@ -44,7 +44,7 @@ CCustomScript::PopStackFrame()
 }
 
 void*
-CCustomScript::CacheObject(std::any&& obj)
+CCustomScript::AddReference(ObjectReference&& ref)
 {
 		(ObjectCache*)(m_pObjectCache)->push_front(std::move(obj));
 }
@@ -59,7 +59,9 @@ CCustomScript::DestroyObject(void* obj)
 						else
 								m_pObjectReferences = current->next;
 
-						current->destroy(current->object);
+						current->destruct(current->object); // call dtor
+						delete current->object; // release memory
+
 						delete current;
 						return;
 				}
