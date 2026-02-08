@@ -71,7 +71,7 @@ protected:
 
 		template <typename T>
 		T* AddReference(T* obj) {
-				return (T*)AddReference({ nullptr, obj, [](void* x) { static_cast<T*>(x)->~T(); } });
+				return (T*)AddReference({ nullptr, obj, [](void* self) { static_cast<T*>(self)->~T(); } });
 		}
 
 private:
