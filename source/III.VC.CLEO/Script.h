@@ -67,9 +67,8 @@ protected:
 			in case of programmer's fault or premature termination.
 		*/
 		template <typename T>
-		T* AddReference(T* obj) {
+		void AddReference(T* obj) {
 				m_pObjectReferences = new ObjectReference{m_pObjectReferences, obj, [](void* self) { static_cast<T*>(self)->~T(); }};
-				return obj;
 		}
 		void DeleteObject(void* obj);
 
