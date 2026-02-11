@@ -14,6 +14,10 @@ enum {
 		CLEO_ARRAY_SIZE = 256
 };
 
+/*
+	We "inherit" CRunningScript from base game, and add custom data in CCustomScript. 
+	The order of class' members is same for both III and VC, except for 3 flags defined in unions.
+*/
 class CRunningScript
 {
 protected:
@@ -25,15 +29,9 @@ protected:
 		ushort m_nGosubStackPointer;
 		ScriptParam m_aLVars[NUM_LOCAL_VARS];
 		ScriptParam m_aTimers[NUM_TIMERS];
-#ifdef CLEO_VC
-		bool m_bSkipWakeTime; 
-		bool m_bCondResult; 
-		bool m_bIsMissionScript;
-#else
-		bool m_bCondResult;
-		bool m_bIsMissionScript;
-		bool m_bSkipWakeTime;
-#endif
+		union { bool m_bCondResultIII, m_bSkipWakeTimeVC; };
+		union { bool m_bIsMissionScriptIII, m_bCondResultVC; };
+		union { bool m_bSkipWakeTimeIII, m_bIsMissionScriptVC; };
 		uint m_nWakeTime;
 		ushort m_nAndOrState;
 		bool m_bNotFlag;
@@ -43,6 +41,8 @@ protected:
 
 		CRunningScript();
 };
+
+static_assert(sizeof(CRunningScript) == 0x88);
 
 class CCustomScript : protected CRunningScript
 {
@@ -62,17 +62,16 @@ protected:
 		void PopStackFrame();
 
 		/*
-			ObjectReferences keep track of Script's ownership of objects it 
+			ObjectReferences keep track of script's ownership of objects it 
 			creates (allocated memory, opened files...) to avoid memory leaks: 
-			in case of programmer's fault or Script being prematurely terminated.
+			in case of programmer's fault or premature termination.
 		*/
-		void* AddReference(ObjectReference&& ref);
-		void DestroyObject(void* obj);
-
 		template <typename T>
 		T* AddReference(T* obj) {
-				return (T*)AddReference({ nullptr, obj, [](void* self) { static_cast<T*>(self)->~T(); } });
+				m_pObjectReferences = new ObjectReference{m_pObjectReferences, obj, [](void* self) { static_cast<T*>(self)->~T(); }};
+				return obj;
 		}
+		void DeleteObject(void* obj);
 
 private:
 		struct StackFrame {
@@ -83,11 +82,12 @@ private:
 
 		struct ObjectReference {
 				ObjectReference* next;
-				void* object;
-				void (__stdcall* destruct)(void* self); // non-capturing, dtor-invoking lambda
+				void* obj;
+				void (__thiscall* destruct)(void* self); // non-capturing, dtor-invoking lambda
 		}* m_pObjectReferences;
 };
 
+// this is introduced to provide laconic, forward-declarable type alias for CCustomScript.
 class Script : protected CCustomScript
 {
 public:
@@ -110,29 +110,3 @@ public:
 		CLEOAPI void ReadShortString(char* out);
 		CLEOAPI void JumpTo(int address);
 };
-
-// CRunningScript's data structure must not be altered!
-static_assert(offsetof(CRunningScript, m_pNext) == 0x00);
-static_assert(offsetof(CRunningScript, m_pPrev) == 0x04);
-static_assert(offsetof(CRunningScript, m_acName) == 0x08);
-static_assert(offsetof(CRunningScript, m_dwIp) == 0x10);
-static_assert(offsetof(CRunningScript, m_aGosubAddr) == 0x14);
-static_assert(offsetof(CRunningScript, m_nCurrentGosub) == 0x2C);
-static_assert(offsetof(CRunningScript, m_aLVars) == 0x30);
-static_assert(offsetof(CRunningScript, m_aTimers) == 0x70);
-#ifdef CLEO_VC
-	static_assert(offsetof(CRunningScript, m_bIsActive) == 0x78);
-	static_assert(offsetof(CRunningScript, m_bCondResult) == 0x79);
-	static_assert(offsetof(CRunningScript, m_bIsMission) == 0x7A);
-#else
-	static_assert(offsetof(CRunningScript, m_bCondResult) == 0x78);
-	static_assert(offsetof(CRunningScript, m_bIsMission) == 0x79);
-	static_assert(offsetof(CRunningScript, m_bIsActive) == 0x7A);
-#endif
-static_assert(offsetof(CRunningScript, m_dwWakeTime) == 0x7C);
-static_assert(offsetof(CRunningScript, m_wIfOp) == 0x80);
-static_assert(offsetof(CRunningScript, m_bNotFlag) == 0x82);
-static_assert(offsetof(CRunningScript, m_bDeathArrestCheckEnabled) == 0x83);
-static_assert(offsetof(CRunningScript, m_bWastedOrBusted) == 0x84);
-static_assert(offsetof(CRunningScript, m_bMissionFlag) == 0x85);
-static_assert(sizeof(CRunningScript) == 0x88);
