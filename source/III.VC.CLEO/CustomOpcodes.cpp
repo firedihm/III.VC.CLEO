@@ -296,7 +296,7 @@ CustomOpcodes::TERMINATE_NAMED_CUSTOM_THREAD(Script* script)
 		if (Script* found = scriptMgr::FindScriptNamed(&name); found) {
 				script->UpdateCompareFlag(true);
 
-				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_NAMED_CUSTOM_THREAD: Terminating custom script \"%s\"", found->m_acName);
+				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_NAMED_CUSTOM_THREAD: Terminating custom script \"%s\"", &found->m_acName);
 				scriptMgr::TerminateScript(found);
 
 				return (found == script) ? OR_TERMINATE : OR_CONTINUE;
@@ -1326,8 +1326,6 @@ CustomOpcodes::START_CUSTOM_THREAD_VSTRING(Script* script)
 
 		fs::path filepath = fs::path(game.Misc.szRootDirName) / "CLEO" / game.Scripts.pScriptParams[0].szVar;
 
-		Script* new_script = new Script(filepath.c_str());
-
 		try {
 				LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_THREAD_VSTRING: Starting new script \"%s\"", filepath.c_str());
 				Script* new_script = scriptMgr::StartScript(filepath.c_str());
@@ -1654,10 +1652,11 @@ CustomOpcodes::OPCODE_0A9A(Script* script)
 		script->Collect(2);
 
 		try {
-				script->StoreCache(&m_pOpenedFiles, new std::fstream(game.Scripts.pScriptParams[0].szVar, openmode_string_to_bitmask(game.Scripts.pScriptParams[1].szVar)));
+				auto file* = new std::fstream(game.Scripts.pScriptParams[0].szVar, openmode_string_to_bitmask(game.Scripts.pScriptParams[1].szVar));
+				script->AddReference(file);
 
-				script->UpdateCompareFlag(*(std::fstream*)m_pOpenedFiles->data); // check for ill-formed fstream with bool()
-				game.Scripts.pScriptParams[0].pVar = m_pOpenedFiles->data;
+				script->UpdateCompareFlag(*file); // check for ill-formed fstream with bool()
+				game.Scripts.pScriptParams[0].pVar = file;
 		} catch (...) {
 				script->UpdateCompareFlag(false);
 				game.Scripts.pScriptParams[0].pVar = nullptr;
@@ -1673,7 +1672,7 @@ CustomOpcodes::OPCODE_0A9B(Script* script)
 {
 		script->Collect(1);
 
-		script->ClearCahce(&m_pOpenedFiles, game.Scripts.pScriptParams[0].pVar);
+		script->DeleteObject(game.Scripts.pScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 }
@@ -1683,7 +1682,7 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9C(Script* script)
 {
 		script->Collect(1);
-		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
+		auto* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
 		auto saved_pos = file->tellg();
 		size_t filesize = file->seekg(0, std::ios::beg).ignore(size_t(-1) >> 1).gcount();
@@ -1701,7 +1700,7 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9D(Script* script)
 {
 		script->Collect(3);
-		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
+		auto* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
 		file->read(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar);
 
@@ -1713,7 +1712,7 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0A9E(Script* script)
 {
 		script->Collect(3);
-		std::fstream* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
+		auto* file = (std::fstream*)game.Scripts.pScriptParams[0].pVar;
 
 		file->write(game.Scripts.pScriptParams[2].pVar, game.Scripts.pScriptParams[1].nVar);
 		file->flush();
@@ -1937,10 +1936,11 @@ CustomOpcodes::OPCODE_0AC8(Script* script)
 		script->Collect(1);
 
 		try {
-				script->StoreCache(&m_pAllocatedMemory, new(game.Scripts.pScriptParams[0].nVar));
+				auto* mem = new(game.Scripts.pScriptParams[0].nVar);
+				script->AddReference(mem);
 
 				script->UpdateCompareFlag(true);
-				game.Scripts.pScriptParams[0].pVar = m_pAllocatedMemory->data;
+				game.Scripts.pScriptParams[0].pVar = mem;
 		} catch (...) {
 				script->UpdateCompareFlag(false);
 				game.Scripts.pScriptParams[0].pVar = nullptr;
@@ -1956,7 +1956,7 @@ CustomOpcodes::OPCODE_0AC9(Script* script)
 {
 		script->Collect(1);
 
-		script->ClearCahce(&m_pAllocatedMemory, game.Scripts.pScriptParams[0].pVar);
+		script->DeleteObject(game.Scripts.pScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 };
@@ -2355,11 +2355,15 @@ CustomOpcodes::OPCODE_0AE6(Script* script)
 {
 		script->Collect(1);
 
+		char* filename = "";
 		try {
-				script->StoreCache(&m_pFileSearchHandles, new fs::directory_iterator(game.Scripts.pScriptParams[0].szVar));
+				auto* handle = new fs::directory_iterator(game.Scripts.pScriptParams[0].szVar);
+				script->AddReference(handle);
 
-				script->UpdateCompareFlag(*m_pFileSearchHandles->data != end(*m_pFileSearchHandles->data)); // check if directory is not empty
-				game.Scripts.pScriptParams[0].pVar = m_pFileSearchHandles->data;
+				script->UpdateCompareFlag(*handle != end(*handle)); // check if directory is not empty
+				game.Scripts.pScriptParams[0].pVar = handle;
+
+				filename = script->m_bCondResult ? (*handle)->path().filename().c_str() : "";
 		} catch (...) {
 				script->UpdateCompareFlag(false);
 				game.Scripts.pScriptParams[0].pVar = nullptr;
@@ -2367,8 +2371,7 @@ CustomOpcodes::OPCODE_0AE6(Script* script)
 		script->Store(1);
 
 		script->Collect(1);
-		const char* src = script->m_bCondResult ? *(fs::directory_iterator*)(m_pFileSearchHandles->data)->path().filename().c_str() : "";
-		std::strcpy(game.Scripts.pScriptParams[0].szVar, src);
+		std::strcpy(game.Scripts.pScriptParams[0].szVar, filename);
 
 		return OR_CONTINUE;
 }
@@ -2378,14 +2381,13 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE7(Script* script)
 {
 		script->Collect(2);
-		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.pScriptParams[0].pVar;
+		auto* handle = (fs::directory_iterator*)game.Scripts.pScriptParams[0].pVar;
 
 		(*handle)++;
-		bool result = (*handle != end(*handle)) ? true : false;
+		script->UpdateCompareFlag(*handle != end(*handle));
 
-		script->UpdateCompareFlag(result);
-		const char* src = result ? (*handle)->path().filename().c_str() : "";
-		std::strcpy(game.Scripts.pScriptParams[1].szVar, src);
+		char* filename = script->m_bCondResult ? (*handle)->path().filename().c_str() : "";
+		std::strcpy(game.Scripts.pScriptParams[1].szVar, filename);
 
 		return OR_CONTINUE;
 }
@@ -2395,10 +2397,8 @@ eOpcodeResult
 CustomOpcodes::OPCODE_0AE8(Script* script)
 {
 		script->Collect(1);
-		fs::directory_iterator* handle = (fs::directory_iterator*)game.Scripts.pScriptParams[0].pVar;
 
-		delete handle;
-		scriptMgr::DeleteFileSearchHandle(handle);
+		script->DeleteObject(game.Scripts.pScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 }
