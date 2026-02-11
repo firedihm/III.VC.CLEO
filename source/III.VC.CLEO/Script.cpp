@@ -6,13 +6,18 @@
 #include <cstring>
 #include <fstream>
 
+CRunningScript::CRunningScript() : m_pNext(nullptr), m_pPrev(nullptr), m_acName({'n', 'o', 'n', 'a', 'm', 'e', '\0'}),
+								   m_nIp(0), m_anGosubStack({0}), m_nGosubStackPointer(0), m_aLVars({0}), m_aTimers({0}),
+								   m_bCondResultIII(false), m_bIsMissionScriptIII(false), m_bSkipWakeTimeIII(false), m_nWakeTime(0),
+								   m_nAndOrState(0), m_bNotFlag(false), m_bDeatharrestEnabled(true), m_bDeatharrestExecuted(false), m_bMissionFlag(false) {}
+
 CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
 								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCleoCallStack(nullptr), m_pObjectReferences(nullptr) {}
 
 CCustomScript::~CCustomScript()
 {
 		while (m_pObjectReferences)
-				DestroyObject(m_pObjectReferences);
+				DeleteObject(m_pObjectReferences->obj);
 
 		while (m_pCleoCallStack)
 				PopStackFrame();
@@ -43,14 +48,8 @@ CCustomScript::PopStackFrame()
 		m_pCleoCallStack = head_next;
 }
 
-void*
-CCustomScript::AddReference(ObjectReference&& ref)
-{
-		(ObjectCache*)(m_pObjectCache)->push_front(std::move(obj));
-}
-
 void
-CCustomScript::DestroyObject(void* obj)
+CCustomScript::DeleteObject(void* obj)
 {
 		for (ObjectReference* previous = nullptr, current = m_pObjectReferences; current; previous = current, current = current->next) {
 				if (current->object == obj) {
@@ -59,8 +58,8 @@ CCustomScript::DestroyObject(void* obj)
 						else
 								m_pObjectReferences = current->next;
 
-						current->destruct(current->object); // call dtor
-						delete current->object; // release memory
+						current->destruct(current->obj); // call dtor
+						delete current->obj; // release memory
 
 						delete current;
 						return;
