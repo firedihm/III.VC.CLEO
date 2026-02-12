@@ -1,6 +1,6 @@
 #include "Game.h"
 #include "Log.h"
-#include "OpcodesSystem.h"
+#include "Opcodes.h"
 #include "Script.h"
 
 #include <cstring>
@@ -108,7 +108,7 @@ Script::ProcessOneCommand()
 		op &= 0x7FFF;
 		m_nIp += 2;
 
-		if (Opcodes::functions[op]) { // call opcode registered as custom
+		if (opcodes::Functions[op]) { // call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
 				eOpcodeResult result = Opcodes::functions[op](this);
 				*game.Scripts.pNumOpcodesExecuted += 1;
