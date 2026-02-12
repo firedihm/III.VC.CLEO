@@ -2,10 +2,6 @@
 
 #include "domain.h"
 
-#ifndef CLEOAPI
-#define CLEOAPI __declspec(dllexport)
-#endif
-
 enum {
 		KEY_LENGTH_IN_SCRIPT = 8,
 		MAX_STACK_DEPTH = 6,
@@ -97,15 +93,14 @@ public:
 
 		eOpcodeResult ProcessOneCommand();
 
-		// exports
-		CLEOAPI void CollectParameters(uint* pIp, short numParams);
-		CLEOAPI int CollectNextParameterWithoutIncreasingPC(uint ip);
-		CLEOAPI void Collect(short numParams) { CollectParameters(&m_nIp, numParams); }
-		CLEOAPI void Store(short numParams);
+		__declspec(dllexport) void CollectParameters(uint* pIp, short numParams);
+		__declspec(dllexport) int CollectNextParameterWithoutIncreasingPC(uint ip);
+		__declspec(dllexport) void Collect(short numParams) { CollectParameters(&m_nIp, numParams); }
+		__declspec(dllexport) void Store(short numParams);
 
-		CLEOAPI ScriptParamType GetNextParamType();
-		CLEOAPI void* GetPointerToScriptVariable();
-		CLEOAPI void UpdateCompareFlag(bool result);
-		CLEOAPI void ReadShortString(char* out);
-		CLEOAPI void JumpTo(int address);
+		__declspec(dllexport) ScriptParamType GetNextParamType();
+		__declspec(dllexport) void* GetPointerToScriptVariable();
+		__declspec(dllexport) void UpdateCompareFlag(bool result);
+		__declspec(dllexport) void ReadShortString(char* out);
+		__declspec(dllexport) void JumpTo(int address);
 };
