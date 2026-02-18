@@ -95,8 +95,8 @@ public:
 
 		__declspec(dllexport) void CollectParameters(uint* pIp, short numParams);
 		__declspec(dllexport) int CollectNextParameterWithoutIncreasingPC(uint ip);
-		__declspec(dllexport) void Collect(short numParams) { CollectParameters(&m_nIp, numParams); }
-		__declspec(dllexport) void Store(short numParams);
+		__declspec(dllexport) void CollectParameters(short numParams) { CollectParameters(&m_nIp, numParams); }
+		__declspec(dllexport) void StoreParameters(short numParams);
 
 		__declspec(dllexport) ScriptParamType GetNextParamType();
 		__declspec(dllexport) void* GetPointerToScriptVariable();
