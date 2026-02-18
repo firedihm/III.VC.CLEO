@@ -110,7 +110,7 @@ Script::ProcessOneCommand()
 
 		if (opcodes::Functions[op]) { // call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
-				eOpcodeResult result = Opcodes::functions[op](this);
+				eOpcodeResult result = opcodes::Definitions[op](this);
 				*game.Scripts.pNumOpcodesExecuted += 1;
 				return result;
 		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
@@ -220,7 +220,7 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 }
 
 void
-Script::Store(short numParams)
+Script::StoreParameters(short numParams)
 {
 		game.Scripts.pfStoreParameters(this, &m_nIp, numParams);
 }
