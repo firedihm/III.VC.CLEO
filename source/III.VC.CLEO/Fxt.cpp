@@ -11,7 +11,7 @@
 
 namespace fs = std::filesystem;
 
-std::map<std::string, std::wstring> FxtEntries;
+static std::map<std::string, std::wstring> FxtEntries;
 
 void
 fxt::Add(const char* key, const char* text)
