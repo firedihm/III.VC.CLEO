@@ -1,9 +1,9 @@
 #include "CleoVersion"
-#include "CustomOpcodes.h"
 #include "Fxt.h"
 #include "Game.h"
 #include "Log.h"
 #include "Memory.h"
+#include "Opcodes.h"
 #include "Script.h"
 #include "ScriptManager.h"
 
@@ -600,7 +600,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::Write<void*>(0x5097C6, ScriptSprites);
 		}
 
-		CustomOpcodes::Register();
+		opcodes::Register();
 		CleoPlugins::LoadPlugins();
 }
 
