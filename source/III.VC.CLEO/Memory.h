@@ -1,7 +1,7 @@
 #pragma once
 
-constexpr uchar Call = 0xE8;
-constexpr uchar Jump = 0xE9;
+inline constexpr uchar Call = 0xE8;
+inline constexpr uchar Jump = 0xE9;
 
 // wrapper over memory patching to keep <Windows.h> isolated
 namespace memory
