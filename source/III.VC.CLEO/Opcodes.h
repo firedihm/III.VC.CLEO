@@ -1,13 +1,19 @@
 #pragma once
 
-constexpr ushort CUSTOM_OPCODE_START_ID = 0x05DC;
-constexpr ushort MAX_NUMBER_OF_OPCODES = 0x8000;
+#include "domain.h"
 
 class Script;
 
 namespace opcodes
 {
-        extern eOpcodeResult (__stdcall* Functions[MAX_NUMBER_OF_OPCODES])(Script*);
+        inline constexpr ushort CUSTOM_START_ID = 0x05DC;
+        inline constexpr ushort MAX_ID = 0x8000;
 
-        __declspec(dllexport) bool Register(ushort id, eOpcodeResult (__stdcall*)(Script*) function);
+        using Definition = eOpcodeResult (__stdcall*)(Script*);
+
+        inline Definition Definitions[MAX_ID] = {nullptr};
+
+        __declspec(dllexport) bool Register(ushort id, Definition def);
+
+        void Register(); // initializes standard CLEO opcodes
 }
