@@ -12,17 +12,17 @@ CRunningScript::CRunningScript() : m_pNext(nullptr), m_pPrev(nullptr), m_acName(
 								   m_nAndOrState(0), m_bNotFlag(false), m_bDeatharrestEnabled(true), m_bDeatharrestExecuted(false), m_bMissionFlag(false) {}
 
 CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
-								 m_pCleoArray(new ScriptParam[CLEO_ARRAY_SIZE]), m_pCleoCallStack(nullptr), m_pObjectReferences(nullptr) {}
+								 CLEO_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr) {}
 
 CCustomScript::~CCustomScript()
 {
-		while (m_pObjectReferences)
-				DeleteObject(m_pObjectReferences->obj);
+		while (register_)
+				DeleteRegisteredObject(register_->obj);
 
-		while (m_pCleoCallStack)
+		while (call_stack_)
 				PopStackFrame();
 
-		delete[] m_pCleoArray;
+		delete[] CLEO_array_;
 		delete[] m_pCodeData;
 }
 
@@ -30,8 +30,8 @@ void
 CCustomScript::PushStackFrame()
 {
 		StackFrame* frame = new StackFrame();
-		frame->next = m_pCleoCallStack;
-		m_pCleoCallStack = frame;
+		frame->next = call_stack_;
+		call_stack_ = frame;
 
 		frame->ret_addr = m_nIp;
 		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
@@ -40,28 +40,28 @@ CCustomScript::PushStackFrame()
 void
 CCustomScript::PopStackFrame()
 {
-		std::memcpy(&m_aLVars, &m_pCleoCallStack->vars, sizeof(m_aLVars));
-		m_nIp = m_pCleoCallStack->ret_addr;
+		m_nIp = call_stack_->ret_addr;
+		std::memcpy(&m_aLVars, &call_stack_->vars, sizeof(m_aLVars));
 
-		StackFrame* head_next = m_pCleoCallStack->next;
-		delete m_pCleoCallStack;
-		m_pCleoCallStack = head_next;
+		StackFrame* head_next = call_stack_->next;
+		delete call_stack_;
+		call_stack_ = head_next;
 }
 
 void
-CCustomScript::DeleteObject(void* obj)
+CCustomScript::DeleteRegisteredObject(void* obj)
 {
-		for (ObjectReference* previous = nullptr, current = m_pObjectReferences; current; previous = current, current = current->next) {
-				if (current->object == obj) {
-						if (previous)
-								previous->next = current->next;
+		for (RegData* prev = nullptr, curr = register_; curr; prev = curr, curr = curr->next) {
+				if (curr->object == obj) {
+						if (prev)
+								prev->next = curr->next;
 						else
-								m_pObjectReferences = current->next;
+								register_ = curr->next;
 
-						current->destruct(current->obj); // call dtor
-						delete current->obj; // release memory
+						curr->destruct(curr->obj); // call dtor
+						delete curr->obj; // release memory
 
-						delete current;
+						delete curr;
 						return;
 				}
 		}
@@ -96,7 +96,7 @@ Script::Init()
 		std::memset(this, 0, sizeof(Script));
 		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
 		m_bDeatharrestEnabled = true;
-		m_pCleoArray = new ScriptParam[CLEO_ARRAY_SIZE];
+		CLEO_array_ = new ScriptParam[CLEO_ARRAY_SIZE];
 }
 
 eOpcodeResult
@@ -108,16 +108,18 @@ Script::ProcessOneCommand()
 		op &= 0x7FFF;
 		m_nIp += 2;
 
-		if (opcodes::Functions[op]) { // call opcode registered as custom
+		if (opcodes::Definitions[op]) {
+				// call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
 				eOpcodeResult result = opcodes::Definitions[op](this);
 				*game.Scripts.pNumOpcodesExecuted += 1;
 				return result;
-		} else if (op >= CUSTOM_OPCODE_START_ID) { // if opcode isn't registered as custom, but has custom opcode's ID
+		} else if (op >= opcodes::CUSTOM_START_ID) {
+				// if opcode isn't registered as custom, but has custom opcode's ID
 				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", &m_acName, op);
-				Error("Incorrect opcode ID: %04X", op);
 				return OR_UNDEFINED;
-		} else { // call default opcode
+		} else {
+				// call default opcode
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
 				eOpcodeResult result = game.Scripts.apfOpcodeHandlers[op / 100](this, op);
 				*game.Scripts.pNumOpcodesExecuted += 1;
