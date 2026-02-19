@@ -2429,26 +2429,7 @@ int format(Script *script, char *str, size_t len, const char *format)
 	return (int)written;
 }
 
-bool
-opcodes::Register(ushort id, Definition def)
-{
-		if (id >= MAX_ID) {
-				LOGL(LOG_PRIORITY_REGISTER_OPCODE, "opcodes::Register: ID is out of range (%04X > %04X)", id, MAX_ID - 1);
-				return false;
-		}
-
-		if (Definitions[id]) {
-				// we don't return false here to allow opcode overloading
-				LOGL(LOG_PRIORITY_REGISTER_OPCODE, "opcodes::Register: %04X was already registered", id);
-		}
-
-		Definitions[id] = def;
-		return true;
-}
-
-void
-opcodes::Register()
-{
+Definition Definitions[MAX_ID] = []() {
 		Register(0x0002, GOTO);
 		Register(0x004C, GOTO_IF_TRUE);
 		Register(0x004D, GOTO_IF_FALSE);
@@ -2632,4 +2613,21 @@ opcodes::Register()
 		Register(0x0AFA, GET_CLEO_ARRAY_OFFSET);
 		Register(0x0AFB, GET_CLEO_ARRAY_SCRIPT);
 		Register(0x0DD5, GET_PLATFORM);
+}();
+
+bool
+opcodes::Register(ushort id, Definition def)
+{
+		if (id >= MAX_ID) {
+				LOGL(LOG_PRIORITY_REGISTER_OPCODE, "opcodes::Register: ID is out of range (%04X > %04X)", id, MAX_ID - 1);
+				return false;
+		}
+
+		if (Definitions[id]) {
+				// we don't return false here to allow opcode overloading
+				LOGL(LOG_PRIORITY_REGISTER_OPCODE, "opcodes::Register: %04X was already registered", id);
+		}
+
+		Definitions[id] = def;
+		return true;
 }
