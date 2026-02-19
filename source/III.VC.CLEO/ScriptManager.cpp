@@ -38,7 +38,7 @@ scriptMgr::LoadScripts(bool game_start)
 		fs::path dir = fs::path(game.Misc.szRootDirName) / "CLEO";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
-				if (entry.is_regular_file() && (entry.path().extension().string() == ".cs" || entry.path().extension().string() == ".csp" && game_start)) {
+				if (entry.is_regular_file() && (!game_start && entry.path().extension().string() == ".cs"  || game_start && entry.path().extension().string() == ".csp")) {
 						StartScript(entry.path().c_str());
 				}
 		}
