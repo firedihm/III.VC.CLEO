@@ -8,7 +8,7 @@
 
 namespace fs = std::filesystem;
 
-static std::list<Script> CustomScripts;
+std::list<Script> CustomScripts;
 
 Script*
 scriptMgr::StartScript(const char* filepath)
