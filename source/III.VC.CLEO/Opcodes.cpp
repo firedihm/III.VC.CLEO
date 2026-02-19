@@ -14,12 +14,16 @@
 
 namespace fs = std::filesystem;
 
+// definitions of header's declarations are at the bottom of this file!
+using namespace opcodes;
+
 constexpr int HELP_MSG_LENGTH = 256;
 
-static ScriptParam SharedVars[0xFFFF];
+ScriptParam SharedVars[0xFFFF];
 
 int format(Script *script, char *str, size_t len, const char *format);
 
+/*
 // Exports
 CLEOAPI unsigned CLEO_GetVersion() { return CLEO_VERSION; }
 CLEOAPI char* CLEO_GetScriptSpaceAddress() { return game.Scripts.pScriptSpace; }
@@ -46,9 +50,10 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+*/
 
 eOpcodeResult
-CustomOpcodes::DUMMY(Script* script)
+__stdcall DUMMY(Script* script)
 {
 		return OR_CONTINUE;
 }
@@ -2429,196 +2434,196 @@ int format(Script *script, char *str, size_t len, const char *format)
 	return (int)written;
 }
 
-Definition Definitions[MAX_ID] = []() {
-		std::memset(&opcodes::Definitions, 0, sizeof(opcodes::Definitions));
+Definition* const Definitions[MAX_ID] = []() {
+		std::memset(&Definitions, 0, sizeof(Definitions));
 
-		opcodes::Register(0x0002, GOTO);
-		opcodes::Register(0x004C, GOTO_IF_TRUE);
-		opcodes::Register(0x004D, GOTO_IF_FALSE);
-		opcodes::Register(0x0050, GOSUB);
-		opcodes::Register(0x05DC, TERMINATE_CUSTOM_THREAD);
-		opcodes::Register(0x05DD, TERMINATE_NAMED_CUSTOM_THREAD);
-		opcodes::Register(0x05DE, START_CUSTOM_THREAD);
-		opcodes::Register(0x05DF, MEMORY_WRITE);
-		opcodes::Register(0x05E0, MEMORY_READ);
-		opcodes::Register(0x05E1, CALL);
-		opcodes::Register(0x05E2, CALL_FUNCTION);
-		opcodes::Register(0x05E3, CALL_METHOD);
-		opcodes::Register(0x05E4, CALL_FUNCTION_METHOD);
-		opcodes::Register(0x05E5, GET_GAME_VERSION);
-		opcodes::Register(0x05E6, GET_CHAR_STRUCT);
-		opcodes::Register(0x05E7, GET_CAR_STRUCT);
-		opcodes::Register(0x05E8, GET_OBJECT_STRUCT);
-		opcodes::Register(0x05E9, GET_CHAR_HANDLE);
-		opcodes::Register(0x05EA, GET_CAR_HANDLE);
-		opcodes::Register(0x05EB, GET_OBJECT_HANDLE);
-		opcodes::Register(0x05EC, GET_THREAD_POINTER);
-		opcodes::Register(0x05ED, GET_NAMED_THREAD_POINTER);
-		opcodes::Register(0x05EE, IS_KEY_PRESSED);
-		opcodes::Register(0x05EF, FIND_RANDOM_CHAR);
-		opcodes::Register(0x05F0, FIND_RANDOM_CAR);
-		opcodes::Register(0x05F1, FIND_RANDOM_OBJECT);
-		opcodes::Register(0x05F2, CALL_POP_FLOAT);
-		opcodes::Register(0x05F3, MATH_EXP);
-		opcodes::Register(0x05F4, MATH_LOG);
-		opcodes::Register(0x05F5, CALL_SCM_FUNCTION);
-		opcodes::Register(0x05F6, SCM_FUNCTION_RET);
-		opcodes::Register(0x05F7, GET_LABEL_OFFSET);
-		opcodes::Register(0x05F8, GET_VAR_OFFSET);
-		opcodes::Register(0x05F9, BIT_AND);
-		opcodes::Register(0x05FA, BIT_OR);
-		opcodes::Register(0x05FB, BIT_XOR);
-		opcodes::Register(0x05FC, BIT_NOT);
-		opcodes::Register(0x05FD, BIT_MOD);
-		opcodes::Register(0x05FE, BIT_SHR);
-		opcodes::Register(0x05FF, BIT_SHL);
+		Register(0x0002, GOTO);
+		Register(0x004C, GOTO_IF_TRUE);
+		Register(0x004D, GOTO_IF_FALSE);
+		Register(0x0050, GOSUB);
+		Register(0x05DC, TERMINATE_CUSTOM_THREAD);
+		Register(0x05DD, TERMINATE_NAMED_CUSTOM_THREAD);
+		Register(0x05DE, START_CUSTOM_THREAD);
+		Register(0x05DF, MEMORY_WRITE);
+		Register(0x05E0, MEMORY_READ);
+		Register(0x05E1, CALL);
+		Register(0x05E2, CALL_FUNCTION);
+		Register(0x05E3, CALL_METHOD);
+		Register(0x05E4, CALL_FUNCTION_METHOD);
+		Register(0x05E5, GET_GAME_VERSION);
+		Register(0x05E6, GET_CHAR_STRUCT);
+		Register(0x05E7, GET_CAR_STRUCT);
+		Register(0x05E8, GET_OBJECT_STRUCT);
+		Register(0x05E9, GET_CHAR_HANDLE);
+		Register(0x05EA, GET_CAR_HANDLE);
+		Register(0x05EB, GET_OBJECT_HANDLE);
+		Register(0x05EC, GET_THREAD_POINTER);
+		Register(0x05ED, GET_NAMED_THREAD_POINTER);
+		Register(0x05EE, IS_KEY_PRESSED);
+		Register(0x05EF, FIND_RANDOM_CHAR);
+		Register(0x05F0, FIND_RANDOM_CAR);
+		Register(0x05F1, FIND_RANDOM_OBJECT);
+		Register(0x05F2, CALL_POP_FLOAT);
+		Register(0x05F3, MATH_EXP);
+		Register(0x05F4, MATH_LOG);
+		Register(0x05F5, CALL_SCM_FUNCTION);
+		Register(0x05F6, SCM_FUNCTION_RET);
+		Register(0x05F7, GET_LABEL_OFFSET);
+		Register(0x05F8, GET_VAR_OFFSET);
+		Register(0x05F9, BIT_AND);
+		Register(0x05FA, BIT_OR);
+		Register(0x05FB, BIT_XOR);
+		Register(0x05FC, BIT_NOT);
+		Register(0x05FD, BIT_MOD);
+		Register(0x05FE, BIT_SHR);
+		Register(0x05FF, BIT_SHL);
 
 		//CLEO4 SA opcodes including duplicates with new ids
-		opcodes::Register(0x0A8C, MEMORY_WRITE);
-		opcodes::Register(0x0A8D, MEMORY_READ);
-		opcodes::Register(0x0A8E, OPCODE_0A8E);
-		opcodes::Register(0x0A8F, OPCODE_0A8F);
-		opcodes::Register(0x0A90, OPCODE_0A90);
-		opcodes::Register(0x0A91, OPCODE_0A91);
-		opcodes::Register(0x0A92, START_CUSTOM_THREAD_VSTRING);
-		opcodes::Register(0x0A93, TERMINATE_CUSTOM_THREAD);
-		opcodes::Register(0x0A94, DUMMY);
-		opcodes::Register(0x0A95, DUMMY);
-		opcodes::Register(0x0A96, GET_CHAR_STRUCT);
-		opcodes::Register(0x0A97, GET_CAR_STRUCT);
-		opcodes::Register(0x0A98, GET_OBJECT_STRUCT);
-		opcodes::Register(0x0A99, OPCODE_0A99);
-		opcodes::Register(0x0A9A, OPCODE_0A9A);
-		opcodes::Register(0x0A9B, OPCODE_0A9B);
-		opcodes::Register(0x0A9C, OPCODE_0A9C);
-		opcodes::Register(0x0A9D, OPCODE_0A9D);
-		opcodes::Register(0x0A9E, OPCODE_0A9E);
-		opcodes::Register(0x0A9F, GET_THREAD_POINTER);
-		opcodes::Register(0x0AA0, OPCODE_0AA0);
-		opcodes::Register(0x0AA1, OPCODE_0AA1);
-		opcodes::Register(0x0AA2, OPCODE_0AA2);
-		opcodes::Register(0x0AA3, OPCODE_0AA3);
-		opcodes::Register(0x0AA4, OPCODE_0AA4);
-		opcodes::Register(0x0AA5, CALL);
-		opcodes::Register(0x0AA6, CALL_METHOD);
-		opcodes::Register(0x0AA7, CALL_FUNCTION);
-		opcodes::Register(0x0AA8, CALL_FUNCTION_METHOD);
-		opcodes::Register(0x0AA9, OPCODE_0AA9);
-		opcodes::Register(0x0AAA, GET_NAMED_THREAD_POINTER);
-		opcodes::Register(0x0AAB, OPCODE_0AAB);
-		opcodes::Register(0x0AAC, DUMMY);
-		opcodes::Register(0x0AAD, DUMMY);
-		opcodes::Register(0x0AAE, DUMMY);
-		opcodes::Register(0x0AAF, DUMMY);
-		opcodes::Register(0x0AB0, IS_KEY_PRESSED);
-		opcodes::Register(0x0AB1, CALL_SCM_FUNCTION);
-		opcodes::Register(0x0AB2, SCM_FUNCTION_RET);
-		opcodes::Register(0x0AB3, OPCODE_0AB3);
-		opcodes::Register(0x0AB4, OPCODE_0AB4);
-		opcodes::Register(0x0AB5, DUMMY);
-		opcodes::Register(0x0AB6, DUMMY);
-		opcodes::Register(0x0AB7, OPCODE_0AB7);
-		opcodes::Register(0x0AB8, OPCODE_0AB8);
-		opcodes::Register(0x0AB9, DUMMY);
-		opcodes::Register(0x0ABA, TERMINATE_NAMED_CUSTOM_THREAD);
-		opcodes::Register(0x0ABB, DUMMY);
-		opcodes::Register(0x0ABC, DUMMY);
-		opcodes::Register(0x0ABD, OPCODE_0ABD);
-		opcodes::Register(0x0ABE, OPCODE_0ABE);
-		opcodes::Register(0x0ABF, OPCODE_0ABF);
-		opcodes::Register(0x0AC0, DUMMY);
-		opcodes::Register(0x0AC1, DUMMY);
-		opcodes::Register(0x0AC2, DUMMY);
-		opcodes::Register(0x0AC3, DUMMY);
-		opcodes::Register(0x0AC4, DUMMY);
-		opcodes::Register(0x0AC5, DUMMY);
-		opcodes::Register(0x0AC6, GET_LABEL_OFFSET);
-		opcodes::Register(0x0AC7, GET_VAR_OFFSET);
-		opcodes::Register(0x0AC8, OPCODE_0AC8);
-		opcodes::Register(0x0AC9, OPCODE_0AC9);
-		opcodes::Register(0x0ACA, OPCODE_0ACA);
-		opcodes::Register(0x0ACB, OPCODE_0ACB);
-		opcodes::Register(0x0ACC, OPCODE_0ACC);
-		opcodes::Register(0x0ACD, OPCODE_0ACD);
-		opcodes::Register(0x0ACE, OPCODE_0ACE);
-		opcodes::Register(0x0ACF, OPCODE_0ACF);
-		opcodes::Register(0x0AD0, OPCODE_0AD0);
-		opcodes::Register(0x0AD1, OPCODE_0AD1);
-		opcodes::Register(0x0AD2, DUMMY);
-		opcodes::Register(0x0AD3, OPCODE_0AD3);
-		opcodes::Register(0x0AD4, OPCODE_0AD4);
-		opcodes::Register(0x0AD5, OPCODE_0AD5);
-		opcodes::Register(0x0AD6, OPCODE_0AD6);
-		opcodes::Register(0x0AD7, OPCODE_0AD7);
-		opcodes::Register(0x0AD8, OPCODE_0AD8);
-		opcodes::Register(0x0AD9, OPCODE_0AD9);
-		opcodes::Register(0x0ADA, OPCODE_0ADA);
-		opcodes::Register(0x0ADB, OPCODE_0ADB);
-		opcodes::Register(0x0ADC, OPCODE_0ADC);
-		opcodes::Register(0x0ADD, OPCODE_0ADD);
-		opcodes::Register(0x0ADE, OPCODE_0ADE);
-		opcodes::Register(0x0ADF, OPCODE_0ADF);
-		opcodes::Register(0x0AE0, OPCODE_0AE0);
-		opcodes::Register(0x0AE1, FIND_RANDOM_CHAR);
-		opcodes::Register(0x0AE2, FIND_RANDOM_CAR);
-		opcodes::Register(0x0AE3, FIND_RANDOM_OBJECT);
-		opcodes::Register(0x0AE4, OPCODE_0AE4);
-		opcodes::Register(0x0AE5, OPCODE_0AE5);
-		opcodes::Register(0x0AE6, OPCODE_0AE6);
-		opcodes::Register(0x0AE7, OPCODE_0AE7);
-		opcodes::Register(0x0AE8, OPCODE_0AE8);
-		opcodes::Register(0x0AE9, CALL_POP_FLOAT);
-		opcodes::Register(0x0AEA, GET_CHAR_HANDLE);
-		opcodes::Register(0x0AEB, GET_CAR_HANDLE);
-		opcodes::Register(0x0AEC, GET_OBJECT_HANDLE);
-		opcodes::Register(0x0AED, DUMMY);
-		opcodes::Register(0x0AEE, MATH_EXP);
-		opcodes::Register(0x0AEF, MATH_LOG);
+		Register(0x0A8C, MEMORY_WRITE);
+		Register(0x0A8D, MEMORY_READ);
+		Register(0x0A8E, OPCODE_0A8E);
+		Register(0x0A8F, OPCODE_0A8F);
+		Register(0x0A90, OPCODE_0A90);
+		Register(0x0A91, OPCODE_0A91);
+		Register(0x0A92, START_CUSTOM_THREAD_VSTRING);
+		Register(0x0A93, TERMINATE_CUSTOM_THREAD);
+		Register(0x0A94, DUMMY);
+		Register(0x0A95, DUMMY);
+		Register(0x0A96, GET_CHAR_STRUCT);
+		Register(0x0A97, GET_CAR_STRUCT);
+		Register(0x0A98, GET_OBJECT_STRUCT);
+		Register(0x0A99, OPCODE_0A99);
+		Register(0x0A9A, OPCODE_0A9A);
+		Register(0x0A9B, OPCODE_0A9B);
+		Register(0x0A9C, OPCODE_0A9C);
+		Register(0x0A9D, OPCODE_0A9D);
+		Register(0x0A9E, OPCODE_0A9E);
+		Register(0x0A9F, GET_THREAD_POINTER);
+		Register(0x0AA0, OPCODE_0AA0);
+		Register(0x0AA1, OPCODE_0AA1);
+		Register(0x0AA2, OPCODE_0AA2);
+		Register(0x0AA3, OPCODE_0AA3);
+		Register(0x0AA4, OPCODE_0AA4);
+		Register(0x0AA5, CALL);
+		Register(0x0AA6, CALL_METHOD);
+		Register(0x0AA7, CALL_FUNCTION);
+		Register(0x0AA8, CALL_FUNCTION_METHOD);
+		Register(0x0AA9, OPCODE_0AA9);
+		Register(0x0AAA, GET_NAMED_THREAD_POINTER);
+		Register(0x0AAB, OPCODE_0AAB);
+		Register(0x0AAC, DUMMY);
+		Register(0x0AAD, DUMMY);
+		Register(0x0AAE, DUMMY);
+		Register(0x0AAF, DUMMY);
+		Register(0x0AB0, IS_KEY_PRESSED);
+		Register(0x0AB1, CALL_SCM_FUNCTION);
+		Register(0x0AB2, SCM_FUNCTION_RET);
+		Register(0x0AB3, OPCODE_0AB3);
+		Register(0x0AB4, OPCODE_0AB4);
+		Register(0x0AB5, DUMMY);
+		Register(0x0AB6, DUMMY);
+		Register(0x0AB7, OPCODE_0AB7);
+		Register(0x0AB8, OPCODE_0AB8);
+		Register(0x0AB9, DUMMY);
+		Register(0x0ABA, TERMINATE_NAMED_CUSTOM_THREAD);
+		Register(0x0ABB, DUMMY);
+		Register(0x0ABC, DUMMY);
+		Register(0x0ABD, OPCODE_0ABD);
+		Register(0x0ABE, OPCODE_0ABE);
+		Register(0x0ABF, OPCODE_0ABF);
+		Register(0x0AC0, DUMMY);
+		Register(0x0AC1, DUMMY);
+		Register(0x0AC2, DUMMY);
+		Register(0x0AC3, DUMMY);
+		Register(0x0AC4, DUMMY);
+		Register(0x0AC5, DUMMY);
+		Register(0x0AC6, GET_LABEL_OFFSET);
+		Register(0x0AC7, GET_VAR_OFFSET);
+		Register(0x0AC8, OPCODE_0AC8);
+		Register(0x0AC9, OPCODE_0AC9);
+		Register(0x0ACA, OPCODE_0ACA);
+		Register(0x0ACB, OPCODE_0ACB);
+		Register(0x0ACC, OPCODE_0ACC);
+		Register(0x0ACD, OPCODE_0ACD);
+		Register(0x0ACE, OPCODE_0ACE);
+		Register(0x0ACF, OPCODE_0ACF);
+		Register(0x0AD0, OPCODE_0AD0);
+		Register(0x0AD1, OPCODE_0AD1);
+		Register(0x0AD2, DUMMY);
+		Register(0x0AD3, OPCODE_0AD3);
+		Register(0x0AD4, OPCODE_0AD4);
+		Register(0x0AD5, OPCODE_0AD5);
+		Register(0x0AD6, OPCODE_0AD6);
+		Register(0x0AD7, OPCODE_0AD7);
+		Register(0x0AD8, OPCODE_0AD8);
+		Register(0x0AD9, OPCODE_0AD9);
+		Register(0x0ADA, OPCODE_0ADA);
+		Register(0x0ADB, OPCODE_0ADB);
+		Register(0x0ADC, OPCODE_0ADC);
+		Register(0x0ADD, OPCODE_0ADD);
+		Register(0x0ADE, OPCODE_0ADE);
+		Register(0x0ADF, OPCODE_0ADF);
+		Register(0x0AE0, OPCODE_0AE0);
+		Register(0x0AE1, FIND_RANDOM_CHAR);
+		Register(0x0AE2, FIND_RANDOM_CAR);
+		Register(0x0AE3, FIND_RANDOM_OBJECT);
+		Register(0x0AE4, OPCODE_0AE4);
+		Register(0x0AE5, OPCODE_0AE5);
+		Register(0x0AE6, OPCODE_0AE6);
+		Register(0x0AE7, OPCODE_0AE7);
+		Register(0x0AE8, OPCODE_0AE8);
+		Register(0x0AE9, CALL_POP_FLOAT);
+		Register(0x0AEA, GET_CHAR_HANDLE);
+		Register(0x0AEB, GET_CAR_HANDLE);
+		Register(0x0AEC, GET_OBJECT_HANDLE);
+		Register(0x0AED, DUMMY);
+		Register(0x0AEE, MATH_EXP);
+		Register(0x0AEF, MATH_LOG);
 
 		//CLEO 2 opcodes
-		opcodes::Register(0x0600, START_CUSTOM_THREAD_VSTRING);
-		opcodes::Register(0x0601, IS_BUTTON_PRESSED_ON_PAD);
-		opcodes::Register(0x0602, EMULATE_BUTTON_PRESS_ON_PAD);
-		opcodes::Register(0x0603, IS_CAMERA_IN_WIDESCREEN_MODE);
-		opcodes::Register(0x0604, GET_MODEL_ID_FROM_WEAPON_ID);
-		opcodes::Register(0x0605, GET_WEAPON_ID_FROM_MODEL_ID);
-		opcodes::Register(0x0606, SET_MEM_OFFSET);
-		opcodes::Register(0x0607, GET_CURRENT_WEATHER);
-		opcodes::Register(0x0608, SHOW_TEXT_POSITION);
-		opcodes::Register(0x0609, SHOW_FORMATTED_TEXT_POSITION);
-		opcodes::Register(0x0673, PLAY_ANIMATION);
+		Register(0x0600, START_CUSTOM_THREAD_VSTRING);
+		Register(0x0601, IS_BUTTON_PRESSED_ON_PAD);
+		Register(0x0602, EMULATE_BUTTON_PRESS_ON_PAD);
+		Register(0x0603, IS_CAMERA_IN_WIDESCREEN_MODE);
+		Register(0x0604, GET_MODEL_ID_FROM_WEAPON_ID);
+		Register(0x0605, GET_WEAPON_ID_FROM_MODEL_ID);
+		Register(0x0606, SET_MEM_OFFSET);
+		Register(0x0607, GET_CURRENT_WEATHER);
+		Register(0x0608, SHOW_TEXT_POSITION);
+		Register(0x0609, SHOW_FORMATTED_TEXT_POSITION);
+		Register(0x0673, PLAY_ANIMATION);
 
 #if CLEO_VC
 		//Scrapped opcodes (VC)
-		opcodes::Register(0x016F, DRAW_SHADOW);
-		opcodes::Register(0x0349, SET_TEXT_DRAW_FONT);
+		Register(0x016F, DRAW_SHADOW);
+		Register(0x0349, SET_TEXT_DRAW_FONT);
 #else
 		//Original opcodes added since VC
-		opcodes::Register(0x04C2, STORE_COORDS_FROM_OBJECT_WITH_OFFSET); //0400
-		opcodes::Register(0x04C3, STORE_COORDS_FROM_CAR_WITH_OFFSET); //0407
-		opcodes::Register(0x04C4, STORE_COORDS_FROM_ACTOR_WITH_OFFSET);
+		Register(0x04C2, STORE_COORDS_FROM_OBJECT_WITH_OFFSET); //0400
+		Register(0x04C3, STORE_COORDS_FROM_CAR_WITH_OFFSET); //0407
+		Register(0x04C4, STORE_COORDS_FROM_ACTOR_WITH_OFFSET);
 
-		opcodes::Register(0x046F, STORE_PLAYER_CURRENTLY_ARMED_WEAPON);
-		opcodes::Register(0x04DD, GET_CHAR_ARMOUR);
+		Register(0x046F, STORE_PLAYER_CURRENTLY_ARMED_WEAPON);
+		Register(0x04DD, GET_CHAR_ARMOUR);
 
-		opcodes::Register(0x04C9, PLAYER_DRIVING_PLANE);
-		opcodes::Register(0x04A8, PLAYER_DRIVING_BOAT);
-		opcodes::Register(0x04AA, PLAYER_DRIVING_HELI);
-		opcodes::Register(0x047E, PLAYER_DRIVING_A_MOTORBIKE);
-		opcodes::Register(0x0485, IS_PC_VERSION);
-		opcodes::Register(0x059A, IS_AUSTRALIAN_GAME);
+		Register(0x04C9, PLAYER_DRIVING_PLANE);
+		Register(0x04A8, PLAYER_DRIVING_BOAT);
+		Register(0x04AA, PLAYER_DRIVING_HELI);
+		Register(0x047E, PLAYER_DRIVING_A_MOTORBIKE);
+		Register(0x0485, IS_PC_VERSION);
+		Register(0x059A, IS_AUSTRALIAN_GAME);
 #endif
 
 		// CLEO 2.1 opcodes
-		opcodes::Register(0x0AF8, SET_CLEO_ARRAY);
-		opcodes::Register(0x0AF9, GET_CLEO_ARRAY);
-		opcodes::Register(0x0AFA, GET_CLEO_ARRAY_OFFSET);
-		opcodes::Register(0x0AFB, GET_CLEO_ARRAY_SCRIPT);
-		opcodes::Register(0x0DD5, GET_PLATFORM);
+		Register(0x0AF8, SET_CLEO_ARRAY);
+		Register(0x0AF9, GET_CLEO_ARRAY);
+		Register(0x0AFA, GET_CLEO_ARRAY_OFFSET);
+		Register(0x0AFB, GET_CLEO_ARRAY_SCRIPT);
+		Register(0x0DD5, GET_PLATFORM);
 }();
 
 bool
-opcodes::Register(ushort id, Definition def)
+Register(ushort id, Definition* def)
 {
 		if (id >= MAX_ID) {
 				LOGL(LOG_PRIORITY_REGISTER_OPCODE, "opcodes::Register: ID is out of range (%04X > %04X)", id, MAX_ID - 1);
@@ -2630,6 +2635,6 @@ opcodes::Register(ushort id, Definition def)
 				LOGL(LOG_PRIORITY_REGISTER_OPCODE, "opcodes::Register: %04X was already registered", id);
 		}
 
-		Definitions[id] = def;
+		const_cast<Definition*>(Definitions[id]) = def;
 		return true;
 }
