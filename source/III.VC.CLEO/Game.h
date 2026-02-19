@@ -36,7 +36,7 @@ class GtaGame
 {
 public:
 		const eGameVersion Version;
-		const bool bIsChinese;
+		const bool is_chinese_;
 		const uint kMainSize;
 		const uint kMissionSize;
 		const uint kScriptSpaceSize;
