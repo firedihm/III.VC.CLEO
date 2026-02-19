@@ -18,7 +18,7 @@ fxt::Add(const char* key, const char* text)
 {
 		// chinese plugin actually makes game text Unicode; they are Extended ASCII with custom encoding by default
 		std::wstring wide_text;
-		if (game.bIsChinese) {
+		if (game.is_chinese_) {
 				std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 				wide_text = converter.from_bytes(text);
 		} else {
