@@ -1,9 +1,8 @@
-#include "CleoVersion"
 #include "Fxt.h"
 #include "Game.h"
+#include "GameAddressLUT.h"
 #include "Log.h"
 #include "Memory.h"
-#include "Opcodes.h"
 #include "Script.h"
 #include "ScriptManager.h"
 
@@ -37,7 +36,7 @@ namespace hooks {
 				game.Events.pfInitScripts();
 
 				LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
-				scriptMgr::LoadScripts(true);
+				scriptMgr::LoadScripts(false);
 				LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
 				fxt::LoadEntries();
 		}
@@ -136,19 +135,14 @@ DetermineChineseness()
 		return handle;
 }
 
-GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChineseness()),
+GtaGame::GtaGame() : Version(DetermineGameVersion()), is_chinese_(DetermineChineseness()),
 					 kMainSize(IsGta3() ? 128*1024 : 225512), kMissionSize(IsGta3() ? 32*1024 : 35000), kScriptSpaceSize(kMainSize + kMissionSize)
 {
-		Log::Initialise("CLEO.log");
-		LOGL(LOG_PRIORITY_ALWAYS, "CLEO LIBRARY v%d.%d.%d Log File", CLEO_VERSION_MAIN, CLEO_VERSION_MAJOR, CLEO_VERSION_MINOR);
-
 		if (Version == GAME_GTAVC_VSTEAMENC || Version == GAME_GTA3_VSTEAMENC) {
 				do // wait for .exe to decrypt
 						std::this_thread::yield();
 				while (DetermineGameVersion() == GAME_GTAVC_VSTEAM || DetermineGameVersion() == GAME_GTA3_VSTEAM)
 		}
-
-		LOGL(LOG_PRIORITY_GAME_EVENT, "%s %s", IsGta3() ? "GTA III" : "GTA VC", (Version == GAME_GTA3_VSTEAM || Version == GAME_GTAVC_VSTEAM) ? "Steam" : "Retail");
 
 		GameAddressLUT lut(Version);
 
@@ -184,7 +178,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Scripts.apfOpcodeHandlers[14] = (eOpcodeResult (__thiscall*)(Script*, int))lut[MA_OPCODE_HANDLER_14];
 		Scripts.ppActiveScriptsList = (Script**)lut[MA_ACTIVE_SCRIPTS];
 		Scripts.pScriptParams = (ScriptParam*)lut[MA_SCRIPT_PARAMS];
-		Scripts.pScriptSpace = lut[MA_SCRIPT_SPACE];
+		Scripts.pScriptSpace = (uchar*)lut[MA_SCRIPT_SPACE];
 		Scripts.pNumOpcodesExecuted = (ushort*)lut[MA_NUM_OPCODES_EXECUTED];
 		Scripts.pUsedObjectArray = (tUsedObject*)lut[MA_USED_OBJECT_ARRAY];
 
@@ -214,7 +208,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Pools.ppPedPool = (CPool**)lut[MA_PED_POOL];
 		Pools.ppVehiclePool = (CPool**)lut[MA_VEHICLE_POOL];
 		Pools.ppObjectPool = (CPool**)lut[MA_OBJECT_POOL];
-		Pools.pPlayers = lut[MA_PLAYERS];
+		Pools.pPlayers = (uchar*)lut[MA_PLAYERS];
 		Pools.pfPedPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[MA_PED_POOL_GET_AT];
 		Pools.pfVehiclePoolGetAt = (void* (__thiscall*)(CPool*, int))lut[MA_VEHICLE_POOL_GET_AT];
 		Pools.pfObjectPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[MA_OBJECT_POOL_GET_AT];
@@ -241,7 +235,7 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 		Shadows.ppShadowHeadLightsTex = (void**)lut[MA_SHADOW_HEADLIGHTS_TEX];
 		Shadows.ppBloodPoolTex = (void**)lut[MA_BLOOD_POOL_TEX];
 
-		Misc.pVehicleModelStore = lut[MA_VEHICLE_MODEL_STORE];
+		Misc.pVehicleModelStore = (uchar*)lut[MA_VEHICLE_MODEL_STORE];
 		Misc.pPadNewState = (short*)lut[MA_PAD_NEW_STATE];
 		Misc.pWideScreenOn = (bool*)lut[MA_CAMERA_WIDESCREEN];
 		Misc.pOldWeatherType = (short*)lut[MA_CURRENT_WEATHER];
@@ -599,16 +593,10 @@ GtaGame::GtaGame() : Version(DetermineGameVersion()), bIsChinese(DetermineChines
 				memory::Write<void*>(0x50874F, ScriptSprites);
 				memory::Write<void*>(0x5097C6, ScriptSprites);
 		}
-
-		opcodes::Register();
-		CleoPlugins::LoadPlugins();
 }
 
 GtaGame::~GtaGame()
 {
-		CleoPlugins::UnloadPlugins();
-		Log::Close();
-
 		delete[] ScriptSprites;
 		delete[] IntroRectangles;
 		delete[] IntroTextLines;
