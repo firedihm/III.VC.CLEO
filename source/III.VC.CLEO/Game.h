@@ -4,42 +4,37 @@
 
 class Script;
 
-enum eGameVersion
+namespace game
 {
-		GAME_GTAVC_V1_0,
-		GAME_GTAVC_V1_1,
-		GAME_GTAVC_VSTEAM,
-		GAME_GTAVC_VSTEAMENC, // encrypted
-		GAME_GTA3_V1_0,
-		GAME_GTA3_V1_1,
-		GAME_GTA3_VSTEAM,
-		GAME_GTA3_VSTEAMENC, // encrypted
-		NUM_GV
-};
+		enum class Release {
+				VC_1_0,
+				VC_1_1,
+				VC_Steam,
+				III_1_0,
+				III_1_1,
+				III_Steam,
+				Count
+		};
 
-// returned by 0DD5: get_platform opcode
-enum ePlatform
-{
-		PLATFORM_NONE,
-		PLATFORM_ANDROID,
-		PLATFORM_PSP,
-		PLATFORM_IOS,
-		PLATFORM_FOS,
-		PLATFORM_XBOX,
-		PLATFORM_PS2,
-		PLATFORM_PS3,
-		PLATFORM_MAC,
-		PLATFORM_WINDOWS
-};
+		enum class Platform {
+				None,
+				Android,
+				PSP,
+				iOS,
+				FOS,
+				Xbox,
+				PS2,
+				PS3,
+				Mac,
+				Windows,
+				Count
+		};
 
-class GtaGame
-{
-public:
-		const eGameVersion Version;
-		const bool is_chinese_;
-		const uint kMainSize;
-		const uint kMissionSize;
-		const uint kScriptSpaceSize;
+		extern const Release Version;
+		extern const bool IsChinese;
+		extern const size_t MainSize;
+		extern const size_t MissionSize;
+		extern const size_t ScriptSpaceSize;
 
 		struct {
 				uchar* pScriptSpace;
@@ -66,17 +61,6 @@ public:
 				ushort* pNumberOfIntroTextLinesThisFrame;
 				char* szKeyboardCheatString;
 		} Text;
-
-		struct {
-				void (__cdecl* pfAsciiToUnicode)(const char*, wchar_t*);
-				void (__cdecl* pfPrintString)(float, float, wchar_t*);
-				void (__cdecl* pfSetFontStyle)(short);
-				void (__cdecl* pfSetScale)(float, float);
-				void (__cdecl* pfSetColor)(CRGBA*);
-				void (__cdecl* pfSetJustifyOn)();
-				void (__cdecl* pfSetDropShadowPosition)(short);
-				void (__cdecl* pfSetPropOn)();
-		} Font;
 
 		struct {
 				CPool** ppPedPool;
@@ -121,7 +105,6 @@ public:
 				void (__cdecl* pfSpawnCar)(int); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
 				void (__cdecl* pfRwV3dTransformPoints)(CVector*, CVector const*, int, const void*);
 				void* (__cdecl* pfBlendAnimation)(void*, int, int, float);
-				bool* pWantToRestart;
 		} Misc;
 
 		GtaGame();
