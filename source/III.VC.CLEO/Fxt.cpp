@@ -79,5 +79,5 @@ fxt::Get(void* pTheText, const char* key)
 		if (auto it = FxtEntries.find(key); it != FxtEntries.end())
 				return it->second.c_str();
 		else
-				return game::text::Get(pTheText, key);
+				return game::GetText(pTheText, key);
 }
