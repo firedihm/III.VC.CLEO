@@ -4,8 +4,9 @@
 
 class Script;
 
-namespace game
+class GtaGame
 {
+public
 		enum class Release {
 				VC_1_0,
 				VC_1_1,
@@ -30,11 +31,11 @@ namespace game
 				Count
 		};
 
-		extern const Release Version;
-		extern const bool IsChinese;
-		extern const size_t MainSize;
-		extern const size_t MissionSize;
-		extern const size_t ScriptSpaceSize;
+		const Release release_;
+		const bool has_cjk_support_;
+		const size_t main_size_;
+		const size_t mission_size_;
+		const size_t script_space_size_;
 
 		struct {
 				uchar* pScriptSpace;
@@ -110,8 +111,24 @@ namespace game
 		GtaGame();
 		~GtaGame();
 
-		bool IsGtaVC() { Version >= GAME_GTAVC_V1_0 && Version <= GAME_GTAVC_VSTEAMENC; }
-		bool IsGta3() { Version >= GAME_GTA3_V1_0 && Version <= GAME_GTA3_VSTEAMENC; }
+		bool IsGtaVC() { release_ >= Release::VC_1_0 && release_ <= Release::VC_Steam; }
+		bool IsGta3() { release_ >= Release::III_1_0 && release_ <= Release::III_Steam; }
+
+private:
+		// these have to be 1 byte, as game has array range checks compiled with 1 byte params
+		static constexpr uchar NUM_SCRIPTS = 128;
+		static constexpr uchar NUM_INTRO_TEXT_LINES = 48; // VC has 48, III has just 2
+		static constexpr uchar NUM_INTRO_SCRIPT_RECTANGLES = 32;
+		static constexpr uchar NUM_SCRIPT_SRPITES = 32;
+
+		static const Script* scripts_array_ = new Script[NUM_SCRIPTS];
+		static const intro_text_line* intro_text_lines_ = new intro_text_line[NUM_INTRO_TEXT_LINES];
+		static const intro_script_rectangle* intro_script_rectangles_ = new intro_script_rectangle[NUM_INTRO_SCRIPT_RECTANGLES];
+		static const CSprite2d* script_sprites_ = new CSprite2d[NUM_SCRIPT_SRPITES];;
+
+		static const void* cjk_support_lib_handle_;
+
+		static bool singleton_check_ = false;
 };
 
 extern GtaGame game;
