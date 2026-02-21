@@ -3,7 +3,7 @@
 inline constexpr uchar Call = 0xE8;
 inline constexpr uchar Jump = 0xE9;
 
-// wrapper over memory patching to keep <Windows.h> isolated
+// wrapper over memory operations to keep <Windows.h> isolated
 namespace memory
 {
 		int Read(void* dest, size_t count, bool vp = false);
@@ -23,4 +23,7 @@ namespace memory
 		{
 				Intercept(OP, dest, addr);
 		}
+
+		void* LoadLibrary(const char* name);
+		void FreeLibrary(const void* handle)
 }
