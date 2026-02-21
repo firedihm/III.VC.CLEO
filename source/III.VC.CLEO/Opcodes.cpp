@@ -176,7 +176,7 @@ CustomOpcodes::MEMORY_WRITE(Script* script)
 {
 		script->CollectParameters(4);
 
-		memory::Write(game.Scripts.pScriptParams[0].pVar, game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[3].nVar);
+		memory::Write(game.Scripts.pScriptParams[0].pVar, &game.Scripts.pScriptParams[2].nVar, game.Scripts.pScriptParams[1].nVar, game.Scripts.pScriptParams[3].nVar);
 
 		return OR_CONTINUE;
 }
