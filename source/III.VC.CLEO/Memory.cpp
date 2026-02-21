@@ -61,3 +61,15 @@ memory::Intercept(uchar op, void* dest, void* addr)
         ptrdiff_t offset = (uchar*)addr - ((uchar*)dest + 5); // (uchar*) cast allows us to perform bytewise arithmetic on ptrs
         Write((uchar*)dest + 1, &offset, sizeof(offset), true);
 }
+
+void*
+memory::LoadLibrary(const char* name)
+{
+		return LoadLibraryA(name);
+}
+
+void
+memory::FreeLibrary(const void* handle)
+{
+		FreeLibrary(handle);
+}
