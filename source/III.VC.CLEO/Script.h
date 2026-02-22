@@ -10,10 +10,10 @@
 class CRunningScript
 {
 protected:
-		static constexpr int KEY_LENGTH_IN_SCRIPT = 8;
-		static constexpr int MAX_STACK_DEPTH = 6;
-		static constexpr int NUM_LOCAL_VARS = 16;
-		static constexpr int NUM_TIMERS = 2;
+		constexpr int KEY_LENGTH_IN_SCRIPT = 8;
+		constexpr int MAX_STACK_DEPTH = 6;
+		constexpr int NUM_LOCAL_VARS = 16;
+		constexpr int NUM_TIMERS = 2;
 
 		CRunningScript* m_pNext;
 		CRunningScript* m_pPrev;
@@ -42,7 +42,7 @@ static_assert(sizeof(CRunningScript) == 0x88);
 class CCustomScript : protected CRunningScript
 {
 protected:
-		static constexpr int CLEO_ARRAY_SIZE = 256;
+		constexpr int CLEO_ARRAY_SIZE = 256;
 
 		uchar* m_pCodeData;
 		bool m_bIsCustom;
