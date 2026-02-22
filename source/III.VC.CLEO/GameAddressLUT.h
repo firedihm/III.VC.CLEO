@@ -4,11 +4,6 @@
 
 enum class Address {
         // Scripts 
-        ScriptsArray_0,
-        ScriptsArray_1,
-        ScriptsArray_2,
-        SizeofScript_0,
-        SizeofScript_1,
         InitScript,
         ProcessOneCommand,
         CollectParameters,
@@ -99,17 +94,25 @@ enum class Address {
         RwV3dTransformPoints,
         BlendAnimation,
 
+        // memory expansion
+        ScriptsArray_0,
+        ScriptsArray_1,
+        ScriptsArray_2,
+        SizeofScript_0,
+        SizeofScript_1,
+        IntroTextLines_0,
+        // ...
+        IntroRectangles_0,
+        // ...
+        ScriptSprites_0,
+        // ...
+
         Count
 };
 
-inline void* LookUpTable[Address::Count][game::Release::Count] = {
+inline void* LookUpTable[Address::count][game::Release::count] = {
         // Scripts
         // VC_1_0  VC_1_1    VC_Steam           III_1_0   III_1_1   III_Steam
-        {0x4504E4, 0x4504E4, 0x4503F4, /*    */ 0x438809, 0x438809, 0x438809}, // ScriptsArray_0
-        {0x450508, 0x450508, 0x450418, /*    */ nullptr,  nullptr,  nullptr }, // ScriptsArray_1
-        {0x45050E, 0x45050E, 0x45041E, /*    */ nullptr,  nullptr,  nullptr }, // ScriptsArray_2
-        {0x450529, 0x450529, 0x450439, /*    */ 0x43882A, 0x43882A, 0x43882A}, // SizeofScript_0
-        {0x45052F, 0x45052F, 0x45043F, /*    */ nullptr,  nullptr,  nullptr }, // SizeofScript_1
         {0x450CF0, 0x450CF0, 0x450C00, /*    */ 0x4386C0, 0x4386C0, 0x4386C0}, // InitScript
         {0x44FBE0, 0x44FBE0, 0x44FAF0, /*    */ 0x439500, 0x439500, 0x439500}, // ProcessOneCommand
         {0x451010, 0x451010, 0x450F20, /*    */ 0x4382E0, 0x4382E0, 0x4382E0}, // CollectParameters
@@ -203,7 +206,18 @@ inline void* LookUpTable[Address::Count][game::Release::Count] = {
         {0x4418B0, 0x4418B0, 0x441820, /*    */ 0x430690, 0x430690, 0x430690}, // ModelForWeapon
         {0x4AE8F0, 0x4AE7D0, 0x4AE7C0, /*    */ 0x490EE0, 0x490FA0, 0x490F30}, // SpawnCar
         {nullptr,  nullptr,  nullptr,  /*    */ 0x5A37D0, 0x5A3A90, 0x5A4570}, // RwV3dTransformPoints
-        {0x405640, 0x405640, 0x405640, /*    */ 0x403710, 0x403710, 0x403710}  // BlendAnimation
+        {0x405640, 0x405640, 0x405640, /*    */ 0x403710, 0x403710, 0x403710}, // BlendAnimation
+
+        // memory expansion
+        // VC_1_0  VC_1_1    VC_Steam           III_1_0   III_1_1   III_Steam
+        {0x4504E4, 0x4504E4, 0x4503F4, /*    */ 0x438809, 0x438809, 0x438809}, // ScriptsArray_0
+        {0x450508, 0x450508, 0x450418, /*    */ nullptr,  nullptr,  nullptr }, // ScriptsArray_1
+        {0x45050E, 0x45050E, 0x45041E, /*    */ nullptr,  nullptr,  nullptr }, // ScriptsArray_2
+        {0x450529, 0x450529, 0x450439, /*    */ 0x43882A, 0x43882A, 0x43882A}, // SizeofScript_0
+        {0x45052F, 0x45052F, 0x45043F, /*    */ nullptr,  nullptr,  nullptr }, // SizeofScript_1
+        {nullptr,  nullptr,  nullptr,  /*    */ 0x43EBEC, nullptr,  nullptr }, // IntroTextLines_0
+        {0x451E72, nullptr,  nullptr,  /*    */ 0x43EC1B, nullptr,  nullptr }, // IntroRectangles_0
+        {0x450B0E, nullptr,  nullptr,  /*    */ 0x43EC4A, nullptr,  nullptr }  // ScriptSprites_0
 };
 
 class GameAddressLUT
