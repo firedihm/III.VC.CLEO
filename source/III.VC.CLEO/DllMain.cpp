@@ -10,7 +10,7 @@ APIENTRY DllMain(HMODULE hModule, DWORD reason_for_call, LPVOID reserved)
 {
         switch (reason_for_call) {
         case DLL_PROCESS_ATTACH:
-                game::LoadResources();
+                game::ExpandMemory();
                 log::Open();
                 plugins::Load();
                 scriptMgr::LoadScripts(true);
@@ -22,7 +22,7 @@ APIENTRY DllMain(HMODULE hModule, DWORD reason_for_call, LPVOID reserved)
                 scriptMgr::UnloadScripts(true);
                 plugins::Unload();
                 log::Close();
-                game::UnloadResources();
+                game::FreeMemory();
                 break;
         }
 
