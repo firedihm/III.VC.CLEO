@@ -4,9 +4,14 @@
 
 class Script;
 
-class GtaGame
+namespace game
 {
-public
+		// these have to be 1 byte, as game has array range checks compiled with 1 byte params
+		constexpr uchar MAX_NUM_SCRIPTS = 128; // 128 in both games; reallocation is needed because of increased Script size
+		constexpr uchar MAX_NUM_INTRO_TEXT_LINES = 48; // VC has 48, III has just 2
+		constexpr uchar MAX_NUM_INTRO_RECTANGLES  = 32; // 16 in both games
+		constexpr uchar MAX_NUM_SCRIPT_SRPITES = 32; // 16 in both games
+
 		enum class Release {
 				VC_1_0,
 				VC_1_1,
@@ -14,11 +19,11 @@ public
 				III_1_0,
 				III_1_1,
 				III_Steam,
-				Count
+				count
 		};
 
 		enum class Platform {
-				None,
+				none,
 				Android,
 				PSP,
 				iOS,
@@ -28,107 +33,89 @@ public
 				PS3,
 				Mac,
 				Windows,
-				Count
+				count
 		};
 
-		const Release release_;
-		const bool has_cjk_support_;
-		const size_t main_size_;
-		const size_t mission_size_;
-		const size_t script_space_size_;
+		extern const Release Version;
+		extern const size_t MainSize;
+		extern const size_t MissionSize;
+		extern const size_t ScriptSpaceSize;
 
-		struct {
-				uchar* pScriptSpace;
-				ScriptParam* pScriptParams;
-				ushort* pNumOpcodesExecuted;
-				eOpcodeResult (__thiscall* apfOpcodeHandlers[15])(Script*, int); // 15 in VC, 12 in III
-				Script** ppActiveScripts;
-				tUsedObject* pUsedObjectArray;
-				void (__thiscall* pfAddScriptToList)(Script*, Script**);
-				void (__thiscall* pfRemoveScriptFromList)(Script*, Script**);
-				void (__thiscall* pfStoreParameters)(Script*, uint*, short);
-				void (__thiscall* pfUpdateCompareFlag)(Script*, bool);
-				void* (__thiscall* pfGetPointerToScriptVariable)(Script*, uint*, short); // last param is unused
-		} Scripts;
+		// Scripts
+		extern uchar* ScriptSpace;
+		extern ScriptParam* ScriptParams;
+		extern ushort* pNumOpcodesExecuted;
+		extern Script** ppActiveScripts;
+		extern tUsedObject* UsedObjectArray;
+		extern eOpcodeResult (__thiscall* OpcodeHandlers[15])(Script*, int opcode); // 15 in VC, 12 in III
+		extern void (__thiscall* AddScriptToList)(Script*, Script** list);
+		extern void (__thiscall* RemoveScriptFromList)(Script*, Script** list);
+		extern void (__thiscall* StoreParameters)(Script*, uint* pIp, short num);
+		extern void (__thiscall* UpdateCompareFlag)(Script*, bool result);
+		extern void* (__thiscall* GetPointerToScriptVariable)(Script*, uint* pIp, short type); // last param is unused
 
-		struct {
-				wchar_t* (__thiscall* pfGet)(void*, const char*);
-				void (__cdecl* pfSetHelpMessage)(wchar_t*, bool, bool); // last param is used only in VC
-				void (__cdecl* pfAddBigMessageQ)(wchar_t*, uint, ushort);
-				void (__cdecl* pfAddMessage)(wchar_t*, uint, ushort);
-				void (__cdecl* pfAddMessageJumpQ)(wchar_t*, uint, ushort);
-				void* pTheText;
-				intro_text_line* pIntroTextLines;
-				ushort* pNumberOfIntroTextLinesThisFrame;
-				char* szKeyboardCheatString;
-		} Text;
+		// Text
+		extern void* TheText; // CText::TheText
+		extern ushort* pNumberOfIntroTextLinesThisFrame;
+		extern char* KeyboardCheatString;
+		extern wchar_t* (__thiscall* GetText)(void*, const char* key);
+		extern void (__cdecl* SetHelpMessage)(wchar_t* message, bool quick, bool display_forever = false); // last param is used only in VC
+		extern void (__cdecl* AddBigMessageQ)(wchar_t* key, uint time, ushort pos);
+		extern void (__cdecl* AddMessage)(wchar_t* key, uint time, ushort pos);
+		extern void (__cdecl* AddMessageJumpQ)(wchar_t* key, uint time, ushort pos);
 
-		struct {
-				CPool** ppPedPool;
-				CPool** ppVehiclePool;
-				CPool** ppObjectPool;
-				uchar* pPlayers; // CPlayerInfo*
-				void* (__thiscall* pfPedPoolGetAt)(CPool*, int);
-				void* (__thiscall* pfVehiclePoolGetAt)(CPool*, int);
-				void* (__thiscall* pfObjectPoolGetAt)(CPool*, int);
-				int (__thiscall* pfPedPoolGetIndex)(CPool*, void*);
-				int (__thiscall* pfVehiclePoolGetIndex)(CPool*, void*);
-				int (__thiscall* pfObjectPoolGetIndex)(CPool*, void*);
-		} Pools;
+		// Pools
+		extern CPool** ppPedPool;
+		extern CPool** ppVehiclePool;
+		extern CPool** ppObjectPool;
+		extern uchar* Players; // CPlayerInfo[]; only PS2 III had 4 player slots, other versions have 1
+		extern void* (__thiscall* PedPoolGetAt)(CPool*, int handle);
+		extern void* (__thiscall* VehiclePoolGetAt)(CPool*, int handle);
+		extern void* (__thiscall* ObjectPoolGetAt)(CPool*, int handle);
+		extern int (__thiscall* PedPoolGetIndex)(CPool*, void* entry);
+		extern int (__thiscall* VehiclePoolGetIndex)(CPool*, void* entry);
+		extern int (__thiscall* ObjectPoolGetIndex)(CPool*, void* entry);
 
-		struct {
-				void (__cdecl* pfInitScripts)();
-				void (__cdecl* pfSaveAllScripts)(uchar*, uint*);
-				void (__cdecl* pfCdStreamRemoveImages)();
-		} Events;
+		// Events
+		extern void (__cdecl* InitScripts)();
+		extern void (__cdecl* SaveAllScripts)(uchar* buf, uint* size);
+		extern void (__cdecl* CdStreamRemoveImages)();
 
-		// VC only: first void* of func is RwTexture*, second is CCutsceneShadow*; the void** are RwTexture**
-		struct {
-				float (__cdecl* pfStoreShadowToBeRendered)(uchar, void*, CVector*, float, float, float, float, short, uchar, uchar, uchar, float, bool, float, void*, bool);
-				void** ppShadowCarTex;
-				void** ppShadowPedTex;
-				void** ppShadowHeliTex;
-				void** ppShadowBikeTex;
-				void** ppShadowBaronTex;
-				void** ppShadowExplosionTex;
-				void** ppShadowHeadLightsTex;
-				void** ppBloodPoolTex;
-		} Shadows;
+		// Shadows; VC only, the void** are RwTexture**
+		extern void** ppShadowCarTex;
+		extern void** ppShadowPedTex;
+		extern void** ppShadowHeliTex;
+		extern void** ppShadowBikeTex;
+		extern void** ppShadowBaronTex;
+		extern void** ppShadowExplosionTex;
+		extern void** ppShadowHeadLightsTex;
+		extern void** ppBloodPoolTex;
+		extern float (__cdecl* StoreShadowToBeRendered)(uchar shadow_type, void* /* RwTexture* */ texture, CVector* pos, 
+														float frontX, float frontY, float sideX, float sideY, 
+														short intensity, uchar red, uchar green, uchar blue, 
+														float distZ, bool draw_on_water, float scale, void* /* CCutsceneShadow* */ shadow, bool draw_on_buildings);
 
-		struct {
-				uchar* pVehicleModelStore;
-				short* pPadNewState;
-				bool* pWideScreenOn;
-				short* pOldWeatherType;
-				char* szRootDirName;
-				char* (__cdecl* pfGetUserFilesFolder)();
-				int (__cdecl* pfModelForWeapon)(int);
-				void (__cdecl* pfSpawnCar)(int); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
-				void (__cdecl* pfRwV3dTransformPoints)(CVector*, CVector const*, int, const void*);
-				void* (__cdecl* pfBlendAnimation)(void*, int, int, float);
-		} Misc;
+		// Misc
+		extern uchar* pVehicleModelStore;
+		extern short* pPadNewState;
+		extern bool* pWideScreenOn;
+		extern short* pOldWeatherType;
+		extern char* RootDirName;
+		extern char* (__cdecl* GetUserFilesFolder)();
+		extern int (__cdecl* ModelForWeapon)(int weapon_type);
+		extern void (__cdecl* SpawnCar)(int veh_id); // VC uses VehicleCheat(int); III uses TankCheat() and doesn't actually use param
+		extern void (__cdecl* RwV3dTransformPoints)(CVector* out, const CVector* in, int num_points, const void* matrix);
+		extern void* (__cdecl* BlendAnimation)(void* /* RpClump* */ clump, int assoc_group_id, int anim_id, float delta);
 
-		GtaGame();
-		~GtaGame();
+		// memory expansion
+		extern Script* ScriptsArray;
+		extern intro_text_line* IntroTextLines;
+		extern intro_script_rectangle* IntroRectangles;
+		extern CSprite2d* ScriptSprites;
 
-		bool IsGtaVC() { release_ >= Release::VC_1_0 && release_ <= Release::VC_Steam; }
-		bool IsGta3() { release_ >= Release::III_1_0 && release_ <= Release::III_Steam; }
+		bool IsVC() { Version >= Release::VC_1_0 && Version <= Release::VC_Steam; }
+		bool IsIII() { Version >= Release::III_1_0 && Version <= Release::III_Steam; }
 
-private:
-		// these have to be 1 byte, as game has array range checks compiled with 1 byte params
-		static constexpr uchar NUM_SCRIPTS = 128;
-		static constexpr uchar NUM_INTRO_TEXT_LINES = 48; // VC has 48, III has just 2
-		static constexpr uchar NUM_INTRO_SCRIPT_RECTANGLES = 32;
-		static constexpr uchar NUM_SCRIPT_SRPITES = 32;
-
-		static const Script* scripts_array_ = new Script[NUM_SCRIPTS];
-		static const intro_text_line* intro_text_lines_ = new intro_text_line[NUM_INTRO_TEXT_LINES];
-		static const intro_script_rectangle* intro_script_rectangles_ = new intro_script_rectangle[NUM_INTRO_SCRIPT_RECTANGLES];
-		static const CSprite2d* script_sprites_ = new CSprite2d[NUM_SCRIPT_SRPITES];;
-
-		static const void* cjk_support_lib_handle_;
-
-		static bool singleton_check_ = false;
-};
-
-extern GtaGame game;
+		void ExpandMemory();
+		void FreeMemory();
+}
