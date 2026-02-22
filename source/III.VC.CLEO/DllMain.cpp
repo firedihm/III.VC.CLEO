@@ -1,3 +1,4 @@
+#include "Game.h"
 #include "Log.h"
 #include "Plugins.h"
 #include "ScriptManager.h"
@@ -9,6 +10,7 @@ APIENTRY DllMain(HMODULE hModule, DWORD reason_for_call, LPVOID reserved)
 {
         switch (reason_for_call) {
         case DLL_PROCESS_ATTACH:
+                game::LoadResources();
                 log::Open();
                 plugins::Load();
                 scriptMgr::LoadScripts(true);
@@ -17,9 +19,10 @@ APIENTRY DllMain(HMODULE hModule, DWORD reason_for_call, LPVOID reserved)
         case DLL_THREAD_DETACH:
                 break;
         case DLL_PROCESS_DETACH:
-                scriptMgr::UnloadScripts(true); // they'll most likely be unloaded by game hooks at this point
+                scriptMgr::UnloadScripts(true);
                 plugins::Unload();
                 log::Close();
+                game::UnloadResources();
                 break;
         }
 
