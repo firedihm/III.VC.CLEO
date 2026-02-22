@@ -6,8 +6,8 @@ class Script;
 
 namespace opcodes
 {
-        inline constexpr ushort CUSTOM_START_ID = 0x05DC;
-        inline constexpr ushort MAX_ID = 0x8000;
+        constexpr ushort CUSTOM_START_ID = 0x05DC;
+        constexpr ushort MAX_ID = 0x8000;
 
         using Definition = eOpcodeResult __stdcall(Script*);
 
