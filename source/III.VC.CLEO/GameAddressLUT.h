@@ -41,7 +41,6 @@ enum class Address {
         SearchText_asm2,
         GetText,
         TheText,
-        IntroTextLines,
         NumberOfIntroTextLinesThisFrame,
         KeyboardCheatString,
         SetHelpMessage,
@@ -98,8 +97,8 @@ enum class Address {
         ScriptsArray_0,
         ScriptsArray_1,
         ScriptsArray_2,
-        SizeofScript_0,
-        SizeofScript_1,
+        sizeofScript_0,
+        sizeofScript_1,
         IntroTextLines_0,
         // ...
         IntroRectangles_0,
@@ -107,7 +106,7 @@ enum class Address {
         ScriptSprites_0,
         // ...
 
-        Count
+        count
 };
 
 inline void* LookUpTable[Address::count][game::Release::count] = {
@@ -151,7 +150,6 @@ inline void* LookUpTable[Address::count][game::Release::count] = {
         {0x584DAA, 0x584DCA, 0x584BDA, /*    */ nullptr,  nullptr,  nullptr }, // SearchText_asm2
         {0x584F30, 0x584F50, 0x584D60, /*    */ 0x52C5A0, 0x52C7E0, 0x52C770}, // GetText
         {0x94B220, 0x94B228, 0x94A228, /*    */ 0x941520, 0x9416D8, 0x951818}, // TheText
-        {0x7F0EA0, 0x7F0EA8, 0x7EFEA8, /*    */ 0x70EA68, 0x70EA68, 0x71EBA8}, // IntroTextLines
         {0xA10A48, 0xA10A50, 0xA0FA50, /*    */ 0x95CC88, 0x95CE40, 0x96CF80}, // NumberOfIntroTextLinesThisFrame
         {0xA10942, 0xA1094A, 0xA0F94A, /*    */ 0x885B90, 0x885B40, 0x895C80}, // KeyboardCheatString
         {0x55BFC0, 0x55BFE0, 0x55BEB0, /*    */ 0x5051E0, 0x5052C0, 0x505250}, // SetHelpMessage
@@ -213,8 +211,8 @@ inline void* LookUpTable[Address::count][game::Release::count] = {
         {0x4504E4, 0x4504E4, 0x4503F4, /*    */ 0x438809, 0x438809, 0x438809}, // ScriptsArray_0
         {0x450508, 0x450508, 0x450418, /*    */ nullptr,  nullptr,  nullptr }, // ScriptsArray_1
         {0x45050E, 0x45050E, 0x45041E, /*    */ nullptr,  nullptr,  nullptr }, // ScriptsArray_2
-        {0x450529, 0x450529, 0x450439, /*    */ 0x43882A, 0x43882A, 0x43882A}, // SizeofScript_0
-        {0x45052F, 0x45052F, 0x45043F, /*    */ nullptr,  nullptr,  nullptr }, // SizeofScript_1
+        {0x450529, 0x450529, 0x450439, /*    */ 0x43882A, 0x43882A, 0x43882A}, // sizeofScript_0
+        {0x45052F, 0x45052F, 0x45043F, /*    */ nullptr,  nullptr,  nullptr }, // sizeofScript_1
         {nullptr,  nullptr,  nullptr,  /*    */ 0x43EBEC, nullptr,  nullptr }, // IntroTextLines_0
         {0x451E72, nullptr,  nullptr,  /*    */ 0x43EC1B, nullptr,  nullptr }, // IntroRectangles_0
         {0x450B0E, nullptr,  nullptr,  /*    */ 0x43EC4A, nullptr,  nullptr }  // ScriptSprites_0
