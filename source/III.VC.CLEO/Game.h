@@ -59,7 +59,7 @@ namespace game
 		extern ushort* pNumberOfIntroTextLinesThisFrame;
 		extern char* KeyboardCheatString;
 		extern wchar_t* (__thiscall* GetText)(void*, const char* key);
-		extern void (__cdecl* SetHelpMessage)(wchar_t* message, bool quick, bool display_forever = false); // last param is used only in VC
+		extern void (__cdecl* SetHelpMessage)(wchar_t* message, bool quick, bool display_forever); // last param is used only in VC
 		extern void (__cdecl* AddBigMessageQ)(wchar_t* key, uint time, ushort pos);
 		extern void (__cdecl* AddMessage)(wchar_t* key, uint time, ushort pos);
 		extern void (__cdecl* AddMessageJumpQ)(wchar_t* key, uint time, ushort pos);
