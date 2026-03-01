@@ -129,33 +129,33 @@ namespace game
 		memory::MakeJump(lut[ProcessOneCommand], Script::ProcessOneCommand);
 		memory::MakeJump(lut[CollectParameters], Script::CollectParameters);
 		memory::MakeJump(lut[CollectNextParameterWithoutIncreasingPC], Script::CollectNextParameterWithoutIncreasingPC);
-		auto AddScriptToList = (void (__thiscall*)(Script*, Script**))lut[AddScriptToList];
-		auto RemoveScriptFromList = (void (__thiscall*)(Script*, Script**))lut[RemoveScriptFromList];
-		auto StoreParameters = (void (__thiscall*)(Script*, uint*, short))lut[StoreParameters];
-		auto UpdateCompareFlag = (void (__thiscall*)(Script*, bool))lut[UpdateCompareFlag];
-		auto GetPointerToScriptVariable = (void* (__thiscall*)(Script*, uint*, short))lut[GetPointerToScriptVariable];
-		auto OpcodeHandlers[0] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_0];
-		auto OpcodeHandlers[1] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_1];
-		auto OpcodeHandlers[2] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_2];
-		auto OpcodeHandlers[3] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_3];
-		auto OpcodeHandlers[4] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_4];
-		auto OpcodeHandlers[5] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_5];
-		auto OpcodeHandlers[6] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_6];
-		auto OpcodeHandlers[7] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_7];
-		auto OpcodeHandlers[8] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_8];
-		auto OpcodeHandlers[9] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_9];
-		auto OpcodeHandlers[10] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_10];
-		auto OpcodeHandlers[11] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_11];
-		auto OpcodeHandlers[12] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_12];
-		auto OpcodeHandlers[13] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_13];
-		auto OpcodeHandlers[14] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_14];
+		auto* AddScriptToList = (void (__thiscall*)(Script*, Script**))lut[AddScriptToList];
+		auto* RemoveScriptFromList = (void (__thiscall*)(Script*, Script**))lut[RemoveScriptFromList];
+		auto* StoreParameters = (void (__thiscall*)(Script*, uint*, short))lut[StoreParameters];
+		auto* UpdateCompareFlag = (void (__thiscall*)(Script*, bool))lut[UpdateCompareFlag];
+		auto* GetPointerToScriptVariable = (void* (__thiscall*)(Script*, uint*, short))lut[GetPointerToScriptVariable];
+		auto* OpcodeHandlers[0] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_0];
+		auto* OpcodeHandlers[1] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_1];
+		auto* OpcodeHandlers[2] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_2];
+		auto* OpcodeHandlers[3] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_3];
+		auto* OpcodeHandlers[4] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_4];
+		auto* OpcodeHandlers[5] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_5];
+		auto* OpcodeHandlers[6] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_6];
+		auto* OpcodeHandlers[7] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_7];
+		auto* OpcodeHandlers[8] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_8];
+		auto* OpcodeHandlers[9] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_9];
+		auto* OpcodeHandlers[10] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_10];
+		auto* OpcodeHandlers[11] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_11];
+		auto* OpcodeHandlers[12] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_12];
+		auto* OpcodeHandlers[13] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_13];
+		auto* OpcodeHandlers[14] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_14];
 		auto** ppActiveScriptsList = (Script**)lut[ActiveScripts];
 		auto* ScriptParams = (ScriptParam*)lut[ScriptParams];
 		auto* ScriptSpace = (uchar*)lut[ScriptSpace];
 		auto* pNumOpcodesExecuted = (ushort*)lut[CommandsExecuted];
 		auto* UsedObjectArray = (tUsedObject*)lut[UsedObjectArray];
 
-		auto GetText = (wchar_t* (__thiscall*)(void*, const char*))lut[SearchText];
+		auto* GetText = (wchar_t* (__thiscall*)(void*, const char*))lut[SearchText];
 		if (IsVC()) {
 				// VC needs to have a relay call coded in
 				memory::Write<uint>(lut[SearchText_asm0], 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
@@ -166,29 +166,29 @@ namespace game
 		auto* TheText = (void*)lut[TheText];
 		auto* pNumberOfIntroTextLinesThisFrame = (ushort*)lut[NumberOfIntroTextLinesThisFrame];
 		auto* KeyboardCheatString = (char*)lut[KeyboardCheatString];
-		auto SetHelpMessage = (void (__cdecl*)(wchar_t*, bool, bool))lut[SetHelpMessage];
-		auto AddBigMessageQ = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddBigMessageQ];
-		auto AddMessage = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddMessage];
-		auto AddMessageJumpQ = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddMessageJumpQ];
+		auto* SetHelpMessage = (void (__cdecl*)(wchar_t*, bool, bool))lut[SetHelpMessage];
+		auto* AddBigMessageQ = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddBigMessageQ];
+		auto* AddMessage = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddMessage];
+		auto* AddMessageJumpQ = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddMessageJumpQ];
 
 		auto** ppPedPool = (CPool**)lut[PedPool];
 		auto** ppVehiclePool = (CPool**)lut[VehiclePool];
 		auto** ppObjectPool = (CPool**)lut[ObjectPool];
 		auto* Players = (uchar*)lut[Players];
-		auto PedPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[PedPoolGetAt];
-		auto VehiclePoolGetAt = (void* (__thiscall*)(CPool*, int))lut[VehiclePoolGetAt];
-		auto ObjectPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[ObjectPoolGetAt];
-		auto PedPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[PedPoolGetIndex];
-		auto VehiclePoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[VehiclePoolGetIndex];
-		auto ObjectPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[ObjectPoolGetIndex];
+		auto* PedPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[PedPoolGetAt];
+		auto* VehiclePoolGetAt = (void* (__thiscall*)(CPool*, int))lut[VehiclePoolGetAt];
+		auto* ObjectPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[ObjectPoolGetAt];
+		auto* PedPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[PedPoolGetIndex];
+		auto* VehiclePoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[VehiclePoolGetIndex];
+		auto* ObjectPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[ObjectPoolGetIndex];
 
-		auto InitScripts = (void (__cdecl*)())lut[InitScripts];
+		auto* InitScripts = (void (__cdecl*)())lut[InitScripts];
 		memory::MakeCall(lut[Init_Scripts_call0], OnGameStart);
 		memory::MakeCall(lut[Init_Scripts_call1], OnGameLoad);
 		memory::MakeCall(lut[Init_Scripts_call2], OnGameReload);
-		auto SaveAllScripts = (void (__cdecl*)(uchar*, uint*))lut[SaveAllScripts];
+		auto* SaveAllScripts = (void (__cdecl*)(uchar*, uint*))lut[SaveAllScripts];
 		memory::MakeCall(lut[SaveAllScripts_call], OnGameSaveAllScripts);
-		auto CdStreamRemoveImages = (void (__cdecl*)())lut[CdStreamRemoveImages];
+		auto* CdStreamRemoveImages = (void (__cdecl*)())lut[CdStreamRemoveImages];
 		memory::MakeCall(lut[CdStreamRemoveImages_call], OnGameShutdown);
 
 		auto** ppShadowCarTex = (void**)lut[ShadowCarTex];
@@ -199,21 +199,21 @@ namespace game
 		auto** ppShadowExplosionTex = (void**)lut[ShadowExplosionTex];
 		auto** ppShadowHeadLightsTex = (void**)lut[ShadowHeadLightsTex];
 		auto** ppBloodPoolTex = (void**)lut[ShadowBloodPoolTex];
-		auto StoreShadowToBeRendered = (float (__cdecl*)(uchar, void*, CVector*, 
-														 float, float, float, float, 
-														 short, uchar, uchar, uchar, 
-														 float, bool, float, void*, bool))lut[StoreShadowToBeRendered];
+		auto* StoreShadowToBeRendered = (float (__cdecl*)(uchar, void*, CVector*, 
+														  float, float, float, float, 
+														  short, uchar, uchar, uchar, 
+														  float, bool, float, void*, bool))lut[StoreShadowToBeRendered];
 
 		auto* pVehicleModelStore = (uchar*)lut[VehicleModelStore];
 		auto* pPadNewState = (short*)lut[PadNewState];
 		auto* pWideScreenOn = (bool*)lut[WideScreenOn];
 		auto* pOldWeatherType = (short*)lut[CurrentWeather];
 		auto* RootDirName = (char*)lut[RootDirName];
-		auto GetUserFilesFolder = (char* (__cdecl*)())lut[GetUserFilesFolder];
-		auto ModelForWeapon = (int (__cdecl*)(int))lut[ModelForWeapon];
-		auto SpawnCar = (void (__cdecl*)(int))lut[SpawnCar];
-		auto RwV3dTransformPoints = (void (__cdecl*)(CVector*, const CVector*, int, const void*))lut[RwV3dTransformPoints];
-		auto BlendAnimation = (int (__cdecl*)(void*, int, int, float))lut[BlendAnimation];
+		auto* GetUserFilesFolder = (char* (__cdecl*)())lut[GetUserFilesFolder];
+		auto* ModelForWeapon = (int (__cdecl*)(int))lut[ModelForWeapon];
+		auto* SpawnCar = (void (__cdecl*)(int))lut[SpawnCar];
+		auto* RwV3dTransformPoints = (void (__cdecl*)(CVector*, const CVector*, int, const void*))lut[RwV3dTransformPoints];
+		auto* BlendAnimation = (int (__cdecl*)(void*, int, int, float))lut[BlendAnimation];
 
 		auto* ScriptsArray = (Script*)lut[ScriptsArray_0];
 		auto* IntroTextLines = (intro_text_line*)lut[IntroTextLines_0];
