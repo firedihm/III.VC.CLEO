@@ -123,102 +123,100 @@ namespace game
 		const size_t MissionSize = IsIII() ? 35000 : 32*1024;
 		const size_t ScriptSpaceSize = MainSize + MissionSize;
 
-		GameAddressLUT lut(Version);
+		memory::MakeJump(gaddr(Address::InitScript), Script::Init);
+		memory::MakeJump(gaddr(Address::ProcessOneCommand), Script::ProcessOneCommand);
+		memory::MakeJump(gaddr(Address::CollectParameters), Script::CollectParameters);
+		memory::MakeJump(gaddr(Address::CollectNextParameterWithoutIncreasingPC), Script::CollectNextParameterWithoutIncreasingPC);
+		auto* AddScriptToList = (void (__thiscall*)(Script*, Script**))gaddr(Address::AddScriptToList);
+		auto* RemoveScriptFromList = (void (__thiscall*)(Script*, Script**))gaddr(Address::RemoveScriptFromList);
+		auto* StoreParameters = (void (__thiscall*)(Script*, uint*, short))gaddr(Address::StoreParameters);
+		auto* UpdateCompareFlag = (void (__thiscall*)(Script*, bool))gaddr(Address::UpdateCompareFlag);
+		auto* GetPointerToScriptVariable = (void* (__thiscall*)(Script*, uint*, short))gaddr(Address::GetPointerToScriptVariable);
+		auto* OpcodeHandlers[0] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_0);
+		auto* OpcodeHandlers[1] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_1);
+		auto* OpcodeHandlers[2] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_2);
+		auto* OpcodeHandlers[3] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_3);
+		auto* OpcodeHandlers[4] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_4);
+		auto* OpcodeHandlers[5] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_5);
+		auto* OpcodeHandlers[6] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_6);
+		auto* OpcodeHandlers[7] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_7);
+		auto* OpcodeHandlers[8] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_8);
+		auto* OpcodeHandlers[9] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_9);
+		auto* OpcodeHandlers[10] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_10);
+		auto* OpcodeHandlers[11] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_11);
+		auto* OpcodeHandlers[12] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_12);
+		auto* OpcodeHandlers[13] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_13);
+		auto* OpcodeHandlers[14] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_14);
+		auto** ppActiveScriptsList = (Script**)gaddr(Address::ActiveScripts);
+		auto* ScriptParams = (ScriptParam*)gaddr(Address::ScriptParams);
+		auto* ScriptSpace = (uchar*)gaddr(Address::ScriptSpace);
+		auto* pNumOpcodesExecuted = (ushort*)gaddr(Address::CommandsExecuted);
+		auto* UsedObjectArray = (tUsedObject*)gaddr(Address::UsedObjectArray);
 
-		memory::MakeJump(lut[InitScript], Script::Init);
-		memory::MakeJump(lut[ProcessOneCommand], Script::ProcessOneCommand);
-		memory::MakeJump(lut[CollectParameters], Script::CollectParameters);
-		memory::MakeJump(lut[CollectNextParameterWithoutIncreasingPC], Script::CollectNextParameterWithoutIncreasingPC);
-		auto* AddScriptToList = (void (__thiscall*)(Script*, Script**))lut[AddScriptToList];
-		auto* RemoveScriptFromList = (void (__thiscall*)(Script*, Script**))lut[RemoveScriptFromList];
-		auto* StoreParameters = (void (__thiscall*)(Script*, uint*, short))lut[StoreParameters];
-		auto* UpdateCompareFlag = (void (__thiscall*)(Script*, bool))lut[UpdateCompareFlag];
-		auto* GetPointerToScriptVariable = (void* (__thiscall*)(Script*, uint*, short))lut[GetPointerToScriptVariable];
-		auto* OpcodeHandlers[0] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_0];
-		auto* OpcodeHandlers[1] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_1];
-		auto* OpcodeHandlers[2] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_2];
-		auto* OpcodeHandlers[3] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_3];
-		auto* OpcodeHandlers[4] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_4];
-		auto* OpcodeHandlers[5] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_5];
-		auto* OpcodeHandlers[6] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_6];
-		auto* OpcodeHandlers[7] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_7];
-		auto* OpcodeHandlers[8] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_8];
-		auto* OpcodeHandlers[9] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_9];
-		auto* OpcodeHandlers[10] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_10];
-		auto* OpcodeHandlers[11] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_11];
-		auto* OpcodeHandlers[12] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_12];
-		auto* OpcodeHandlers[13] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_13];
-		auto* OpcodeHandlers[14] = (eOpcodeResult (__thiscall*)(Script*, int))lut[OpcodeHandler_14];
-		auto** ppActiveScriptsList = (Script**)lut[ActiveScripts];
-		auto* ScriptParams = (ScriptParam*)lut[ScriptParams];
-		auto* ScriptSpace = (uchar*)lut[ScriptSpace];
-		auto* pNumOpcodesExecuted = (ushort*)lut[CommandsExecuted];
-		auto* UsedObjectArray = (tUsedObject*)lut[UsedObjectArray];
-
-		auto* GetText = (wchar_t* (__thiscall*)(void*, const char*))lut[SearchText];
+		auto* GetText = (wchar_t* (__thiscall*)(void*, const char*))gaddr(Address::SearchText);
 		if (IsVC()) {
 				// VC needs to have a relay call coded in
-				memory::Write<uint>(lut[SearchText_asm0], 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
-				memory::Write<uint>(lut[SearchText_asm1], 0xE940EC83); // sub esp,40
-				memory::Write<uint>(lut[SearchText_asm2], 0x00000189); // jmp 584F37
+				memory::Write<uint>(gaddr(Address::SearchText_asm0), 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
+				memory::Write<uint>(gaddr(Address::SearchText_asm1), 0xE940EC83); // sub esp,40
+				memory::Write<uint>(gaddr(Address::SearchText_asm2), 0x00000189); // jmp 584F37
 		}
-		memory::MakeJump(lut[GetText], fxt::Get);
-		auto* TheText = (void*)lut[TheText];
-		auto* pNumberOfIntroTextLinesThisFrame = (ushort*)lut[NumberOfIntroTextLinesThisFrame];
-		auto* KeyboardCheatString = (char*)lut[KeyboardCheatString];
-		auto* SetHelpMessage = (void (__cdecl*)(wchar_t*, bool, bool))lut[SetHelpMessage];
-		auto* AddBigMessageQ = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddBigMessageQ];
-		auto* AddMessage = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddMessage];
-		auto* AddMessageJumpQ = (void (__cdecl*)(wchar_t*, uint, ushort))lut[AddMessageJumpQ];
+		memory::MakeJump(gaddr(Address::GetText), fxt::Get);
+		auto* TheText = (void*)gaddr(Address::TheText);
+		auto* pNumberOfIntroTextLinesThisFrame = (ushort*)gaddr(Address::NumberOfIntroTextLinesThisFrame);
+		auto* KeyboardCheatString = (char*)gaddr(Address::KeyboardCheatString);
+		auto* SetHelpMessage = (void (__cdecl*)(wchar_t*, bool, bool))gaddr(Address::SetHelpMessage);
+		auto* AddBigMessageQ = (void (__cdecl*)(wchar_t*, uint, ushort))gaddr(Address::AddBigMessageQ);
+		auto* AddMessage = (void (__cdecl*)(wchar_t*, uint, ushort))gaddr(Address::AddMessage);
+		auto* AddMessageJumpQ = (void (__cdecl*)(wchar_t*, uint, ushort))gaddr(Address::AddMessageJumpQ);
 
-		auto** ppPedPool = (CPool**)lut[PedPool];
-		auto** ppVehiclePool = (CPool**)lut[VehiclePool];
-		auto** ppObjectPool = (CPool**)lut[ObjectPool];
-		auto* Players = (uchar*)lut[Players];
-		auto* PedPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[PedPoolGetAt];
-		auto* VehiclePoolGetAt = (void* (__thiscall*)(CPool*, int))lut[VehiclePoolGetAt];
-		auto* ObjectPoolGetAt = (void* (__thiscall*)(CPool*, int))lut[ObjectPoolGetAt];
-		auto* PedPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[PedPoolGetIndex];
-		auto* VehiclePoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[VehiclePoolGetIndex];
-		auto* ObjectPoolGetHandle = (int (__thiscall*)(CPool*, void*))lut[ObjectPoolGetIndex];
+		auto** ppPedPool = (CPool**)gaddr(Address::PedPool);
+		auto** ppVehiclePool = (CPool**)gaddr(Address::VehiclePool);
+		auto** ppObjectPool = (CPool**)gaddr(Address::ObjectPool);
+		auto* Players = (uchar*)gaddr(Address::Players);
+		auto* PedPoolGetAt = (void* (__thiscall*)(CPool*, int))gaddr(Address::PedPoolGetAt);
+		auto* VehiclePoolGetAt = (void* (__thiscall*)(CPool*, int))gaddr(Address::VehiclePoolGetAt);
+		auto* ObjectPoolGetAt = (void* (__thiscall*)(CPool*, int))gaddr(Address::ObjectPoolGetAt);
+		auto* PedPoolGetHandle = (int (__thiscall*)(CPool*, void*))gaddr(Address::PedPoolGetIndex);
+		auto* VehiclePoolGetHandle = (int (__thiscall*)(CPool*, void*))gaddr(Address::VehiclePoolGetIndex);
+		auto* ObjectPoolGetHandle = (int (__thiscall*)(CPool*, void*))gaddr(Address::ObjectPoolGetIndex);
 
-		auto* InitScripts = (void (__cdecl*)())lut[InitScripts];
-		memory::MakeCall(lut[Init_Scripts_call0], OnGameStart);
-		memory::MakeCall(lut[Init_Scripts_call1], OnGameLoad);
-		memory::MakeCall(lut[Init_Scripts_call2], OnGameReload);
-		auto* SaveAllScripts = (void (__cdecl*)(uchar*, uint*))lut[SaveAllScripts];
-		memory::MakeCall(lut[SaveAllScripts_call], OnGameSaveAllScripts);
-		auto* CdStreamRemoveImages = (void (__cdecl*)())lut[CdStreamRemoveImages];
-		memory::MakeCall(lut[CdStreamRemoveImages_call], OnGameShutdown);
+		auto* InitScripts = (void (__cdecl*)())gaddr(Address::InitScripts);
+		memory::MakeCall(gaddr(Address::Init_Scripts_call0), OnGameStart);
+		memory::MakeCall(gaddr(Address::Init_Scripts_call1), OnGameLoad);
+		memory::MakeCall(gaddr(Address::Init_Scripts_call2), OnGameReload);
+		auto* SaveAllScripts = (void (__cdecl*)(uchar*, uint*))gaddr(Address::SaveAllScripts);
+		memory::MakeCall(gaddr(Address::SaveAllScripts_call), OnGameSaveAllScripts);
+		auto* CdStreamRemoveImages = (void (__cdecl*)())gaddr(Address::CdStreamRemoveImages);
+		memory::MakeCall(gaddr(Address::CdStreamRemoveImages_call), OnGameShutdown);
 
-		auto** ppShadowCarTex = (void**)lut[ShadowCarTex];
-		auto** ppShadowPedTex = (void**)lut[ShadowPedTex];
-		auto** ppShadowHeliTex = (void**)lut[ShadowHeliTex];
-		auto** ppShadowBikeTex = (void**)lut[ShadowBikeTex];
-		auto** ppShadowBaronTex = (void**)lut[ShadowBaronTex];
-		auto** ppShadowExplosionTex = (void**)lut[ShadowExplosionTex];
-		auto** ppShadowHeadLightsTex = (void**)lut[ShadowHeadLightsTex];
-		auto** ppBloodPoolTex = (void**)lut[ShadowBloodPoolTex];
+		auto** ppShadowCarTex = (void**)gaddr(Address::ShadowCarTex);
+		auto** ppShadowPedTex = (void**)gaddr(Address::ShadowPedTex);
+		auto** ppShadowHeliTex = (void**)gaddr(Address::ShadowHeliTex);
+		auto** ppShadowBikeTex = (void**)gaddr(Address::ShadowBikeTex);
+		auto** ppShadowBaronTex = (void**)gaddr(Address::ShadowBaronTex);
+		auto** ppShadowExplosionTex = (void**)gaddr(Address::ShadowExplosionTex);
+		auto** ppShadowHeadLightsTex = (void**)gaddr(Address::ShadowHeadLightsTex);
+		auto** ppBloodPoolTex = (void**)gaddr(Address::ShadowBloodPoolTex);
 		auto* StoreShadowToBeRendered = (float (__cdecl*)(uchar, void*, CVector*, 
 														  float, float, float, float, 
 														  short, uchar, uchar, uchar, 
-														  float, bool, float, void*, bool))lut[StoreShadowToBeRendered];
+														  float, bool, float, void*, bool))gaddr(Address::StoreShadowToBeRendered);
 
-		auto* pVehicleModelStore = (uchar*)lut[VehicleModelStore];
-		auto* pPadNewState = (short*)lut[PadNewState];
-		auto* pWideScreenOn = (bool*)lut[WideScreenOn];
-		auto* pOldWeatherType = (short*)lut[CurrentWeather];
-		auto* RootDirName = (char*)lut[RootDirName];
-		auto* GetUserFilesFolder = (char* (__cdecl*)())lut[GetUserFilesFolder];
-		auto* ModelForWeapon = (int (__cdecl*)(int))lut[ModelForWeapon];
-		auto* SpawnCar = (void (__cdecl*)(int))lut[SpawnCar];
-		auto* RwV3dTransformPoints = (void (__cdecl*)(CVector*, const CVector*, int, const void*))lut[RwV3dTransformPoints];
-		auto* BlendAnimation = (int (__cdecl*)(void*, int, int, float))lut[BlendAnimation];
+		auto* pVehicleModelStore = (uchar*)gaddr(Address::VehicleModelStore);
+		auto* pPadNewState = (short*)gaddr(Address::PadNewState);
+		auto* pWideScreenOn = (bool*)gaddr(Address::WideScreenOn);
+		auto* pOldWeatherType = (short*)gaddr(Address::CurrentWeather);
+		auto* RootDirName = (char*)gaddr(Address::RootDirName);
+		auto* GetUserFilesFolder = (char* (__cdecl*)())gaddr(Address::GetUserFilesFolder);
+		auto* ModelForWeapon = (int (__cdecl*)(int))gaddr(Address::ModelForWeapon);
+		auto* SpawnCar = (void (__cdecl*)(int))gaddr(Address::SpawnCar);
+		auto* RwV3dTransformPoints = (void (__cdecl*)(CVector*, const CVector*, int, const void*))gaddr(Address::RwV3dTransformPoints);
+		auto* BlendAnimation = (int (__cdecl*)(void*, int, int, float))gaddr(Address::BlendAnimation);
 
-		auto* ScriptsArray = (Script*)lut[ScriptsArray_0];
-		auto* IntroTextLines = (intro_text_line*)lut[IntroTextLines_0];
-		auto* IntroRectangles = (intro_script_rectangle*)lut[IntroRectangles_0];
-		auto* ScriptSprites = (CSprite2d*)lut[ScriptSprites_0];
+		auto* ScriptsArray = (Script*)gaddr(Address::ScriptsArray_0);
+		auto* IntroTextLines = (intro_text_line*)gaddr(Address::IntroTextLines_0);
+		auto* IntroRectangles = (intro_script_rectangle*)gaddr(Address::IntroRectangles_0);
+		auto* ScriptSprites = (CSprite2d*)gaddr(Address::ScriptSprites_0);
 }
 
 void
@@ -229,14 +227,14 @@ game::ExpandMemory()
 		IntroRectangles = new intro_script_rectangle[MAX_NUM_INTRO_RECTANGLES];
 		ScriptSprites = new CSprite2d[MAX_NUM_SCRIPT_SRPITES];
 
-		memory::Write(lut[ScriptsArray_0], ScriptsArray);
+		memory::Write(gaddr(Address::ScriptsArray_0), ScriptsArray);
 		if (IsVC()) {
-				memory::Write(lut[ScriptsArray_1], &ScriptsArray->m_pNext);
-				memory::Write(lut[ScriptsArray_2], &ScriptsArray->m_pPrev);
+				memory::Write(gaddr(Address::ScriptsArray_1), &ScriptsArray->m_pNext);
+				memory::Write(gaddr(Address::ScriptsArray_2), &ScriptsArray->m_pPrev);
 		}
-		memory::Write(lut[sizeofScript_0], sizeof(Script));
+		memory::Write(gaddr(Address::sizeofScript_0), sizeof(Script));
 		if (IsVC()) {
-				memory::Write(lut[sizeofScript_1], sizeof(Script));
+				memory::Write(gaddr(Address::sizeofScript_1), sizeof(Script));
 		}
 
 		// rather messy and incomplete: addresses below only apply to v1.0
