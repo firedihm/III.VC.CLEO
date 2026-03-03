@@ -51,8 +51,8 @@ CCustomScript::PopStackFrame()
 void
 CCustomScript::DeleteRegisteredObject(void* obj)
 {
-		for (RegData* prev = nullptr, curr = register_; curr; prev = curr, curr = curr->next) {
-				if (curr->object == obj) {
+		for (RegData* prev = nullptr, * curr = register_; curr; prev = curr, curr = curr->next) {
+				if (curr->obj == obj) {
 						if (prev)
 								prev->next = curr->next;
 						else
@@ -76,13 +76,13 @@ Script::Script(const char* filepath)
 				throw "File is empty or corrupt";
 
 		/*
-			We have to remember that game will always add pScriptSpace to m_nIp when processing scripts, because 
+			We have to remember that game will always add ScriptSpace to m_nIp when processing scripts, because 
 			the latter is an offset. Since custom scripts store code data on heap, and game can't account for this, 
-			we'll have to initialise m_nIp to a difference of heap address and pScriptSpace, so it will even out 
+			we'll have to initialise m_nIp to a difference of heap address and ScriptSpace, so it will even out 
 			when game will be processing this script.
 		*/
 		m_pCodeData = new uchar[filesize];
-		m_nIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace);
+		m_nIp = (uint)(m_pCodeData - game::ScriptSpace);
 		file->clear();
 		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
 
@@ -103,7 +103,7 @@ eOpcodeResult
 Script::ProcessOneCommand()
 {
 		// highest bit of opcode denotes notFlag: reversing conditional result
-		ushort op = *(ushort*)&game.Scripts.pScriptSpace[m_nIp];
+		ushort op = *(ushort*)&game::ScriptSpace[m_nIp];
 		m_bNotFlag = (op & 0x8000) ? true : false;
 		op &= 0x7FFF;
 		m_nIp += 2;
@@ -112,7 +112,7 @@ Script::ProcessOneCommand()
 				// call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
 				eOpcodeResult result = opcodes::Definitions[op](this);
-				*game.Scripts.pNumOpcodesExecuted += 1;
+				*game::pNumOpcodesExecuted += 1;
 				return result;
 		} else if (op >= opcodes::CUSTOM_START_ID) {
 				// if opcode isn't registered as custom, but has custom opcode's ID
@@ -121,8 +121,8 @@ Script::ProcessOneCommand()
 		} else {
 				// call default opcode
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
-				eOpcodeResult result = game.Scripts.apfOpcodeHandlers[op / 100](this, op);
-				*game.Scripts.pNumOpcodesExecuted += 1;
+				eOpcodeResult result = game::OpcodeHandlers[op / 100](this, op);
+				*game::pNumOpcodesExecuted += 1;
 				return result;
 		}
 }
@@ -131,54 +131,54 @@ void
 Script::CollectParameters(uint* pIp, short numParams)
 {
 		for (short i = 0; i < numParams; i++) {
-				ScriptParamType* paramType = (ScriptParamType*)&game.Scripts.pScriptSpace[*pIp];
+				ScriptParamType* paramType = (ScriptParamType*)&game::ScriptSpace[*pIp];
 				*pIp += 1;
 
 				switch (paramType->type) {
 				case PARAM_TYPE_INT32:
-						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*pIp];
+						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*pIp];
 						*pIp += 4;
 						break;
 				case PARAM_TYPE_GVAR:
-						game.Scripts.pScriptParams[i].nVar = *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[*pIp]];
+						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[*pIp]];
 						*pIp += 2;
 						break;
 				case PARAM_TYPE_LVAR:
-						game.Scripts.pScriptParams[i].nVar = m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[*pIp]].nVar;
+						game::ScriptParams[i].nVar = m_aLVars[*(ushort*)&game::ScriptSpace[*pIp]].nVar;
 						*pIp += 2;
 						break;
 				case PARAM_TYPE_INT8:
-						game.Scripts.pScriptParams[i].nVar = *(char*)&game.Scripts.pScriptSpace[*pIp];
+						game::ScriptParams[i].nVar = *(char*)&game::ScriptSpace[*pIp];
 						*pIp += 1;
 						break;
 				case PARAM_TYPE_INT16:
-						game.Scripts.pScriptParams[i].nVar = *(short*)&game.Scripts.pScriptSpace[*pIp];
+						game::ScriptParams[i].nVar = *(short*)&game::ScriptSpace[*pIp];
 						*pIp += 2;
 						break;
 				case PARAM_TYPE_FLOAT:
-						if (game.IsGta3()) {
-								game.Scripts.pScriptParams[i].fVar = *(short*)&game.Scripts.pScriptSpace[*pIp] / 16.0f;
+						if (game::IsIII()) {
+								game::ScriptParams[i].fVar = *(short*)&game::ScriptSpace[*pIp] / 16.0f;
 								*pIp += 2;
 								break;
 						} else {
-								game.Scripts.pScriptParams[i].fVar = *(float*)&game.Scripts.pScriptSpace[*pIp];
+								game::ScriptParams[i].fVar = *(float*)&game::ScriptSpace[*pIp];
 								*pIp += 4;
 								break;
 						}
 				case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
-								uchar length = game.Scripts.pScriptSpace[*pIp];
-								std::memcpy(&game.Scripts.pScriptSpace[*pIp + 1], &game.Scripts.pScriptSpace[*pIp], length);
-								(game.Scripts.pScriptSpace[*pIp] + length) = '\0';
+								uchar length = game::ScriptSpace[*pIp];
+								std::memcpy(&game::ScriptSpace[*pIp + 1], &game::ScriptSpace[*pIp], length);
+								(game::ScriptSpace[*pIp] + length) = '\0';
 								paramType->processed = true;
 						}
 
-						game.Scripts.pScriptParams[i].szVar = &game.Scripts.pScriptSpace[*pIp];
-						*pIp += std::strlen(&game.Scripts.pScriptSpace[*pIp]) + 1;
+						game::ScriptParams[i].szVar = &game::ScriptSpace[*pIp];
+						*pIp += std::strlen(&game::ScriptSpace[*pIp]) + 1;
 						break;
 				default:
 						*pIp -= 1;
-						game.Scripts.pScriptParams[i].szVar = &game.Scripts.pScriptSpace[*pIp];
+						game::ScriptParams[i].szVar = &game::ScriptSpace[*pIp];
 						*pIp += KEY_LENGTH_IN_SCRIPT;
 						break;
 				}
@@ -188,34 +188,34 @@ Script::CollectParameters(uint* pIp, short numParams)
 int
 Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 {
-		ScriptParamType* paramType = (ScriptParamType*)&game.Scripts.pScriptSpace[ip];
+		ScriptParamType* paramType = (ScriptParamType*)&game::ScriptSpace[ip];
 		ip += 1;
 
 		switch (paramType->type) {
 		case PARAM_TYPE_INT32:
-				return *(int*)&game.Scripts.pScriptSpace[ip];
+				return *(int*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_GVAR:
-				return *(int*)&game.Scripts.pScriptSpace[*(ushort*)&game.Scripts.pScriptSpace[ip]];
+				return *(int*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip]];
 		case PARAM_TYPE_LVAR:
-				return m_aLVars[*(ushort*)&game.Scripts.pScriptSpace[ip]].nVar;
+				return m_aLVars[*(ushort*)&game::ScriptSpace[ip]].nVar;
 		case PARAM_TYPE_INT8:
-				return *(char*)&game.Scripts.pScriptSpace[ip];
+				return *(char*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_INT16:
-				return *(short*)&game.Scripts.pScriptSpace[ip];
+				return *(short*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_FLOAT:
-				if (game.IsGta3())
-						return (int)(*(short*)&game.Scripts.pScriptSpace[ip] / 16.0f);
+				if (game::IsIII())
+						return (int)(*(short*)&game::ScriptSpace[ip] / 16.0f);
 				else
-						return *(int*)&game.Scripts.pScriptSpace[ip];
+						return *(int*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
-						uchar length = game.Scripts.pScriptSpace[ip];
-						std::memcpy(&game.Scripts.pScriptSpace[ip + 1], &game.Scripts.pScriptSpace[ip], length);
-						(game.Scripts.pScriptSpace[ip] + length) = '\0';
+						uchar length = game::ScriptSpace[ip];
+						std::memcpy(&game::ScriptSpace[ip + 1], &game::ScriptSpace[ip], length);
+						(game::ScriptSpace[ip] + length) = '\0';
 						paramType->processed = true;
 				}
 
-				return (int)&game.Scripts.pScriptSpace[ip]; // string address
+				return (int)&game::ScriptSpace[ip]; // string address
 		default:
 				return -1;
 		}
@@ -224,31 +224,31 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 void
 Script::StoreParameters(short numParams)
 {
-		game.Scripts.pfStoreParameters(this, &m_nIp, numParams);
+		game::StoreParameters(this, &m_nIp, numParams);
 }
 
 ScriptParamType
 Script::GetNextParamType()
 {
-		return ((ScriptParamType*)&game.Scripts.pScriptSpace[m_nIp])->type;
+		return ((ScriptParamType*)&game::ScriptSpace[m_nIp])->type;
 }
 
 void*
 Script::GetPointerToScriptVariable()
 {
-		return game.Scripts.pfGetPointerToScriptVariable(this, &m_nIp, 1);
+		return game::GetPointerToScriptVariable(this, &m_nIp, 1);
 }
 
 void
 Script::UpdateCompareFlag(bool result)
 {
-		game.Scripts.pfUpdateCompareFlag(this, result);
+		game::UpdateCompareFlag(this, result);
 }
 
 void
 Script::ReadShortString(char* out)
 {
-		std::strncpy(out, &game.Scripts.pScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
+		std::strncpy(out, &game::ScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
 		m_nIp += KEY_LENGTH_IN_SCRIPT;
 }
 
@@ -260,8 +260,8 @@ Script::JumpTo(int address)
 				m_nIp = address;
 		} else {
 				if (m_bIsCustom)
-						m_nIp = (uint)(m_pCodeData - game.Scripts.pScriptSpace) + (-address); // see Script ctor for details
+						m_nIp = (uint)(m_pCodeData - game::ScriptSpace) + (-address); // see Script ctor for details
 				else
-						m_nIp = game.kMainSize + (-address);
+						m_nIp = game::MainSize + (-address);
 		}
 }
