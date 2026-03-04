@@ -12,7 +12,7 @@ CRunningScript::CRunningScript() : m_pNext(nullptr), m_pPrev(nullptr), m_acName(
 								   m_nAndOrState(0), m_bNotFlag(false), m_bDeatharrestEnabled(true), m_bDeatharrestExecuted(false), m_bMissionFlag(false) {}
 
 CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
-								 CLEO_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr) {}
+								 cleo_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr) {}
 
 CCustomScript::~CCustomScript()
 {
@@ -22,7 +22,7 @@ CCustomScript::~CCustomScript()
 		while (call_stack_)
 				PopStackFrame();
 
-		delete[] CLEO_array_;
+		delete[] cleo_array_;
 		delete[] m_pCodeData;
 }
 
@@ -51,19 +51,24 @@ CCustomScript::PopStackFrame()
 void
 CCustomScript::DeleteRegisteredObject(void* obj)
 {
-		for (RegData* prev = nullptr, * curr = register_; curr; prev = curr, curr = curr->next) {
-				if (curr->obj == obj) {
-						if (prev)
-								prev->next = curr->next;
-						else
-								register_ = curr->next;
+		RegData* target = register_;
+		RegData* pentarget = nullptr;
 
-						curr->destruct(curr->obj); // call dtor
-						delete curr->obj; // release memory
+		while (target && target->obj != obj) {
+				pentarget = target;
+				target = target->next;
+		}
 
-						delete curr;
-						return;
-				}
+		if (target) {
+				if (pentarget)
+						pentarget->next = target->next;
+				else
+						register_ = target->next;
+
+				target->destruct(target->obj); // call dtor
+				delete target->obj; // release memory
+
+				delete target;
 		}
 }
 
@@ -96,7 +101,7 @@ Script::Init()
 		std::memset(this, 0, sizeof(Script));
 		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
 		m_bDeatharrestEnabled = true;
-		CLEO_array_ = new ScriptParam[CLEO_ARRAY_SIZE];
+		cleo_array_ = new ScriptParam[CLEO_ARRAY_SIZE];
 }
 
 eOpcodeResult
@@ -108,10 +113,10 @@ Script::ProcessOneCommand()
 		op &= 0x7FFF;
 		m_nIp += 2;
 
-		if (opcodes::Definitions[op]) {
+		if (opcodes::Definition(op)) {
 				// call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
-				eOpcodeResult result = opcodes::Definitions[op](this);
+				eOpcodeResult result = opcodes::Definition(op)(this);
 				*game::pNumOpcodesExecuted += 1;
 				return result;
 		} else if (op >= opcodes::CUSTOM_START_ID) {
