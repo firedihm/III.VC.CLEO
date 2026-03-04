@@ -112,6 +112,7 @@ namespace game
 		extern intro_text_line* IntroTextLines;
 		extern intro_script_rectangle* IntroRectangles;
 		extern CSprite2d* ScriptSprites;
+		extern void* CjkSupportLib; // adds unicode support to game
 
 		bool IsVC() { Version >= Release::VC_1_0 && Version <= Release::VC_Steam; }
 		bool IsIII() { Version >= Release::III_1_0 && Version <= Release::III_Steam; }
