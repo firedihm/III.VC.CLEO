@@ -102,23 +102,6 @@ namespace game
 				throw "Unsupported game version";
 		}();
 
-		const void* CjkSupportLib = []() -> void* {
-				// CJK support mod may have any of these names
-				const char* names[4] = {
-						"wm_vcchs.asi",
-						"wm_vcchs.dll",
-						"wm_lcchs.asi",
-						"wm_lcchs.dll"
-				};
-
-				void* handle = nullptr;
-				for (int i = 0; i < 4 && !handle; ++i) {
-						handle = memory::LoadLibrary(names[i]);
-				}
-
-				return handle;
-		}();
-
 		const size_t MainSize = IsVC() ? 225512 : 128*1024;
 		const size_t MissionSize = IsIII() ? 35000 : 32*1024;
 		const size_t ScriptSpaceSize = MainSize + MissionSize;
@@ -217,6 +200,7 @@ namespace game
 		auto* IntroTextLines = (intro_text_line*)gaddr(Address::IntroTextLines_0);
 		auto* IntroRectangles = (intro_script_rectangle*)gaddr(Address::IntroRectangles_0);
 		auto* ScriptSprites = (CSprite2d*)gaddr(Address::ScriptSprites_0);
+		void* CjkSupportLib = nullptr;
 }
 
 void
@@ -578,11 +562,30 @@ game::ExpandMemory()
 				memory::Write(0x50874F, ScriptSprites);
 				memory::Write(0x5097C6, ScriptSprites);
 		}
+
+		void* CjkSupportLib = []() -> void* {
+				// CJK support mod may have any of these names
+				const char* names[4] = {
+						"wm_vcchs.asi",
+						"wm_vcchs.dll",
+						"wm_lcchs.asi",
+						"wm_lcchs.dll"
+				};
+
+				void* handle = nullptr;
+				for (int i = 0; i < 4 && !handle; ++i) {
+						handle = memory::LoadLibrary(names[i]);
+				}
+
+				return handle;
+		}();
 }
 
 void
 game::FreeMemory()
 {
+		memory::FreeLibrary(CjkSupportLib);
+
 		delete[] ScriptSprites;
 		delete[] IntroRectangles;
 		delete[] IntroTextLines;
