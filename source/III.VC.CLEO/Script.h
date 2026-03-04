@@ -47,9 +47,9 @@ protected:
 		uchar* m_pCodeData;
 		bool m_bIsCustom;
 		bool m_bIsPersistent;
-		uint m_nLastPedSearchIndex;
-		uint m_nLastVehicleSearchIndex;
-		uint m_nLastObjectSearchIndex;
+		int m_nLastPedSearchIndex;
+		int m_nLastVehicleSearchIndex;
+		int m_nLastObjectSearchIndex;
 		ScriptParam* cleo_array_;
 
 		CCustomScript();
