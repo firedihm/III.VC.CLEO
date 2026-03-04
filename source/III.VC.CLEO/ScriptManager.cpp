@@ -8,34 +8,34 @@
 
 namespace fs = std::filesystem;
 
-std::list<Script> CustomScripts;
+std::list<Script> g_custom_scripts;
 
 Script*
-scriptMgr::StartScript(const char* filepath)
+script_mgr::StartScript(const char* filepath)
 {
-		Script& new_script = CustomScripts.emplace_front(filepath);
+		Script& new_script = g_custom_scripts.emplace_front(filepath);
 
-		game.Scripts.pfAddScriptToList(&new_script, game.Scripts.ppActiveScripts);
+		game::AddScriptToList(&new_script, game::ppActiveScripts);
 
 		return &new_script;
 }
 
 void
-scriptMgr::TerminateScript(Script* script)
+script_mgr::TerminateScript(Script* script)
 {
-		game.Scripts.pfRemoveScriptFromList(script, game.Scripts.ppActiveScripts);
+		game::RemoveScriptFromList(script, game::ppActiveScripts);
 
 		if (!script->m_bIsPersistent) {
-				CustomScripts.remove_if([script](Script& current) {
+				g_custom_scripts.remove_if([script](Script& current) {
 						&current == script;
 				});
 		}
 }
 
 void
-scriptMgr::LoadScripts(bool game_start)
+script_mgr::LoadScripts(bool game_start)
 {
-		fs::path dir = fs::path(game.Misc.szRootDirName) / "CLEO";
+		fs::path dir = fs::path(game::RootDirName) / "CLEO";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && (!game_start && entry.path().extension().string() == ".cs" || game_start && entry.path().extension().string() == ".csp")) {
@@ -45,12 +45,12 @@ scriptMgr::LoadScripts(bool game_start)
 }
 
 void
-scriptMgr::UnloadScripts(bool game_shutdown)
+script_mgr::UnloadScripts(bool game_shutdown)
 {
-		for (auto it = CustomScripts.begin(); it != CustomScripts.end(); ) {
+		for (auto it = g_custom_scripts.begin(); it != g_custom_scripts.end(); ) {
 				if (!it->m_bIsPersistent || game_shutdown) {
-						game.Scripts.pfRemoveScriptFromList(&(*it), game.Scripts.ppActiveScripts);
-						it = CustomScripts.erase(it);
+						game::RemoveScriptFromList(&(*it), game::ppActiveScripts);
+						it = g_custom_scripts.erase(it);
 				} else {
 						++it;
 				}
@@ -58,29 +58,29 @@ scriptMgr::UnloadScripts(bool game_shutdown)
 }
 
 void
-scriptMgr::EnableScripts()
+script_mgr::EnableScripts()
 {
-		for (Script& script : CustomScripts)
-				game.Scripts.pfAddScriptToList(&script, game.Scripts.ppActiveScripts);
+		for (Script& script : g_custom_scripts)
+				game::AddScriptToList(&script, game::ppActiveScripts);
 }
 
 void
-scriptMgr::DisableScripts()
+script_mgr::DisableScripts()
 {
-		for (Script& script : CustomScripts)
-				game.Scripts.pfRemoveScriptFromList(&script, game.Scripts.ppActiveScripts);
+		for (Script& script : g_custom_scripts)
+				game::RemoveScriptFromList(&script, game::ppActiveScripts);
 }
 
 Script*
-scriptMgr::FindScriptNamed(char* name, bool search_generic)
+script_mgr::FindScriptNamed(char* name, bool search_generic)
 {
-		for (Script& script : CustomScripts) {
+		for (Script& script : g_custom_scripts) {
 				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
 						return &script;
 		}
 
 		if (search_generic) {
-				for (Script* script = *game.Scripts.ppActiveScripts; script; script = script->m_pNext) {
+				for (Script* script = *game::ppActiveScripts; script; script = script->m_pNext) {
 						if (!script->m_bIsCustom && !std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
 								return script;
 				}
