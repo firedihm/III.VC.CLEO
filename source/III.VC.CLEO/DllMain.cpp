@@ -13,13 +13,13 @@ APIENTRY DllMain(HMODULE hModule, DWORD reason_for_call, LPVOID reserved)
                 game::ExpandMemory();
                 log::Open();
                 plugins::Load();
-                scriptMgr::LoadScripts(true);
+                script_mgr::LoadScripts(true);
                 break;
         case DLL_THREAD_ATTACH:
         case DLL_THREAD_DETACH:
                 break;
         case DLL_PROCESS_DETACH:
-                scriptMgr::UnloadScripts(true);
+                script_mgr::UnloadScripts(true);
                 plugins::Unload();
                 log::Close();
                 game::FreeMemory();
