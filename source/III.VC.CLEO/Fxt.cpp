@@ -11,33 +11,33 @@
 
 namespace fs = std::filesystem;
 
-std::map<std::string, std::wstring> FxtEntries;
+std::map<std::string, std::wstring> g_fxt_entries;
 
 void
 fxt::Add(const char* key, const char* text)
 {
-		// chinese plugin actually makes game text Unicode; they are Extended ASCII with custom encoding by default
+		// CJK support makes game text Unicode; it's Extended ASCII with custom encoding by default
 		std::wstring wide_text;
-		if (game::IsChinese) {
+		if (game::CjkSupportLib) {
 				std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 				wide_text = converter.from_bytes(text);
 		} else {
 				wide_text = std::wstring(text, text + std::strlen(text));
 		}
 
-		FxtEntries.emplace(key, std::move(wide_text))
+		g_fxt_entries.emplace(key, std::move(wide_text))
 }
 
 void
 fxt::Remove(const char* key)
 {
-		FxtEntries.erase(key);
+		g_fxt_entries.erase(key);
 }
 
 void
 fxt::LoadEntries()
 {
-		fs::path dir = fs::path(game.Misc.szRootDirName) / "CLEO" / "CLEO_TEXT";
+		fs::path dir = fs::path(game::RootDirName) / "CLEO" / "CLEO_TEXT";
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".fxt") {
@@ -70,14 +70,14 @@ fxt::LoadEntries()
 void
 fxt::UnloadEntries()
 {
-		FxtEntries.clear();
+		g_fxt_entries.clear();
 }
 
 wchar_t*
 fxt::Get(void* pTheText, const char* key)
 {
-		if (auto it = FxtEntries.find(key); it != FxtEntries.end())
+		if (auto it = g_fxt_entries.find(key); it != g_fxt_entries.end())
 				return it->second.c_str();
 		else
-				return game::pfGet(pTheText, key);
+				return game::GetText(pTheText, key);
 }
