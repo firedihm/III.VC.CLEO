@@ -50,7 +50,7 @@ protected:
 		uint m_nLastPedSearchIndex;
 		uint m_nLastVehicleSearchIndex;
 		uint m_nLastObjectSearchIndex;
-		ScriptParam* CLEO_array_;
+		ScriptParam* cleo_array_;
 
 		CCustomScript();
 		~CCustomScript();
