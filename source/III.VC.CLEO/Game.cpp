@@ -16,7 +16,7 @@ OnGameStart()
 		game::InitScripts();
 
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
-		scriptMgr::LoadScripts(false);
+		script_mgr::LoadScripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
 		fxt::LoadEntries();
 }
@@ -30,7 +30,7 @@ OnGameLoad()
 
 		// if game is cold-started by loading a save, then OnGameStart() is called first, then OnGameReload(), and only then OnGameLoad()
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
-		scriptMgr::LoadScripts(false);
+		script_mgr::LoadScripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
 		fxt::LoadEntries();
 }
@@ -41,7 +41,7 @@ OnGameReload()
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Shutdown For Load Game--");
 
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
-		scriptMgr::UnloadScripts(false);
+		script_mgr::UnloadScripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
 		fxt::UnloadEntries();
 
@@ -53,9 +53,9 @@ OnGameSaveAllScripts(uchar* buf, uint* size)
 {
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Disabling Cutom Scripts For Save Game--");
 
-		scriptMgr::DisableScripts();
+		script_mgr::DisableScripts();
 		game::SaveAllScripts(buf, size);
-		scriptMgr::EnableScripts();
+		script_mgr::EnableScripts();
 }
 
 void
@@ -66,7 +66,7 @@ OnGameShutdown()
 		game::CdStreamRemoveImages();
 
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
-		scriptMgr::UnloadScripts(false);
+		script_mgr::UnloadScripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
 		fxt::UnloadEntries();
 }
