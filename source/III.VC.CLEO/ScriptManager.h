@@ -2,7 +2,7 @@
 
 class Script;
 
-namespace scriptMgr
+namespace script_mgr
 {
 		Script* StartScript(const char* filepath);
 		void TerminateScript(Script* script);
