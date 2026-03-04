@@ -11,7 +11,6 @@ namespace opcodes
 
         using Definition = eOpcodeResult __stdcall(Script*);
 
-        extern Definition* const Definitions[MAX_ID];
-
         __declspec(dllexport) bool Register(ushort id, Definition* def);
+        __declspec(dllexport) Definition* Definition(ushort id);
 }
