@@ -25,11 +25,9 @@ script_mgr::TerminateScript(Script* script)
 {
 		game::RemoveScriptFromList(script, game::ppActiveScripts);
 
-		if (!script->m_bIsPersistent) {
-				g_custom_scripts.remove_if([script](Script& current) {
-						&current == script;
-				});
-		}
+		g_custom_scripts.remove_if([script](Script& current) {
+				&current == script;
+		});
 }
 
 void
