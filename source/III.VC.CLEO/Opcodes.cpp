@@ -166,92 +166,112 @@ __stdcall READ_MEMORY(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL(Script *script)
+eOpcodeResult
+__stdcall CALL_FUNCTION(Script* script)
 {
-	script->CollectParameters(3);
-	void *func = game::ScriptParams[0].pVar;
-	unsigned int popsize = game::ScriptParams[2].nVar * 4;
-	for(int i = 0; i < game::ScriptParams[1].nVar; i++)
-	{
-		script->CollectParameters(1);
-		unsigned int param = game::ScriptParams[0].nVar;
-		__asm push param
-	}
-	__asm call func
-	__asm add esp, popsize
-	while((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
+		script->CollectParameters(3);
+		void* func = game::ScriptParams[0].pVar;
+		int argc = game::ScriptParams[1].nVar;
+		int popsize = game::ScriptParams[2].nVar * sizeof(ScriptParam);
+
+		script->CollectParameters(argc);
+
+		// we push them in read order; params have to be compiled in reverse order
+		for (int i = 0; i < argc; ++i)
+				__asm push game::ScriptParams[i].nVar
+
+		__asm call func
+		__asm add esp, popsize
+
+		// what is this?
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_FUNCTION(Script *script)
+eOpcodeResult
+__stdcall CALL_FUNCTION_RETURN(Script* script)
 {
-	script->CollectParameters(3);
-	void *func = game::ScriptParams[0].pVar;
-	int func_result;
-	unsigned int popsize = game::ScriptParams[2].nVar * 4;
-	for(int i = 0; i < game::ScriptParams[1].nVar; i++)
-	{
-		script->CollectParameters(1);
-		unsigned int param = game::ScriptParams[0].nVar;
-		__asm push param
-	}
-	__asm call func
-	__asm mov func_result, eax
-	__asm add esp, popsize
-	game::ScriptParams[0].nVar = func_result;
-	script->StoreParameters(1);
-	while((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
+		script->CollectParameters(3);
+		void* func = game::ScriptParams[0].pVar;
+		int argc = game::ScriptParams[1].nVar;
+		int popsize = game::ScriptParams[2].nVar * sizeof(ScriptParam);
+
+		script->CollectParameters(argc);
+
+		// we push them in read order; params have to be compiled in reverse order
+		for (int i = 0; i < argc; ++i)
+				__asm push game::ScriptParams[i].nVar
+
+		__asm call func
+		__asm add esp, popsize
+		__asm mov game::ScriptParams[0].nVar, eax
+		script->StoreParameters(1);
+
+		// what is this?
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_METHOD(Script *script)
+eOpcodeResult
+__stdcall CALL_METHOD(Script* script)
 {
-	script->CollectParameters(4);
-	void *func = game::ScriptParams[0].pVar;
-	void *object = game::ScriptParams[1].pVar;
-	unsigned int popsize = game::ScriptParams[3].nVar * 4;
-	for(int i = 0; i < game::ScriptParams[2].nVar; i++)
-	{
-		script->CollectParameters(1);
-		unsigned int param = game::ScriptParams[0].nVar;
-		__asm push param
-	}
-	__asm mov ecx, object
-	__asm call func
-	__asm add esp, popsize
-	while((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
+		script->CollectParameters(4);
+		void* func = game::ScriptParams[0].pVar;
+		void* object = game::ScriptParams[1].pVar;
+		int argc = game::ScriptParams[2].nVar;
+		int popsize = game::ScriptParams[3].nVar * sizeof(ScriptParam);
+
+		script->CollectParameters(argc);
+
+		// we push them in read order; params have to be compiled in reverse order
+		for (int i = 0; i < argc; ++i)
+				__asm push game::ScriptParams[i].nVar
+
+		__asm mov ecx, object
+		__asm call func
+		__asm add esp, popsize
+
+		// what is this?
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_FUNCTION_METHOD(Script *script)
+eOpcodeResult
+__stdcall CALL_METHOD_RETURN(Script* script)
 {
-	script->CollectParameters(4);
-	void *func = game::ScriptParams[0].pVar;
-	void *object = game::ScriptParams[1].pVar;
-	int func_result;
-	unsigned int popsize = game::ScriptParams[3].nVar * 4;
-	for(int i = 0; i < game::ScriptParams[2].nVar; i++)
-	{
-		script->CollectParameters(1);
-		unsigned int param = game::ScriptParams[0].nVar;
-		__asm push param
-	}
-	__asm mov ecx, object
-	__asm call func
-	__asm mov func_result, eax
-	__asm add esp, popsize
-	game::ScriptParams[0].nVar = func_result;
-	script->StoreParameters(1);
-	while((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
+		script->CollectParameters(4);
+		void* func = game::ScriptParams[0].pVar;
+		void* object = game::ScriptParams[1].pVar;
+		int argc = game::ScriptParams[2].nVar;
+		int popsize = game::ScriptParams[3].nVar * sizeof(ScriptParam);
+
+		script->CollectParameters(argc);
+
+		// we push them in read order; params have to be compiled in reverse order
+		for (int i = 0; i < argc; ++i)
+				__asm push game::ScriptParams[i].nVar
+
+		__asm mov ecx, object
+		__asm call func
+		__asm add esp, popsize
+		__asm mov game::ScriptParams[0].nVar, eax
+		script->StoreParameters(1);
+
+		// what is this?
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -2267,10 +2287,10 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x05DE, START_CUSTOM_SCRIPT);
 		opcodes::Register(0x05DF, WRITE_MEMORY);
 		opcodes::Register(0x05E0, READ_MEMORY);
-		opcodes::Register(0x05E1, CALL);
-		opcodes::Register(0x05E2, CALL_FUNCTION);
+		opcodes::Register(0x05E1, CALL_FUNCTION);
+		opcodes::Register(0x05E2, CALL_FUNCTION_RETURN);
 		opcodes::Register(0x05E3, CALL_METHOD);
-		opcodes::Register(0x05E4, CALL_FUNCTION_METHOD);
+		opcodes::Register(0x05E4, CALL_METHOD_RETURN);
 		opcodes::Register(0x05E5, GET_GAME_VERSION);
 		opcodes::Register(0x05E6, GET_PED_POINTER);
 		opcodes::Register(0x05E7, GET_VEHICLE_POINTER);
@@ -2325,10 +2345,10 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AA2, OPCODE_0AA2);
 		opcodes::Register(0x0AA3, OPCODE_0AA3);
 		opcodes::Register(0x0AA4, OPCODE_0AA4);
-		opcodes::Register(0x0AA5, CALL);
+		opcodes::Register(0x0AA5, CALL_FUNCTION);
 		opcodes::Register(0x0AA6, CALL_METHOD);
-		opcodes::Register(0x0AA7, CALL_FUNCTION);
-		opcodes::Register(0x0AA8, CALL_FUNCTION_METHOD);
+		opcodes::Register(0x0AA7, CALL_FUNCTION_RETURN);
+		opcodes::Register(0x0AA8, CALL_METHOD_RETURN);
 		opcodes::Register(0x0AA9, IS_GAME_VERSION_ORIGINAL);
 		opcodes::Register(0x0AAA, GET_SCRIPT_STRUCT_NAMED);
 		opcodes::Register(0x0AAB, OPCODE_0AAB);
