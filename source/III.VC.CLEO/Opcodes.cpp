@@ -695,29 +695,36 @@ __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::CALL_POP_FLOAT(Script *script)
+eOpcodeResult
+__stdcall POP_FLOAT(Script* script)
 {
-	float *pParam = &game::ScriptParams[0].fVar;
-	__asm mov eax, pParam
-	__asm fstp [eax]
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		__asm mov eax, &game::ScriptParams[0].fVar
+		__asm fstp [eax]
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MATH_EXP(Script *script)
+eOpcodeResult
+__stdcall POW(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].fVar = powf(game::ScriptParams[0].fVar, game::ScriptParams[1].fVar);
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].fVar = std::powf(game::ScriptParams[0].fVar, game::ScriptParams[1].fVar);
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::MATH_LOG(Script *script)
+eOpcodeResult
+__stdcall LOG(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].fVar =  logf(game::ScriptParams[0].fVar) / logf(game::ScriptParams[1].fVar);
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].fVar = std::logf(game::ScriptParams[0].fVar) / std::logf(game::ScriptParams[1].fVar);
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -725,9 +732,9 @@ __stdcall CLEO_CALL(Script* script)
 {
 		script->CollectParameters(2);
 		int addr = game::ScriptParams[0].nVar;
-		int paramCount = game::ScriptParams[1].nVar;
+		int param_count = game::ScriptParams[1].nVar;
 
-		script->CollectParameters(paramCount);
+		script->CollectParameters(param_count);
 
 		/*
 			We didn't actually read all params this opcode provides just yet: after we read values that caller 
@@ -736,7 +743,7 @@ __stdcall CLEO_CALL(Script* script)
 		*/
 		script->PushStackFrame();
 
-		std::memcpy(&script->m_aLVars, &game::ScriptParams, paramCount * sizeof(ScriptParam));
+		std::memcpy(&script->m_aLVars, &game::ScriptParams, param_count * sizeof(ScriptParam));
 		script->JumpTo(addr);
 
 		return OR_CONTINUE;
@@ -746,16 +753,16 @@ eOpcodeResult
 __stdcall CLEO_RETURN(Script* script)
 {
 		script->CollectParameters(1);
-		int paramCount = game::ScriptParams[0].nVar;
+		int param_count = game::ScriptParams[0].nVar;
 
 		// collect callee's retvals
-		script->CollectParameters(paramCount);
+		script->CollectParameters(param_count);
 
 		// return to caller
 		script->PopStackFrame();
 
 		// continue reading indexes of caller's m_aLVars to store callee's retvals
-		script->StoreParameters(paramCount);
+		script->StoreParameters(param_count);
 
 		// variadic opcodes like 0AB1: CLEO_CALL end with PARAM_TYPE_END_OF_PARAMS; consume it.
 		script->m_nIp++;
@@ -2073,7 +2080,6 @@ __stdcall FIND_CLOSE(Script* script)
 		return OR_CONTINUE;
 }
 
-//0AE9=1,pop_float %1d% //dup
 //0AEA=2,%2d% = actor_struct %1d% handle //dup
 //0AEB=2,%2d% = car_struct %1d% handle //dup
 //0AEC=2,%2d% = object_struct %1d% handle //dup
@@ -2304,9 +2310,9 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x05EF, GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE);
 		opcodes::Register(0x05F0, GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE);
 		opcodes::Register(0x05F1, GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE);
-		opcodes::Register(0x05F2, CALL_POP_FLOAT);
-		opcodes::Register(0x05F3, MATH_EXP);
-		opcodes::Register(0x05F4, MATH_LOG);
+		opcodes::Register(0x05F2, POP_FLOAT);
+		opcodes::Register(0x05F3, POW);
+		opcodes::Register(0x05F4, LOG);
 		opcodes::Register(0x05F5, CLEO_CALL);
 		opcodes::Register(0x05F6, CLEO_RETURN);
 		opcodes::Register(0x05F7, GET_LABEL_POINTER);
@@ -2413,13 +2419,13 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AE6, FIND_FIRST_FILE);
 		opcodes::Register(0x0AE7, FIND_NEXT_FILE);
 		opcodes::Register(0x0AE8, FIND_CLOSE);
-		opcodes::Register(0x0AE9, CALL_POP_FLOAT);
+		opcodes::Register(0x0AE9, POP_FLOAT);
 		opcodes::Register(0x0AEA, GET_PED_REF);
 		opcodes::Register(0x0AEB, GET_VEHICLE_REF);
 		opcodes::Register(0x0AEC, GET_OBJECT_REF);
 		opcodes::Register(0x0AED, DUMMY);
-		opcodes::Register(0x0AEE, MATH_EXP);
-		opcodes::Register(0x0AEF, MATH_LOG);
+		opcodes::Register(0x0AEE, POW);
+		opcodes::Register(0x0AEF, LOG);
 
 		//CLEO 2 opcodes
 		opcodes::Register(0x0600, STREAM_CUSTOM_SCRIPT);
