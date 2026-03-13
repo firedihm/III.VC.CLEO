@@ -17,7 +17,7 @@ namespace fs = std::filesystem;
 
 constexpr int HELP_MSG_LENGTH = 256;
 
-ScriptParam SharedVars[0xFFFF];
+ScriptParam g_cleo_shared_vars[0xFFFF];
 
 int format(Script *script, char *str, size_t len, const char *format);
 
@@ -942,7 +942,7 @@ eOpcodeResult
 __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 {
 		bool gta3 = game::IsIII();
-		short miDodo = gta3 ? 126 : 190; // skimmer for VC
+		short mi_dodo = gta3 ? 126 : 190; // skimmer for VC
 		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
 		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
@@ -967,7 +967,7 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 				uchar* handling = reinterpret_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
 				uint flags = *(uint*)(handling + offset_Flags);
 
-				result = (mi == miDodo || flags & 0x40000) ? true : false;
+				result = (mi == mi_dodo || flags & 0x40000) ? true : false;
 		}
 
 		script->UpdateCompareFlag(result);
@@ -1140,15 +1140,15 @@ eOpcodeResult
 __stdcall GET_WEAPONTYPE_FOR_MODEL(Script* script)
 {
 		script->CollectParameters(1);
-		int weaponMI = game::ScriptParams[0].nVar;
+		int weapon_mi = game::ScriptParams[0].nVar;
 
-		if (weaponMI < 0) 
-				weaponMI = game::UsedObjectArray[-weaponMI].index;
+		if (weapon_mi < 0) 
+				weapon_mi = game::UsedObjectArray[-weapon_mi].index;
 
 		// CPickups::WeaponForModel() exits only in III, so we do this manually for VC compatability
 		int result = -1;
 		for (size_t i = 0; i < 37; ++i) {
-				if (weaponMI == game::ModelForWeapon(i))
+				if (weapon_mi == game::ModelForWeapon(i))
 						break;
 		}
 
@@ -1163,7 +1163,8 @@ __stdcall SET_MEMORY_OFFSET(Script* script)
 {
 		script->CollectParameters(3);
 
-		memory::Write(game::ScriptParams[0].pVar, game::ScriptParams[1].nVar - (game::ScriptParams[0].nVar + 4));
+		int value = game::ScriptParams[1].nVar - (game::ScriptParams[0].nVar + 4);
+		memory::Write(game::ScriptParams[0].pVar, &value, sizeof(value), game::ScriptParams[2].nVar);
 
 		return OR_CONTINUE;
 }
@@ -1518,7 +1519,7 @@ __stdcall SET_CLEO_SHARED_VAR(Script* script)
 {
 		script->CollectParameters(2);
 
-		SharedVars[game::ScriptParams[0].nVar].nVar = game::ScriptParams[1].nVar;
+		g_cleo_shared_vars[game::ScriptParams[0].nVar].nVar = game::ScriptParams[1].nVar;
 
 		return OR_CONTINUE;
 }
@@ -1528,7 +1529,7 @@ __stdcall GET_CLEO_SHARED_VAR(Script* script)
 {
 		script->CollectParameters(1);
 
-		game::ScriptParams[0].nVar = SharedVars[game::ScriptParams[0].nVar].nVar;
+		game::ScriptParams[0].nVar = g_cleo_shared_vars[game::ScriptParams[0].nVar].nVar;
 		script->StoreParameters(1);
 
 		return OR_CONTINUE;
@@ -1639,7 +1640,7 @@ __stdcall ALLOCATE_MEMORY(Script* script)
 		auto* mem = new(game::ScriptParams[0].nVar);
 		script->RegisterObject(mem);
 
-		script->UpdateCompareFlag(true);
+		script->UpdateCompareFlag(true); // will throw otherwise
 
 		game::ScriptParams[0].pVar = mem;
 		script->StoreParameters(1);
