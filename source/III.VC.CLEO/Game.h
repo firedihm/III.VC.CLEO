@@ -65,7 +65,7 @@ namespace game
 		extern void (__cdecl* AddMessageJumpQ)(wchar_t* key, uint time, ushort pos);
 
 		// Pools
-		extern CPool** ppPedPool;
+		extern CPool** ppPedPool; // actually a CPlayerPed pool
 		extern CPool** ppVehiclePool;
 		extern CPool** ppObjectPool;
 		extern uchar* Players; // CPlayerInfo[]; only PS2 III had 4 player slots, other versions have 1
