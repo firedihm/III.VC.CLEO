@@ -555,15 +555,10 @@ eOpcodeResult CustomOpcodes::IS_KEY_PRESSED(Script *script)
 eOpcodeResult
 __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 {
-#if CLEO_VC
-	static constexpr auto off6D8 = 0x6D8;
-	static constexpr auto off3D4 = 0x3D4;
-	static constexpr auto off244 = 0x244;
-#else
-	static constexpr auto off6D8 = 0x5F0;
-	static constexpr auto off3D4 = 0x32C;
-	static constexpr auto off244 = 0x224;
-#endif
+		bool gta3 = game::IsIII();
+		uint sizeof_CPlayerPed = gta3 ? 0x5F0 : 0x6D8;
+		uint offset_nPedType = gta3 ? 0x32C : 0x3D4; // CPed::m_nPedType
+		uint offset_nPedState = gta3 ? 0x224 : 0x244; // CPed::m_nPedState
 
 		script->CollectParameters(6);
 		float radius = game::ScriptParams[3].fVar;
@@ -574,17 +569,18 @@ __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		int obj_index = 0;
 
 		for (int i = search_index - 1; i >= 0; --i) {
-				uchar* obj = (uchar*)(*game::ppPedPool)->m_entries + i * off6D8;
+				uchar* obj = (uchar*)(*game::ppPedPool)->m_entries + i * sizeof_CPlayerPed;
 				search_index = i;
 
-				// POOLFLAG_ISFREE = 0x80
-				if (!((*game::ppPedPool)->m_flags[i] & 0x80) && *(uint*)(obj + off3D4)) {
-						if(!skip_dead || (*(uint*)(obj + off244) != 48 && *(uint*)(obj + off244) != 49)) {
-								float xd = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar;
-								float yd = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar;
-								float zd = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar;
-								float dist_sqr = xd * xd + yd * yd + zd * zd;
-								if (dist_sqr <= std::pow(radius, 2)) {
+				// !POOLFLAG_ISFREE && !PEDTYPE_PLAYER1
+				if (!((*game::ppPedPool)->m_flags[i] & 0x80) && *(uint*)(obj + offset_nPedType)) {
+						// !PED_DIE && !PED_DEAD 
+						if (!skip_dead || *(uint*)(obj + offset_nPedState) != 48 && *(uint*)(obj + offset_nPedState) != 49) {
+								float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // m_matrix.px
+								float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // m_matrix.py
+								float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // m_matrix.pz
+								float dist_sqr = px * px + py * py + pz * pz;
+								if (dist_sqr <= radius * radius) {
 										obj_index = game::PedPoolGetIndex(*game::ppPedPool, obj);
 										break;
 								}
@@ -605,15 +601,11 @@ __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 eOpcodeResult
 __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 {
-#if CLEO_VC
-	static constexpr auto off5DC = 0x5DC;
-	static constexpr auto off29C = 0x29C;
-	static constexpr auto off11A = 0x11A;
-#else
-	static constexpr auto off5DC = 0x5A8;
-	static constexpr auto off29C = 0x284;
-	static constexpr auto off11A = 0x122;
-#endif
+		bool gta3 = game::IsIII();
+		uint sizeof_CAutomobile = gta3 ? 0x5A8 : 0x5DC;
+		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
+		uint offset_flags = gta3 ? 0x122 : 0x11A; // CPhysical::flags
+		uint offset_status = 0x50; // CEntity::m_status
 
 		script->CollectParameters(6);
 		float radius = game::ScriptParams[3].fVar;
@@ -624,17 +616,18 @@ __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		int obj_index = 0;
 
 		for (int i = search_index - 1; i >= 0; --i) {
-				uchar* obj = (uchar*)(*game::ppVehiclePool)->m_entries + i * off5DC;
+				uchar* obj = (uchar*)(*game::ppVehiclePool)->m_entries + i * sizeof_CAutomobile;
 				search_index = i;
 
-				// POOLFLAG_ISFREE = 0x80
-				if(!((*game::ppVehiclePool)->m_flags[i] & 0x80)) {
-						if (!skip_wrecked || ((*(uchar*)(obj + 0x50) & 0xF8) != 40 && *(uint*)(obj + off29C) != 1 && !(*(uchar*)(obj + off11A) & 8))) {
-								float xd = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar;
-								float yd = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar;
-								float zd = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar;
-								float dist_sqr = xd * xd + yd * yd + zd * zd;
-								if (dist_sqr <= std::pow(radius, 2)) {
+				// !POOLFLAG_ISFREE
+				if (!((*game::ppVehiclePool)->m_flags[i] & 0x80)) {
+						// !STATUS_WRECKED && !VEHICLE_TYPE_BOAT && !bIsInWater
+						if (!skip_wrecked || (*(uchar*)(obj + offset_status) & 0xF8) != 40 && *(uint*)(obj + offset_vehType) != 1 && !(*(uchar*)(obj + offset_flags) & 8)) {
+								float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // m_matrix.px
+								float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // m_matrix.py
+								float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // m_matrix.pz
+								float dist_sqr = px * px + py * py + pz * pz;
+								if (dist_sqr <= radius * radius) {
 										obj_index = game::VehiclePoolGetIndex(*game::ppVehiclePool, obj);
 										break;
 								}
@@ -655,11 +648,8 @@ __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 eOpcodeResult
 __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 {
-#if CLEO_VC
-	static constexpr auto off1A0 = 0x1A0;
-#else
-	static constexpr auto off1A0 = 0x19C;
-#endif
+		bool gta3 = game::IsIII();
+		uint sizeof_CCutsceneObject = gta3 ? 0x19C : 0x1A0; // CCutsceneHead for III
 
 		script->CollectParameters(5);
 		float radius = game::ScriptParams[3].fVar;
@@ -668,17 +658,17 @@ __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		int search_index = find_next ? script->m_nLastObjectSearchIndex : (*game::ppObjectPool)->m_size;
 		int obj_index = 0;
 
-		for(int i = search_index - 1; i >= 0; --i) {
-				uchar* obj = (uchar*)(*game::ppObjectPool)->m_entries + i * off1A0;
+		for (int i = search_index - 1; i >= 0; --i) {
+				uchar* obj = (uchar*)(*game::ppObjectPool)->m_entries + i * sizeof_CCutsceneObject;
 				search_index = i;
 
-				// POOLFLAG_ISFREE = 0x80
+				// !POOLFLAG_ISFREE
 				if (!((*game::ppObjectPool)->m_flags[i] & 0x80)) {
-						float xd = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar;
-						float yd = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar;
-						float zd = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar;
-						float dist_sqr = xd * xd + yd * yd + zd * zd;
-						if (dist_sqr <= std::pow(radius, 2)) {
+						float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // m_matrix.px
+						float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // m_matrix.py
+						float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // m_matrix.pz
+						float dist_sqr = px * px + py * py + pz * pz;
+						if (dist_sqr <= radius * radius) {
 								obj_index = game::ObjectPoolGetIndex(*game::ppObjectPool, obj);
 								break;
 						}
@@ -943,16 +933,17 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 {
 		bool gta3 = game::IsIII();
 		short mi_dodo = gta3 ? 126 : 190; // skimmer for VC
-		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
+		uint offset_modelIndex = 0x5C; // CEntity::m_modelIndex
 		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
 		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
 
 		script->CollectParameters(1);
 
 		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = CPlayerInfoSize * game::ScriptParams[0].nVar); // game technically supports only 1 player...
+		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
 		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
 
 		/*
@@ -962,7 +953,7 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
 				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
-				short mi = *(short*)(vehicle + 0x5C); // CEntity::m_modelIndex; same offset for both games
+				short mi = *(short*)(vehicle + offset_modelIndex);
 
 				uchar* handling = reinterpret_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
 				uint flags = *(uint*)(handling + offset_Flags);
@@ -979,15 +970,15 @@ eOpcodeResult
 __stdcall IS_PLAYER_IN_ANY_BOAT(Script* script)
 {
 		bool gta3 = game::IsIII();
-		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
 
 		script->CollectParameters(1);
 
 		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = CPlayerInfoSize * game::ScriptParams[0].nVar); // game technically supports only 1 player...
+		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
 		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
 
 		bool result = false;
@@ -1005,16 +996,16 @@ eOpcodeResult
 __stdcall IS_PLAYER_IN_ANY_HELI(Script* script)
 {
 		bool gta3 = game::IsIII();
-		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
 		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
 
 		script->CollectParameters(1);
 
 		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = CPlayerInfoSize * game::ScriptParams[0].nVar); // game technically supports only 1 player...
+		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
 		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
 
 		/*
@@ -1040,15 +1031,15 @@ eOpcodeResult
 __stdcall IS_PLAYER_ON_ANY_BIKE(Script* script)
 {
 		bool gta3 = game::IsIII();
-		uint CPlayerInfoSize = gta3 ? 0x13C : 0x170;
+		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::pMyVehicle
+		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
 
 		script->CollectParameters(1);
 
 		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = CPlayerInfoSize * game::ScriptParams[0].nVar); // game technically supports only 1 player...
+		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
 		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
 
 		bool result = false;
