@@ -19,4 +19,6 @@ namespace memory
 
 		void* LoadLibrary(const char* name);
 		void FreeLibrary(const void* handle)
+
+		short GetKeyState(int virtual_key);
 }
