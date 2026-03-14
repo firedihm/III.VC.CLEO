@@ -18,7 +18,7 @@ namespace memory
 		void MakeJump(void* dest, void* addr) { Intercept(0xE9, dest, addr); }
 
 		void* LoadLibrary(const char* name);
-		void FreeLibrary(const void* handle)
+		void FreeLibrary(const void* handle);
 
 		short GetKeyState(int virtual_key);
 }
