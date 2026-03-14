@@ -373,183 +373,14 @@ __stdcall GET_SCRIPT_STRUCT_NAMED(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::IS_KEY_PRESSED(Script *script)
+eOpcodeResult
+__stdcall IS_KEY_PRESSED(Script* script)
 {
-	script->CollectParameters(1);
-#if CLEO_VC
-	switch (game::ScriptParams[0].nVar)
-	{
-	case OVK_F1:
-		game::ScriptParams[0].nVar = VK_F1;
-		break;
-	case OVK_F2:
-		game::ScriptParams[0].nVar = VK_F2;
-		break;
-	case OVK_F3:
-		game::ScriptParams[0].nVar = VK_F3;
-		break;
-	case OVK_F4:
-		game::ScriptParams[0].nVar = VK_F4;
-		break;
-	case OVK_F5:
-		game::ScriptParams[0].nVar = VK_F5;
-		break;
-	case OVK_F6:
-		game::ScriptParams[0].nVar = VK_F6;
-		break;
-	case OVK_F7:
-		game::ScriptParams[0].nVar = VK_F7;
-		break;
-	case OVK_F8:
-		game::ScriptParams[0].nVar = VK_F8;
-		break;
-	case OVK_F9:
-		game::ScriptParams[0].nVar = VK_F9;
-		break;
-	case OVK_F10:
-		game::ScriptParams[0].nVar = VK_F10;
-		break;
-	case OVK_F11:
-		game::ScriptParams[0].nVar = VK_F11;
-		break;
-	case OVK_F12:
-		game::ScriptParams[0].nVar = VK_F12;
-		break;
-	case OVK_INSERT:
-		game::ScriptParams[0].nVar = VK_INSERT;
-		break;
-	case OVK_DELETE:
-		game::ScriptParams[0].nVar = VK_DELETE;
-		break;
-	case OVK_HOME:
-		game::ScriptParams[0].nVar = VK_HOME;
-		break;
-	case OVK_END:
-		game::ScriptParams[0].nVar = VK_END;
-		break;
-	case OVK_PRIOR:
-		game::ScriptParams[0].nVar = VK_PRIOR;
-		break;
-	case OVK_NEXT:
-		game::ScriptParams[0].nVar = VK_NEXT;
-		break;
-	case OVK_UP:
-		game::ScriptParams[0].nVar = VK_UP;
-		break;
-	case OVK_DOWN:
-		game::ScriptParams[0].nVar = VK_DOWN;
-		break;
-	case OVK_LEFT:
-		game::ScriptParams[0].nVar = VK_LEFT;
-		break;
-	case OVK_RIGHT:
-		game::ScriptParams[0].nVar = VK_RIGHT;
-		break;
-	case OVK_DIVIDE:
-		game::ScriptParams[0].nVar = VK_DIVIDE;
-		break;
-	case OVK_MULTIPLY:
-		game::ScriptParams[0].nVar = VK_MULTIPLY;
-		break;
-	case OVK_ADD:
-		game::ScriptParams[0].nVar = VK_ADD;
-		break;
-	case OVK_SUBTRACT:
-		game::ScriptParams[0].nVar = VK_SUBTRACT;
-		break;
-	case OVK_DECIMAL:
-		game::ScriptParams[0].nVar = VK_DECIMAL;
-		break;
-	case OVK_NUMPAD1:
-		game::ScriptParams[0].nVar = VK_NUMPAD1;
-		break;
-	case OVK_NUMPAD2:
-		game::ScriptParams[0].nVar = VK_NUMPAD2;
-		break;
-	case OVK_NUMPAD3:
-		game::ScriptParams[0].nVar = VK_NUMPAD3;
-		break;
-	case OVK_NUMPAD4:
-		game::ScriptParams[0].nVar = VK_NUMPAD4;
-		break;
-	case OVK_NUMPAD5:
-		game::ScriptParams[0].nVar = VK_NUMPAD5;
-		break;
-	case OVK_NUMLOCK:
-		game::ScriptParams[0].nVar = VK_NUMLOCK;
-		break;
-	case OVK_NUMPAD6:
-		game::ScriptParams[0].nVar = VK_NUMPAD6;
-		break;
-	case OVK_NUMPAD7:
-		game::ScriptParams[0].nVar = VK_NUMPAD7;
-		break;
-	case OVK_NUMPAD8:
-		game::ScriptParams[0].nVar = VK_NUMPAD8;
-		break;
-	case OVK_NUMPAD9:
-		game::ScriptParams[0].nVar = VK_NUMPAD9;
-		break;
-	case OVK_NUMPAD0:
-		game::ScriptParams[0].nVar = VK_NUMPAD0;
-		break;
-	case OVK_SEPARATOR:
-		game::ScriptParams[0].nVar = VK_SEPARATOR;
-		break;
-	case OVK_SCROLL:
-		game::ScriptParams[0].nVar = VK_SCROLL;
-		break;
-	case OVK_PAUSE:
-		game::ScriptParams[0].nVar = VK_PAUSE;
-		break;
-	case OVK_BACK:
-		game::ScriptParams[0].nVar = VK_BACK;
-		break;
-	case OVK_TAB:
-		game::ScriptParams[0].nVar = VK_TAB;
-		break;
-	case OVK_CAPITAL:
-		game::ScriptParams[0].nVar = VK_CAPITAL;
-		break;
-	case OVK_RETURN:
-		game::ScriptParams[0].nVar = VK_RETURN;
-		break;
-	case OVK_LSHIFT:
-		game::ScriptParams[0].nVar = VK_LSHIFT;
-		break;
-	case OVK_RSHIFT:
-		game::ScriptParams[0].nVar = VK_RSHIFT;
-		break;
-	case OVK_ESC:
-		game::ScriptParams[0].nVar = VK_ESCAPE;
-		break;
-	case OVK_LCONTROL:
-		game::ScriptParams[0].nVar = VK_LCONTROL;
-		break;
-	case OVK_RCONTROL:
-		game::ScriptParams[0].nVar = VK_RCONTROL;
-		break;
-	case OVK_LMENU:
-		game::ScriptParams[0].nVar = VK_LMENU;
-		break;
-	case OVK_RMENU:
-		game::ScriptParams[0].nVar = VK_RMENU;
-		break;
-	case OVK_LWIN:
-		game::ScriptParams[0].nVar = VK_LWIN;
-		break;
-	case OVK_RWIN:
-		game::ScriptParams[0].nVar = VK_RWIN;
-		break;
-	case OVK_APPS:
-		game::ScriptParams[0].nVar = VK_APPS;
-		break;
-	default:
-		break;
-	}
-#endif
-	script->UpdateCompareFlag(GetKeyState(game::ScriptParams[0].nVar) & 0x8000);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		script->UpdateCompareFlag(memory::GetKeyState(game::ScriptParams[0].nVar) & 0x8000);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -792,60 +623,81 @@ __stdcall GET_VAR_POINTER(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_AND(Script *script)
+eOpcodeResult
+__stdcall BIT_AND(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].nVar = game::ScriptParams[0].nVar & game::ScriptParams[1].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].nVar = game::ScriptParams[0].nVar & game::ScriptParams[1].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_OR(Script *script)
+eOpcodeResult
+__stdcall BIT_OR(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].nVar = game::ScriptParams[0].nVar | game::ScriptParams[1].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].nVar = game::ScriptParams[0].nVar | game::ScriptParams[1].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_XOR(Script *script)
+eOpcodeResult
+__stdcall BIT_XOR(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].nVar = game::ScriptParams[0].nVar ^ game::ScriptParams[1].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].nVar = game::ScriptParams[0].nVar ^ game::ScriptParams[1].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_NOT(Script *script)
+eOpcodeResult
+__stdcall BIT_NOT(Script* script)
 {
-	script->CollectParameters(1);
-	game::ScriptParams[0].nVar = ~game::ScriptParams[0].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		game::ScriptParams[0].nVar = ~game::ScriptParams[0].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_MOD(Script *script)
+eOpcodeResult
+__stdcall BIT_MOD(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].nVar = game::ScriptParams[0].nVar % game::ScriptParams[1].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].nVar = game::ScriptParams[0].nVar % game::ScriptParams[1].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_SHR(Script *script)
+eOpcodeResult
+__stdcall BIT_SHR(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].nVar = game::ScriptParams[0].nVar >> game::ScriptParams[1].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].nVar = game::ScriptParams[0].nVar >> game::ScriptParams[1].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::BIT_SHL(Script *script)
+eOpcodeResult
+__stdcall BIT_SHL(Script* script)
 {
-	script->CollectParameters(2);
-	game::ScriptParams[0].nVar = game::ScriptParams[0].nVar << game::ScriptParams[1].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].nVar = game::ScriptParams[0].nVar << game::ScriptParams[1].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
 //0400=7,store_coords_to %5d% %6d% %7d% from_object %1d% with_offset %2d% %3d% %4d%
@@ -911,21 +763,36 @@ eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_ACTOR_WITH_OFFSET(Script *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::STORE_PLAYER_CURRENTLY_ARMED_WEAPON(Script *script)
+eOpcodeResult
+__stdcall GET_CURRENT_PLAYER_WEAPON(Script* script)
 {
-	script->CollectParameters(1);
-	game::ScriptParams[0].nVar = *(DWORD *)(game::Players[79 * game::ScriptParams[0].nVar] + 24 * *(BYTE *)(game::Players[79 * game::ScriptParams[0].nVar] + 1176) + 860);
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		bool gta3 = game::IsIII();
+		uint offset_currentWeapon = gta3 ? 0x498 : 0x504; // CPed::m_currentWeapon
+		uint offset_weapons = gta3 ? 0x35C : 0x408; // CPed::m_weapons[]
+		uint sizeof_CWeapon = 0x18;
+
+		script->CollectParameters(1);
+		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
+
+		uchar equipped_slot = *(uchar*)(player + offset_currentWeapon);
+		game::ScriptParams[0].nVar = *(int*)(player + offset_weapons + sizeof_CWeapon * equipped_slot);
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::GET_CHAR_ARMOUR(Script *script)
+eOpcodeResult
+__stdcall GET_CHAR_ARMOUR(Script* script)
 {
-	script->CollectParameters(1);
-	void* actor = game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar);
-	game::ScriptParams[0].nVar = static_cast<int>(*(float*)((uintptr_t)actor + 0x2C4));
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		uint offset_fArmour = game::IsIII() ? 0x2C4 : 0x358; // CPed::m_fArmour
+
+		script->CollectParameters(1);
+		uchar* ped = (uchar*)(game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar));
+
+		game::ScriptParams[0].nVar = static_cast<int>(*(float*)(ped + offset_fArmour));
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -933,7 +800,6 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 {
 		bool gta3 = game::IsIII();
 		short mi_dodo = gta3 ? 126 : 190; // skimmer for VC
-		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
 		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_modelIndex = 0x5C; // CEntity::m_modelIndex
@@ -941,10 +807,7 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
 
 		script->CollectParameters(1);
-
-		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
-		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
 
 		/*
 			Planes and helis have to be checked by handling flags, because game treats them as CAutomobile 
@@ -952,10 +815,10 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 		*/
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
 				short mi = *(short*)(vehicle + offset_modelIndex);
 
-				uchar* handling = reinterpret_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+				uchar* handling = static_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
 				uint flags = *(uint*)(handling + offset_Flags);
 
 				result = (mi == mi_dodo || flags & 0x40000) ? true : false;
@@ -970,20 +833,16 @@ eOpcodeResult
 __stdcall IS_PLAYER_IN_ANY_BOAT(Script* script)
 {
 		bool gta3 = game::IsIII();
-		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
 		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
 
 		script->CollectParameters(1);
-
-		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
-		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
 
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
 				result = *(int*)(vehicle + offset_vehType) == 1 ? true : false;
 		}
 
@@ -996,17 +855,13 @@ eOpcodeResult
 __stdcall IS_PLAYER_IN_ANY_HELI(Script* script)
 {
 		bool gta3 = game::IsIII();
-		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
 		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
 		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
 
 		script->CollectParameters(1);
-
-		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
-		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
 
 		/*
 			Planes and helis have to be checked by handling flags, because game treats them as CAutomobile 
@@ -1014,9 +869,9 @@ __stdcall IS_PLAYER_IN_ANY_HELI(Script* script)
 		*/
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
 
-				uchar* handling = reinterpret_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+				uchar* handling = static_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
 				uint flags = *(uint*)(handling + offset_Flags);
 
 				result = (flags & 0x20000) ? true : false;
@@ -1031,20 +886,16 @@ eOpcodeResult
 __stdcall IS_PLAYER_ON_ANY_BIKE(Script* script)
 {
 		bool gta3 = game::IsIII();
-		uint sizeof_CPlayerInfo = gta3 ? 0x13C : 0x170;
 		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
 		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
 
 		script->CollectParameters(1);
-
-		// get CPlayerInfo::m_pPed as uchar*
-		uint offset = sizeof_CPlayerInfo * game::ScriptParams[0].nVar); // game technically supports only 1 player...
-		uchar* player = reinterpret_cast<uchar*>(*(uint*)(game::Players + offset); // we use 2 casts here! read m_pPed as uint and cast it to uchar*
+		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
 
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = reinterpret_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
 				result = *(int*)(vehicle + offset_vehType) == 5 ? true : false;
 		}
 
@@ -2442,7 +2293,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x04C3, STORE_COORDS_FROM_CAR_WITH_OFFSET); //0407
 		opcodes::Register(0x04C4, STORE_COORDS_FROM_ACTOR_WITH_OFFSET);
 
-		opcodes::Register(0x046F, STORE_PLAYER_CURRENTLY_ARMED_WEAPON);
+		opcodes::Register(0x046F, GET_CURRENT_PLAYER_WEAPON);
 		opcodes::Register(0x04DD, GET_CHAR_ARMOUR);
 
 		opcodes::Register(0x04C9, IS_PLAYER_IN_FLYING_VEHICLE);
