@@ -65,3 +65,9 @@ memory::FreeLibrary(const void* handle)
 {
 		::FreeLibrary(handle);
 }
+
+short
+memory::GetKeyState(int virtual_key)
+{
+		return ::GetKeyState(virtual_key);
+}
