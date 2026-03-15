@@ -99,6 +99,7 @@ public:
 		__declspec(dllexport) ScriptParamType GetNextParamType();
 		__declspec(dllexport) void* GetPointerToScriptVariable();
 		__declspec(dllexport) void UpdateCompareFlag(bool result);
-		__declspec(dllexport) void ReadShortString(char* out);
 		__declspec(dllexport) void JumpTo(int address);
+		__declspec(dllexport) void ReadShortString(char* out);
+		__declspec(dllexport) void FormatString(char* out);
 };
