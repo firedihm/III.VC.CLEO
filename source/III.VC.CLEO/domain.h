@@ -1,5 +1,8 @@
 #pragma once
 
+constexpr int HELP_MSG_LENGTH = 256;
+constexpr int INTRO_TEXT_LENGTH = 500; // 100 in VC, 500 in III
+
 // Script parameters are compiled with byte prefix that denotes their data type...
 struct ScriptParamType
 {
@@ -87,7 +90,7 @@ struct intro_text_line
         int32 m_nFont;
         float m_fAtX;
         float m_fAtY;
-        wchar_t text[500]; // 100 in VC, 500 in III
+        wchar_t text[INTRO_TEXT_LENGTH];
 };
 
 // stores settings for script-based rectangle drawing, e.g. 038E: DRAW_RECT
