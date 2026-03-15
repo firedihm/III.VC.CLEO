@@ -117,7 +117,7 @@ Script::ProcessOneCommand()
 				// call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
 				eOpcodeResult result = opcodes::Definition(op)(this);
-				*game::pNumOpcodesExecuted += 1;
+				(*game::pNumOpcodesExecuted)++;
 				return result;
 		} else if (op >= opcodes::CUSTOM_START_ID) {
 				// if opcode isn't registered as custom, but has custom opcode's ID
@@ -127,15 +127,15 @@ Script::ProcessOneCommand()
 				// call default opcode
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
 				eOpcodeResult result = game::OpcodeHandlers[op / 100](this, op);
-				*game::pNumOpcodesExecuted += 1;
+				(*game::pNumOpcodesExecuted)++;
 				return result;
 		}
 }
 
 void
-Script::CollectParameters(uint* pIp, short numParams)
+Script::CollectParameters(uint* pIp, short num_params)
 {
-		for (short i = 0; i < numParams; i++) {
+		for (short i = 0; i < num_params; i++) {
 				ScriptParamType* paramType = (ScriptParamType*)&game::ScriptSpace[*pIp];
 				*pIp += 1;
 
@@ -173,8 +173,8 @@ Script::CollectParameters(uint* pIp, short numParams)
 				case PARAM_TYPE_STRING:
 						if (!paramType->processed) {
 								uchar length = game::ScriptSpace[*pIp];
-								std::memcpy(&game::ScriptSpace[*pIp + 1], &game::ScriptSpace[*pIp], length);
-								(game::ScriptSpace[*pIp] + length) = '\0';
+								std::memcpy(&game::ScriptSpace[*pIp], &game::ScriptSpace[*pIp + 1], length);
+								*(&game::ScriptSpace[*pIp] + length) = '\0';
 								paramType->processed = true;
 						}
 
@@ -215,8 +215,8 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 		case PARAM_TYPE_STRING:
 				if (!paramType->processed) {
 						uchar length = game::ScriptSpace[ip];
-						std::memcpy(&game::ScriptSpace[ip + 1], &game::ScriptSpace[ip], length);
-						(game::ScriptSpace[ip] + length) = '\0';
+						std::memcpy(&game::ScriptSpace[ip], &game::ScriptSpace[ip + 1], length);
+						*(&game::ScriptSpace[ip] + length) = '\0';
 						paramType->processed = true;
 				}
 
@@ -227,9 +227,9 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 }
 
 void
-Script::StoreParameters(short numParams)
+Script::StoreParameters(short num_params)
 {
-		game::StoreParameters(this, &m_nIp, numParams);
+		game::StoreParameters(this, &m_nIp, num_params);
 }
 
 ScriptParamType
