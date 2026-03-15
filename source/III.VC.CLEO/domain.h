@@ -2,7 +2,6 @@
 
 constexpr int HELP_MSG_LENGTH = 256;
 constexpr int INTRO_TEXT_LENGTH = 500; // 100 in VC, 500 in III
-constexpr int NUM_SCRIPT_PARAMS = 32;
 
 // Script parameters are compiled with byte prefix that denotes their data type...
 struct ScriptParamType
