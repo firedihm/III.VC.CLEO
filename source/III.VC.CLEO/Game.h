@@ -7,6 +7,7 @@ class Script;
 namespace game
 {
 		// these have to be 1 byte, as game has array range checks compiled with 1 byte params
+		constexpr uchar MAX_NUM_SCRIPT_PARAMS = 32; // 32 in both games
 		constexpr uchar MAX_NUM_SCRIPTS = 128; // 128 in both games; reallocation is needed because of increased Script size
 		constexpr uchar MAX_NUM_INTRO_TEXT_LINES = 48; // VC has 48, III has just 2
 		constexpr uchar MAX_NUM_INTRO_RECTANGLES  = 32; // 16 in both games
