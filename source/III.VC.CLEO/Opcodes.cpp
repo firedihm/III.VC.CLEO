@@ -9,13 +9,12 @@
 
 #include <cmath>
 #include <cstring>
+#include <cwchar>
 #include <filesystem>
 #include <fstream>
 #include <memory>
 
 namespace fs = std::filesystem;
-
-constexpr int HELP_MSG_LENGTH = 256;
 
 ScriptParam g_cleo_shared_vars[0xFFFF];
 
@@ -552,7 +551,7 @@ eOpcodeResult
 __stdcall CLEO_CALL(Script* script)
 {
 		script->CollectParameters(2);
-		int addr = game::ScriptParams[0].nVar;
+		int address = game::ScriptParams[0].nVar;
 		int param_count = game::ScriptParams[1].nVar;
 
 		script->CollectParameters(param_count);
@@ -565,7 +564,7 @@ __stdcall CLEO_CALL(Script* script)
 		script->PushStackFrame();
 
 		std::memcpy(&script->m_aLVars, &game::ScriptParams, param_count * sizeof(ScriptParam));
-		script->JumpTo(addr);
+		script->JumpTo(address);
 
 		return OR_CONTINUE;
 }
@@ -1020,33 +1019,39 @@ __stdcall GET_CURRENT_WEATHER(Script* script)
 		return OR_CONTINUE;
 }
 
-//0608=3, show_text_position %1d% %2d% text %3d%
-eOpcodeResult CustomOpcodes::SHOW_TEXT_POSITION(Script *script)
+eOpcodeResult
+__stdcall DISPLAY_TEXT_STRING(Script* script)
 {
-	script->CollectParameters(3);
-	game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = game::ScriptParams[0].fVar;
-	game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = game::ScriptParams[1].fVar;
-	const char *text = game::ScriptParams[2].szVar;
-	swprintf((wchar_t*)&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, 100, L"%hs", text);
-	*game::pNumberOfIntroTextLinesThisFrame = *game::pNumberOfIntroTextLinesThisFrame + 1;
-	return OR_CONTINUE;
-};
+		script->CollectParameters(3);
 
-//0609=-1, show_formatted_text_position %1d% %2d% text %3d%
-eOpcodeResult CustomOpcodes::SHOW_FORMATTED_TEXT_POSITION(Script *script)
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = game::ScriptParams[0].fVar;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = game::ScriptParams[1].fVar;
+		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", game::ScriptParams[2].szVar);
+		(*game::pNumberOfIntroTextLinesThisFrame)++;
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 {
-	script->CollectParameters(3);
-	game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = game::ScriptParams[0].fVar;
-	game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = game::ScriptParams[1].fVar;
-	char fmt[100]; char text[100]; static wchar_t message_buf[0x80];
-	strcpy(fmt, game::ScriptParams[2].szVar);
-	format(script, text, sizeof(text), fmt);
-	swprintf((wchar_t*)&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, 100, L"%hs", text);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	*game::pNumberOfIntroTextLinesThisFrame = *game::pNumberOfIntroTextLinesThisFrame + 1;
-	return OR_CONTINUE;
+		char fmt[500];
+
+		script->CollectParameters(3);
+
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = game::ScriptParams[0].fVar;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = game::ScriptParams[1].fVar;
+
+		char text[100]; static wchar_t message_buf[0x80];
+		strcpy(fmt, game::ScriptParams[2].szVar);
+		format(script, text, sizeof(text), fmt);
+		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", text);
+		while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
+			script->CollectParameters(1);
+		script->m_nIp++;
+		(*game::pNumberOfIntroTextLinesThisFrame)++;
+
+		return OR_CONTINUE;
 };
 
 //0673=4,play_animation on actor %1d% animgroup %2d% anim %3d% blendfactor %4f%
@@ -2279,8 +2284,8 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0605, GET_WEAPONTYPE_FOR_MODEL);
 		opcodes::Register(0x0606, SET_MEMORY_OFFSET);
 		opcodes::Register(0x0607, GET_CURRENT_WEATHER);
-		opcodes::Register(0x0608, SHOW_TEXT_POSITION);
-		opcodes::Register(0x0609, SHOW_FORMATTED_TEXT_POSITION);
+		opcodes::Register(0x0608, DISPLAY_TEXT_STRING);
+		opcodes::Register(0x0609, DISPLAY_TEXT_FORMATTED);
 		opcodes::Register(0x0673, PLAY_ANIMATION);
 
 #if CLEO_VC
