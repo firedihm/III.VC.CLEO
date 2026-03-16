@@ -3,8 +3,10 @@
 #include "Opcodes.h"
 #include "Script.h"
 
+#include <cctype>
 #include <cstring>
 #include <fstream>
+#include <cstdio>
 
 CRunningScript::CRunningScript() : m_pNext(nullptr), m_pPrev(nullptr), m_acName({'n', 'o', 'n', 'a', 'm', 'e', '\0'}),
 								   m_nIp(0), m_anGosubStack({0}), m_nGosubStackPointer(0), m_aLVars({0}), m_aTimers({0}),
@@ -262,4 +264,57 @@ Script::JumpTo(int address)
 				else
 						m_nIp = game::MainSize + (-address);
 		}
+}
+
+void
+Script::FormatString(char* out, const char* format)
+{
+		while (*format) {
+				if (*format != '%') {
+						*(out++) = *(format++);
+				} else {
+						// read conversion specification (flags + length modifiers + specifier) and resolve it
+						// https://en.cppreference.com/w/cpp/io/c/printf.html
+						char conv_spec[32];
+						int i = 0;
+
+						conv_spec[i++] = *(format++); // '%'
+
+						// flags
+						while (*format == '-' || *format == '+' || *format == ' ' || *format == '#' || *format == '0' ||
+							   *format == '*' || *format == '.' || std::isdigit(*format)) {
+								if (*format == '*') {
+										CollectParameters(1);
+										i += std::sprintf(&conv_spec[i], "%u", game::ScriptParams[0].nVar);
+										format++;
+								} else {
+										conv_spec[i++] = *(format++);
+								}
+						}
+
+						// length modifiers
+						while (*format == 'h' || *format == 'l' || *format == 'j' || *format == 'z' || *format == 't' || *format == 'L')
+								conv_spec[i++] = *(format++);
+
+						// conversion specifier
+						while (*format == '%' || *format == 'c' || *format == 's' ||
+							   *format == 'd' || *format == 'i' ||
+							   *format == 'o' || *format == 'x' || *format == 'X' || *format == 'u' ||
+							   *format == 'f' || *format == 'F' || *format == 'e' || *format == 'E' ||
+							   *format == 'a' || *format == 'A' || *format == 'g' || *format == 'G' ||
+							   *format == 'n' || *format == 'p') {
+								conv_spec[i++] = *(format++);
+						}
+
+						conv_spec[i] = '\0';
+
+						// "%%" needs no argument: it formats to '%'
+						if (!(conv_spec[0] == '%' && conv_spec[1] == '%'))
+								CollectParameters(1);
+
+						out += std::sprintf(out, &conv_spec, game::ScriptParams[0].nVar); // pass argument as binary; junk value if "%%"
+				}
+		}
+
+		*out = '\0';
 }
