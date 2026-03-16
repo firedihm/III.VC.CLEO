@@ -251,13 +251,6 @@ Script::UpdateCompareFlag(bool result)
 }
 
 void
-Script::ReadTextLabel(char* out)
-{
-		std::strncpy(out, &game::ScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
-		m_nIp += KEY_LENGTH_IN_SCRIPT;
-}
-
-void
 Script::JumpTo(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
