@@ -14,5 +14,5 @@ namespace script_mgr
 		void EnableScripts();
 		void DisableScripts();
 
-		Script* FindScriptNamed(char* name, bool search_generic = false);
+		Script* FindScriptNamed(const char* name, bool search_generic = false);
 };
