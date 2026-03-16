@@ -70,7 +70,7 @@ script_mgr::DisableScripts()
 }
 
 Script*
-script_mgr::FindScriptNamed(char* name, bool search_generic)
+script_mgr::FindScriptNamed(const char* name, bool search_generic)
 {
 		for (Script& script : g_custom_scripts) {
 				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
