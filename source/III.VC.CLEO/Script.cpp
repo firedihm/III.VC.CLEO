@@ -251,7 +251,7 @@ Script::UpdateCompareFlag(bool result)
 }
 
 void
-Script::ReadShortString(char* out)
+Script::ReadTextLabel(char* out)
 {
 		std::strncpy(out, &game::ScriptSpace[m_nIp], KEY_LENGTH_IN_SCRIPT);
 		m_nIp += KEY_LENGTH_IN_SCRIPT;
