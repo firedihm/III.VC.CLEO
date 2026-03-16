@@ -18,8 +18,6 @@ namespace fs = std::filesystem;
 
 ScriptParam g_cleo_shared_vars[0xFFFF];
 
-int format(Script *script, char *str, size_t len, const char *format);
-
 /*
 // Exports
 CLEOAPI unsigned CLEO_GetVersion() { return CLEO_VERSION; }
@@ -110,11 +108,10 @@ __stdcall TERMINATE_THIS_CUSTOM_SCRIPT(Script* script)
 eOpcodeResult
 __stdcall TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME(Script* script)
 {
-		char name[KEY_LENGTH_IN_SCRIPT];
-		script->ReadShortString(&name);
+		script->CollectParameters(1);
 
 		bool terminate_self = false;
-		while (Script* found = script_mgr::FindScriptNamed(&name)) {
+		while (Script* found = script_mgr::FindScriptNamed(game::ScriptParams[0].szVar)) {
 				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME: Terminating custom script \"%s\"", &found->m_acName);
 				script_mgr::TerminateScript(found);
 
@@ -127,10 +124,9 @@ __stdcall TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME(Script* script)
 eOpcodeResult
 __stdcall START_CUSTOM_SCRIPT(Script* script)
 {
-		char filename[KEY_LENGTH_IN_SCRIPT];
-		script->ReadShortString(&filename);
+		script->CollectParameters(1);
 
-		fs::path filepath = fs::path(game::RootDirName) / "CLEO" / &filename;
+		fs::path filepath = fs::path(game::RootDirName) / "CLEO" / game::ScriptParams[0].szVar;
 
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
 		Script* new_script = script_mgr::StartScript(filepath.c_str());
@@ -363,10 +359,9 @@ __stdcall GET_THIS_SCRIPT_STRUCT(Script* script)
 eOpcodeResult
 __stdcall GET_SCRIPT_STRUCT_NAMED(Script* script)
 {
-		char name[KEY_LENGTH_IN_SCRIPT];
-		script->ReadShortString(&name);
+		script->CollectParameters(1);
 
-		game::ScriptParams[0].pVar = script_mgr::FindScriptNamed(&name, true);
+		game::ScriptParams[0].pVar = script_mgr::FindScriptNamed(game::ScriptParams[0].szVar, true);
 		script->StoreParameters(1);
 
 		return OR_CONTINUE;
@@ -1035,21 +1030,22 @@ __stdcall DISPLAY_TEXT_STRING(Script* script)
 eOpcodeResult
 __stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 {
-		char fmt[500];
-
 		script->CollectParameters(3);
+		float x = game::ScriptParams[0].fVar;
+		float y = game::ScriptParams[1].fVar;
 
-		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = game::ScriptParams[0].fVar;
-		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = game::ScriptParams[1].fVar;
+		char fmt[INTRO_TEXT_LENGTH];
+		script->FormatString(&fmt, game::ScriptParams[2].szVar);
 
-		char text[100]; static wchar_t message_buf[0x80];
-		strcpy(fmt, game::ScriptParams[2].szVar);
-		format(script, text, sizeof(text), fmt);
-		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", text);
-		while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-			script->CollectParameters(1);
-		script->m_nIp++;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = x;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = y;
+		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", &fmt);
 		(*game::pNumberOfIntroTextLinesThisFrame)++;
+
+		// skip redundant params
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
 
 		return OR_CONTINUE;
 };
@@ -1493,7 +1489,7 @@ __stdcall ALLOCATE_MEMORY(Script* script)
 		script->StoreParameters(1);
 
 		return OR_CONTINUE;
-};
+}
 
 eOpcodeResult
 __stdcall FREE_MEMORY(Script* script)
@@ -1503,122 +1499,147 @@ __stdcall FREE_MEMORY(Script* script)
 		script->DeleteRegisteredObject(game::ScriptParams[0].pVar);
 
 		return OR_CONTINUE;
-};
+}
 
-//0ACA=1,show_text_box %1s%
-eOpcodeResult CustomOpcodes::OPCODE_0ACA(Script *script)
+eOpcodeResult
+__stdcall PRINT_HELP_STRING(Script* script)
 {
-	static wchar_t message_buf[HELP_MSG_LENGTH];
-	script->CollectParameters(1);
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", game::ScriptParams[0].szVar);
-	game::SetHelpMessage(message_buf, false, false);
-	return OR_CONTINUE;
-};
-
-//0ACB=3,show_styled_text %1s% time %2d% style %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACB(Script *script)
-{
-	static wchar_t message_buf[HELP_MSG_LENGTH];
-	script->CollectParameters(3);
-	const char *text = game::ScriptParams[0].szVar;
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::AddBigMessageQ(message_buf, game::ScriptParams[1].nVar, game::ScriptParams[2].nVar - 1);
-	return OR_CONTINUE;
-};
-
-//0ACC=2,show_text_lowpriority %1s% time %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACC(Script *script)
-{
-	static wchar_t message_buf[HELP_MSG_LENGTH];
-	script->CollectParameters(2);
-	const char *text = game::ScriptParams[0].szVar;
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::AddMessage(message_buf, game::ScriptParams[1].nVar, false, false);
-	return OR_CONTINUE;
-};
-
-//0ACD=2,show_text_highpriority %1s% time %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACD(Script *script)
-{
-	static wchar_t message_buf[HELP_MSG_LENGTH];
-	script->CollectParameters(2);
-	const char *text = game::ScriptParams[0].szVar;
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::AddMessageJumpQ(message_buf, game::ScriptParams[1].nVar, false, false);
-	return OR_CONTINUE;
-};
-
-//0ACE=-1,show_formatted_text_box %1s%
-eOpcodeResult CustomOpcodes::OPCODE_0ACE(Script *script)
-{
-	static wchar_t message_buf[HELP_MSG_LENGTH];
-	script->CollectParameters(1);
-	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH];
-	strcpy(fmt, game::ScriptParams[0].szVar);
-	format(script, text, sizeof(text), fmt);
-
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::SetHelpMessage(message_buf, false, false);
-
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
 		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
-};
 
-//0ACF=-1,show_formatted_styled_text %1s% time %2d% style %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0ACF(Script *script)
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", game::ScriptParams[0].szVar);
+
+		game::SetHelpMessage(&wfmt, false, false);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_BIG_STRING(Script* script)
 {
-	script->CollectParameters(3);
-	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
-	unsigned time, style;
-	strcpy(fmt, game::ScriptParams[0].szVar);
-	time = game::ScriptParams[1].nVar;
-	style = game::ScriptParams[2].nVar;
-	format(script, text, sizeof(text), fmt);
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::AddBigMessageQ(message_buf, time, style - 1);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
-};
+		script->CollectParameters(3);
 
-//0AD0=-1,show_formatted_text_lowpriority %1s% time %2s%
-eOpcodeResult CustomOpcodes::OPCODE_0AD0(Script *script)
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", game::ScriptParams[0].szVar);
+
+		game::AddBigMessageQ(&wfmt, game::ScriptParams[1].nVar, game::ScriptParams[2].nVar - 1);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_STRING(Script* script)
 {
-	script->CollectParameters(2);
-	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
-	unsigned time;
-	strcpy(fmt, game::ScriptParams[0].szVar);
-	time = game::ScriptParams[1].nVar;
-	format(script, text, sizeof(text), fmt);
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::AddMessage(message_buf, time, false, false);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
-};
+		script->CollectParameters(2);
 
-//0AD1=-1,show_formatted_text_highpriority %1s% time %2s%
-eOpcodeResult CustomOpcodes::OPCODE_0AD1(Script *script)
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", game::ScriptParams[0].szVar);
+
+		game::AddMessage(&wfmt, game::ScriptParams[1].nVar, 0);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_STRING_NOW(Script* script)
 {
-	script->CollectParameters(2);
-	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH]; static wchar_t message_buf[HELP_MSG_LENGTH];
-	unsigned time;
-	strcpy(fmt, game::ScriptParams[0].szVar);
-	time = game::ScriptParams[1].nVar;
-	format(script, text, sizeof(text), fmt);
-	swprintf(message_buf, HELP_MSG_LENGTH, L"%hs", text);
-	game::AddMessageJumpQ(message_buf, time, false, false);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
-		script->CollectParameters(1);
-	script->m_nIp++;
-	return OR_CONTINUE;
-};
+		script->CollectParameters(2);
 
-//0AD2=2,%2d% = player %1d% targeted_actor //IF and SET
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", game::ScriptParams[0].szVar);
+
+		game::AddMessageJumpQ(&wfmt, game::ScriptParams[1].nVar, 0);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_HELP_FORMATTED(Script* script)
+{
+		script->CollectParameters(1);
+
+		char fmt[HELP_MSG_LENGTH];
+		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
+
+		game::SetHelpMessage(&wfmt, false, false);
+
+		// skip redundant params
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_BIG_FORMATTED(Script* script)
+{
+		script->CollectParameters(3);
+		int time = game::ScriptParams[1].nVar;
+		int style = game::ScriptParams[2].nVar;
+
+		char fmt[HELP_MSG_LENGTH];
+		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
+
+		game::AddBigMessageQ(&wfmt, time, style - 1);
+
+		// skip redundant params
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_FORMATTED(Script* script)
+{
+		script->CollectParameters(2);
+		int time = game::ScriptParams[1].nVar;
+
+		char fmt[HELP_MSG_LENGTH];
+		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
+
+		game::AddMessage(&wfmt, time, 0);
+
+		// skip redundant params
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall PRINT_FORMATTED_NOW(Script* script)
+{
+		script->CollectParameters(2);
+		int time = game::ScriptParams[1].nVar;
+
+		char fmt[HELP_MSG_LENGTH];
+		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+
+		wchar_t wfmt[HELP_MSG_LENGTH];
+		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
+
+		game::AddMessageJumpQ(&wfmt, time, 0);
+
+		// skip redundant params
+		while (script->GetNextParamType())
+				script->CollectParameters(1);
+		script->m_nIp++;
+
+		return OR_CONTINUE;
+}
 
 //0AD3=-1,string %1d% format %2d%
 eOpcodeResult CustomOpcodes::OPCODE_0AD3(Script *script)
@@ -1983,152 +2004,6 @@ __stdcall GET_PLATFORM(Script* script)
 		return OR_CONTINUE;
 }
 
-// perform 'sprintf'-operation for parameters, passed through SCM
-int format(Script *script, char *str, size_t len, const char *format)
-{
-	unsigned int written = 0;
-	const char *iter = format;
-	char bufa[256], fmtbufa[64], *fmta;
-
-	while (*iter)
-	{
-		while (*iter && *iter != '%')
-		{
-			if (written++ >= len)
-				return -1;
-			*str++ = *iter++;
-		}
-		if (*iter == '%')
-		{
-			if (iter[1] == '%')
-			{
-				if (written++ >= len)
-					return -1;
-				*str++ = '%'; /* "%%"->'%' */
-				iter += 2;
-				continue;
-			}
-
-			//get flags and width specifier
-			fmta = fmtbufa;
-			*fmta++ = *iter++;
-			while (*iter == '0' ||
-				*iter == '+' ||
-				*iter == '-' ||
-				*iter == ' ' ||
-				*iter == '*' ||
-				*iter == '#')
-			{
-				if (*iter == '*')
-				{
-					char *buffiter = bufa;
-					//get width
-					script->CollectParameters(1);
-					_itoa(game::ScriptParams[0].nVar, buffiter, 10);
-					while (*buffiter)
-						*fmta++ = *buffiter++;
-				}
-				else
-					*fmta++ = *iter;
-				iter++;
-			}
-
-			//get immidiate width value
-			while (isdigit(*iter))
-				*fmta++ = *iter++;
-
-			//get precision
-			if (*iter == '.')
-			{
-				*fmta++ = *iter++;
-				if (*iter == '*')
-				{
-					char *buffiter = bufa;
-					script->CollectParameters(1);
-					_itoa(game::ScriptParams[0].nVar, buffiter, 10);
-					while (*buffiter)
-						*fmta++ = *buffiter++;
-				}
-				else
-					while (isdigit(*iter))
-						*fmta++ = *iter++;
-			}
-			//get size
-			if (*iter == 'h' || *iter == 'l')
-				*fmta++ = *iter++;
-
-			switch (*iter)
-			{
-			case 's':
-			{
-				script->CollectParameters(1);
-				static const char none[] = "(null)";
-				const char *astr = game::ScriptParams[0].szVar;
-				const char *striter = astr ? astr : none;
-				while (*striter)
-				{
-					if (written++ >= len)
-						return -1;
-					*str++ = *striter++;
-				}
-				iter++;
-				break;
-			}
-
-			case 'c':
-				if (written++ >= len)
-					return -1;
-				script->CollectParameters(1);
-				*str++ = (char)game::ScriptParams[0].nVar;
-				iter++;
-				break;
-
-			default:
-			{
-				/* For non wc types, use system sprintf and append to wide char output */
-				/* FIXME: for unrecognised types, should ignore % when printing */
-				char *bufaiter = bufa;
-				if (*iter == 'p' || *iter == 'P')
-				{
-					script->CollectParameters(1);
-					sprintf(bufaiter, "%08X", game::ScriptParams[0].nVar);
-				}
-				else
-				{
-					*fmta++ = *iter;
-					*fmta = '\0';
-					if (*iter == 'a' || *iter == 'A' ||
-						*iter == 'e' || *iter == 'E' ||
-						*iter == 'f' || *iter == 'F' ||
-						*iter == 'g' || *iter == 'G')
-					{
-						script->CollectParameters(1);
-						sprintf(bufaiter, fmtbufa, game::ScriptParams[0].fVar);
-					}
-					else
-					{
-						script->CollectParameters(1);
-						sprintf(bufaiter, fmtbufa, game::ScriptParams[0].pVar);
-					}
-				}
-				while (*bufaiter)
-				{
-					if (written++ >= len)
-						return -1;
-					*str++ = *bufaiter++;
-				}
-				iter++;
-				break;
-			}
-			}
-		}
-	}
-	if (written >= len)
-		return -1;
-	*str++ = 0;
-	return (int)written;
-}
-
 opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		std::memset(&g_opcode_defs, 0, sizeof(g_opcode_defs));
 
@@ -2236,14 +2111,14 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AC7, GET_VAR_POINTER);
 		opcodes::Register(0x0AC8, ALLOCATE_MEMORY);
 		opcodes::Register(0x0AC9, FREE_MEMORY);
-		opcodes::Register(0x0ACA, OPCODE_0ACA);
-		opcodes::Register(0x0ACB, OPCODE_0ACB);
-		opcodes::Register(0x0ACC, OPCODE_0ACC);
-		opcodes::Register(0x0ACD, OPCODE_0ACD);
-		opcodes::Register(0x0ACE, OPCODE_0ACE);
-		opcodes::Register(0x0ACF, OPCODE_0ACF);
-		opcodes::Register(0x0AD0, OPCODE_0AD0);
-		opcodes::Register(0x0AD1, OPCODE_0AD1);
+		opcodes::Register(0x0ACA, PRINT_HELP_STRING);
+		opcodes::Register(0x0ACB, PRINT_BIG_STRING);
+		opcodes::Register(0x0ACC, PRINT_STRING);
+		opcodes::Register(0x0ACD, PRINT_STRING_NOW);
+		opcodes::Register(0x0ACE, PRINT_HELP_FORMATTED);
+		opcodes::Register(0x0ACF, PRINT_BIG_FORMATTED);
+		opcodes::Register(0x0AD0, PRINT_FORMATTED);
+		opcodes::Register(0x0AD1, PRINT_FORMATTED_NOW);
 		opcodes::Register(0x0AD2, DUMMY);
 		opcodes::Register(0x0AD3, OPCODE_0AD3);
 		opcodes::Register(0x0AD4, OPCODE_0AD4);
