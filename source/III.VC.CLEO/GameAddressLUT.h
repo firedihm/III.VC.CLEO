@@ -205,7 +205,7 @@ namespace game
                 {0x602240, 0x602220, 0x601E60, /*    */ 0x580BB0, 0x580F00, 0x580E00}, // GetUserFilesFolder
                 {0x4418B0, 0x4418B0, 0x441820, /*    */ 0x430690, 0x430690, 0x430690}, // ModelForWeapon
                 {0x4AE8F0, 0x4AE7D0, 0x4AE7C0, /*    */ 0x490EE0, 0x490FA0, 0x490F30}, // SpawnCar
-                {nullptr,  nullptr,  nullptr,  /*    */ 0x5A37D0, 0x5A3A90, 0x5A4570}, // RwV3dTransformPoints
+                {0x647160, nullptr,  nullptr,  /*    */ 0x5A37D0, 0x5A3A90, 0x5A4570}, // RwV3dTransformPoints
                 {0x405640, 0x405640, 0x405640, /*    */ 0x403710, 0x403710, 0x403710}, // BlendAnimation
 
                 // memory expansion
