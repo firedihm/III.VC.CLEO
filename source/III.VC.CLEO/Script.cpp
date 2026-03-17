@@ -8,42 +8,60 @@
 #include <fstream>
 #include <cstdio>
 
-CRunningScript::CRunningScript() : m_pNext(nullptr), m_pPrev(nullptr), m_acName({'n', 'o', 'n', 'a', 'm', 'e', '\0'}),
-								   m_nIp(0), m_anGosubStack({0}), m_nGosubStackPointer(0), m_aLVars({0}), m_aTimers({0}),
-								   m_bCondResultIII(false), m_bIsMissionScriptIII(false), m_bSkipWakeTimeIII(false), m_nWakeTime(0),
-								   m_nAndOrState(0), m_bNotFlag(false), m_bDeatharrestEnabled(true), m_bDeatharrestExecuted(false), m_bMissionFlag(false) {}
+CRunningScript::CRunningScript() : next_(nullptr), prev_(nullptr), name_({'n', 'o', 'n', 'a', 'm', 'e', '\0'}),
+								   ip_(0), gosub_stack_({0}), gosub_stack_pointer_(0), local_vars_({0}), local_timers_({0}),
+								   cond_result_III_(false), is_mission_script_III_(false), skip_wake_time_III_(false), wake_time_(0),
+								   and_or_state_(0), not_flag_(false), deatharrest_enabled_(true), deatharrest_executed_(false), mission_flag_(false) {}
 
-CCustomScript::CCustomScript() : m_pCodeData(nullptr), m_bIsCustom(true), m_bIsPersistent(false), m_nLastPedSearchIndex(0), m_nLastVehicleSearchIndex(0), m_nLastObjectSearchIndex(0),
+bool
+CRunningScript::cond_result()
+{
+		return game::IsIII() ? cond_result_III_ : cond_result_VC_;
+}
+
+bool
+CRunningScript::is_mission_script()
+{
+		return game::IsIII() ? is_mission_script_III_ : is_mission_script_VC_;
+}
+
+bool
+CRunningScript::skip_wake_time()
+{
+		return game::IsIII() ? skip_wake_time_III_ : skip_wake_time_VC_;
+}
+
+CCustomScript::CCustomScript() : code_data_(nullptr), is_custom_(true), is_persistent_(false), last_ped_search_index_(0), last_vehicle_search_index_(0), last_object_search_index_(0),
 								 cleo_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr) {}
 
 CCustomScript::~CCustomScript()
 {
 		while (register_)
-				DeleteRegisteredObject(register_->obj);
+				delete_registered_object(register_->obj);
 
 		while (call_stack_)
-				PopStackFrame();
+				pop_stack_frame();
 
 		delete[] cleo_array_;
-		delete[] m_pCodeData;
+		delete[] code_data_;
 }
 
 void
-CCustomScript::PushStackFrame()
+CCustomScript::push_stack_frame()
 {
 		StackFrame* frame = new StackFrame();
 		frame->next = call_stack_;
 		call_stack_ = frame;
 
-		frame->ret_addr = m_nIp;
-		std::memcpy(&frame->vars, &m_aLVars, sizeof(frame->vars));
+		frame->ret_addr = ip_;
+		std::memcpy(&frame->vars, &local_vars_, sizeof(frame->vars));
 }
 
 void
-CCustomScript::PopStackFrame()
+CCustomScript::pop_stack_frame()
 {
-		m_nIp = call_stack_->ret_addr;
-		std::memcpy(&m_aLVars, &call_stack_->vars, sizeof(m_aLVars));
+		ip_ = call_stack_->ret_addr;
+		std::memcpy(&local_vars_, &call_stack_->vars, sizeof(local_vars_));
 
 		StackFrame* head_next = call_stack_->next;
 		delete call_stack_;
@@ -51,26 +69,27 @@ CCustomScript::PopStackFrame()
 }
 
 void
-CCustomScript::DeleteRegisteredObject(void* obj)
+CCustomScript::delete_registered_object(void* obj)
 {
 		RegData* target = register_;
 		RegData* pentarget = nullptr;
 
-		while (target && target->obj != obj) {
-				pentarget = target;
-				target = target->next;
-		}
+		while (target) {
+				if (target->obj == obj) {
+						if (pentarget)
+								pentarget->next = target->next;
+						else
+								register_ = target->next;
 
-		if (target) {
-				if (pentarget)
-						pentarget->next = target->next;
-				else
-						register_ = target->next;
+						target->destruct(target->obj); // call dtor
+						delete target->obj; // release memory
 
-				target->destruct(target->obj); // call dtor
-				delete target->obj; // release memory
-
-				delete target;
+						delete target;
+						return;
+				} else {
+						pentarget = target;
+						target = target->next;
+				}
 		}
 }
 
@@ -83,51 +102,51 @@ Script::Script(const char* filepath)
 				throw "File is empty or corrupt";
 
 		/*
-			We have to remember that game will always add ScriptSpace to m_nIp when processing scripts, because 
+			We have to remember that game will always add ScriptSpace to ip_ when processing scripts, because 
 			the latter is an offset. Since custom scripts store code data on heap, and game can't account for this, 
-			we'll have to initialise m_nIp to a difference of heap address and ScriptSpace, so it will even out 
+			we'll have to initialise ip_ to a difference of heap address and ScriptSpace, so it will even out 
 			when game will be processing this script.
 		*/
-		m_pCodeData = new uchar[filesize];
-		m_nIp = (uint)(m_pCodeData - game::ScriptSpace);
+		code_data_ = new uchar[filesize];
+		ip_ = (uint)(code_data_ - game::ScriptSpace);
 		file->clear();
-		file.seekg(0, std::ios::beg).read(m_pCodeData, filesize);
+		file.seekg(0, std::ios::beg).read(code_data_, filesize);
 
 		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
-				m_bIsPersistent = true;
+				is_persistent_ = true;
 }
 
 void
 Script::Init()
 {
 		std::memset(this, 0, sizeof(Script));
-		std::strncpy(&m_acName, "noname", KEY_LENGTH_IN_SCRIPT);
-		m_bDeatharrestEnabled = true;
+		std::strncpy(&name_, "noname", KEY_LENGTH_IN_SCRIPT);
+		deatharrest_enabled_ = true;
 		cleo_array_ = new ScriptParam[CLEO_ARRAY_SIZE];
 }
 
 eOpcodeResult
 Script::ProcessOneCommand()
 {
-		// highest bit of opcode denotes notFlag: reversing conditional result
-		ushort op = *(ushort*)&game::ScriptSpace[m_nIp];
-		m_bNotFlag = (op & 0x8000) ? true : false;
+		// highest bit of opcode denotes not_flag_: reversing conditional result
+		ushort op = *(ushort*)&game::ScriptSpace[ip_];
+		not_flag_ = (op & 0x8000) ? true : false;
 		op &= 0x7FFF;
-		m_nIp += 2;
+		ip_ += 2;
 
 		if (opcodes::Definition(op)) {
 				// call opcode registered as custom
-				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &m_acName, op);
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &name_, op);
 				eOpcodeResult result = opcodes::Definition(op)(this);
 				(*game::pNumOpcodesExecuted)++;
 				return result;
 		} else if (op >= opcodes::CUSTOM_START_ID) {
 				// if opcode isn't registered as custom, but has custom opcode's ID
-				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", &m_acName, op);
+				LOGL(LOG_PRIORITY_ALWAYS, "Error (incorrect opcode): %s, %04X", &name_, op);
 				return OR_UNDEFINED;
 		} else {
 				// call default opcode
-				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &m_acName, op);
+				LOGL(LOG_PRIORITY_OPCODE_ID, "%s opcode %04X", &name_, op);
 				eOpcodeResult result = game::OpcodeHandlers[op / 100](this, op);
 				(*game::pNumOpcodesExecuted)++;
 				return result;
@@ -135,58 +154,58 @@ Script::ProcessOneCommand()
 }
 
 void
-Script::CollectParameters(uint* pIp, short num_params)
+Script::CollectParameters(uint* p_ip, short num_params)
 {
 		for (short i = 0; i < num_params; i++) {
-				ScriptParamType* paramType = (ScriptParamType*)&game::ScriptSpace[*pIp];
-				*pIp += 1;
+				ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[*p_ip];
+				*p_ip += 1;
 
-				switch (paramType->type) {
+				switch (param_type->type) {
 				case PARAM_TYPE_INT32:
-						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*pIp];
-						*pIp += 4;
+						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*p_ip];
+						*p_ip += 4;
 						break;
 				case PARAM_TYPE_GVAR:
-						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[*pIp]];
-						*pIp += 2;
+						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[*p_ip]];
+						*p_ip += 2;
 						break;
 				case PARAM_TYPE_LVAR:
-						game::ScriptParams[i].nVar = m_aLVars[*(ushort*)&game::ScriptSpace[*pIp]].nVar;
-						*pIp += 2;
+						game::ScriptParams[i].nVar = local_vars_[*(ushort*)&game::ScriptSpace[*p_ip]].nVar;
+						*p_ip += 2;
 						break;
 				case PARAM_TYPE_INT8:
-						game::ScriptParams[i].nVar = *(char*)&game::ScriptSpace[*pIp];
-						*pIp += 1;
+						game::ScriptParams[i].nVar = *(char*)&game::ScriptSpace[*p_ip];
+						*p_ip += 1;
 						break;
 				case PARAM_TYPE_INT16:
-						game::ScriptParams[i].nVar = *(short*)&game::ScriptSpace[*pIp];
-						*pIp += 2;
+						game::ScriptParams[i].nVar = *(short*)&game::ScriptSpace[*p_ip];
+						*p_ip += 2;
 						break;
 				case PARAM_TYPE_FLOAT:
 						if (game::IsIII()) {
-								game::ScriptParams[i].fVar = *(short*)&game::ScriptSpace[*pIp] / 16.0f;
-								*pIp += 2;
+								game::ScriptParams[i].fVar = *(short*)&game::ScriptSpace[*p_ip] / 16.0f;
+								*p_ip += 2;
 								break;
 						} else {
-								game::ScriptParams[i].fVar = *(float*)&game::ScriptSpace[*pIp];
-								*pIp += 4;
+								game::ScriptParams[i].fVar = *(float*)&game::ScriptSpace[*p_ip];
+								*p_ip += 4;
 								break;
 						}
 				case PARAM_TYPE_STRING:
-						if (!paramType->processed) {
-								uchar length = game::ScriptSpace[*pIp];
-								std::memcpy(&game::ScriptSpace[*pIp], &game::ScriptSpace[*pIp + 1], length);
-								*(&game::ScriptSpace[*pIp] + length) = '\0';
-								paramType->processed = true;
+						if (!param_type->processed) {
+								uchar length = game::ScriptSpace[*p_ip];
+								std::memcpy(&game::ScriptSpace[*p_ip], &game::ScriptSpace[*p_ip + 1], length);
+								*(&game::ScriptSpace[*p_ip] + length) = '\0';
+								param_type->processed = true;
 						}
 
-						game::ScriptParams[i].szVar = &game::ScriptSpace[*pIp];
-						*pIp += std::strlen(&game::ScriptSpace[*pIp]) + 1;
+						game::ScriptParams[i].szVar = &game::ScriptSpace[*p_ip];
+						*p_ip += std::strlen(&game::ScriptSpace[*p_ip]) + 1;
 						break;
 				default:
-						*pIp -= 1;
-						game::ScriptParams[i].szVar = &game::ScriptSpace[*pIp];
-						*pIp += KEY_LENGTH_IN_SCRIPT;
+						*p_ip -= 1;
+						game::ScriptParams[i].szVar = &game::ScriptSpace[*p_ip];
+						*p_ip += KEY_LENGTH_IN_SCRIPT;
 						break;
 				}
 		}
@@ -195,16 +214,16 @@ Script::CollectParameters(uint* pIp, short num_params)
 int
 Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 {
-		ScriptParamType* paramType = (ScriptParamType*)&game::ScriptSpace[ip];
+		ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[ip];
 		ip += 1;
 
-		switch (paramType->type) {
+		switch (param_type->type) {
 		case PARAM_TYPE_INT32:
 				return *(int*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_GVAR:
 				return *(int*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip]];
 		case PARAM_TYPE_LVAR:
-				return m_aLVars[*(ushort*)&game::ScriptSpace[ip]].nVar;
+				return local_vars_[*(ushort*)&game::ScriptSpace[ip]].nVar;
 		case PARAM_TYPE_INT8:
 				return *(char*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_INT16:
@@ -215,11 +234,11 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 				else
 						return *(int*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_STRING:
-				if (!paramType->processed) {
+				if (!param_type->processed) {
 						uchar length = game::ScriptSpace[ip];
 						std::memcpy(&game::ScriptSpace[ip], &game::ScriptSpace[ip + 1], length);
 						*(&game::ScriptSpace[ip] + length) = '\0';
-						paramType->processed = true;
+						param_type->processed = true;
 				}
 
 				return (int)&game::ScriptSpace[ip]; // string address
@@ -231,19 +250,19 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 void
 Script::StoreParameters(short num_params)
 {
-		game::StoreParameters(this, &m_nIp, num_params);
+		game::StoreParameters(this, &ip_, num_params);
 }
 
 ScriptParamType
 Script::GetNextParamType()
 {
-		return ((ScriptParamType*)&game::ScriptSpace[m_nIp])->type;
+		return ((ScriptParamType*)&game::ScriptSpace[ip_])->type;
 }
 
 void*
 Script::GetPointerToScriptVariable()
 {
-		return game::GetPointerToScriptVariable(this, &m_nIp, 1);
+		return game::GetPointerToScriptVariable(this, &ip_, 1);
 }
 
 void
@@ -257,12 +276,12 @@ Script::JumpTo(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		if (address >= 0) {
-				m_nIp = address;
+				ip_ = address;
 		} else {
-				if (m_bIsCustom)
-						m_nIp = (uint)(m_pCodeData - game::ScriptSpace) + (-address); // see Script ctor for details
+				if (is_custom_)
+						ip_ = (uint)(code_data_ - game::ScriptSpace) + (-address); // see Script ctor for details
 				else
-						m_nIp = game::MainSize + (-address);
+						ip_ = game::MainSize + (-address);
 		}
 }
 
