@@ -68,7 +68,7 @@ __stdcall GOTO_IF_TRUE(Script* script)
 {
 		script->CollectParameters(1);
 
-		if (script->m_bCondResult)
+		if (script->cond_result())
 				script->JumpTo(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
@@ -79,7 +79,7 @@ __stdcall GOTO_IF_FALSE(Script* script)
 {
 		script->CollectParameters(1);
 
-		if (!script->m_bCondResult)
+		if (!script->cond_result())
 				script->JumpTo(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
@@ -90,7 +90,7 @@ __stdcall GOSUB(Script* script)
 {
 		script->CollectParameters(1);
 
-		script->m_anGosubStack[script->m_nGosubStackPointer++] = script->m_nIp;
+		script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
 		script->JumpTo(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
@@ -99,7 +99,7 @@ __stdcall GOSUB(Script* script)
 eOpcodeResult
 __stdcall TERMINATE_THIS_CUSTOM_SCRIPT(Script* script)
 {
-		LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_THIS_CUSTOM_SCRIPT: Terminating custom script \"%s\"", &script->m_acName);
+		LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_THIS_CUSTOM_SCRIPT: Terminating custom script \"%s\"", &script->name_);
 		script_mgr::TerminateScript(script);
 
 		return OR_TERMINATE;
@@ -112,7 +112,7 @@ __stdcall TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME(Script* script)
 
 		bool terminate_self = false;
 		while (Script* found = script_mgr::FindScriptNamed(game::ScriptParams[0].szVar)) {
-				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME: Terminating custom script \"%s\"", &found->m_acName);
+				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME: Terminating custom script \"%s\"", &found->name_);
 				script_mgr::TerminateScript(found);
 
 				terminate_self = (found == script) ? true : false;
@@ -133,9 +133,9 @@ __stdcall START_CUSTOM_SCRIPT(Script* script)
 
 		for (int i = 0; i < Script::NUM_LOCAL_VARS && script->GetNextParamType(); ++i) {
 				script->CollectParameters(1);
-				new_script->m_aLVars[i].nVar = game::ScriptParams[0].nVar;
+				new_script->local_vars_[i].nVar = game::ScriptParams[0].nVar;
 		}
-		script->m_nIp++; // consume PARAM_TYPE_END_OF_PARAMS
+		script->ip_++; // consume PARAM_TYPE_END_OF_PARAMS
 
 		return OR_CONTINUE;
 }
@@ -181,7 +181,7 @@ __stdcall CALL_FUNCTION(Script* script)
 		// what is this?
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -208,7 +208,7 @@ __stdcall CALL_FUNCTION_RETURN(Script* script)
 		// what is this?
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -235,7 +235,7 @@ __stdcall CALL_METHOD(Script* script)
 		// what is this?
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -264,7 +264,7 @@ __stdcall CALL_METHOD_RETURN(Script* script)
 		// what is this?
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -390,7 +390,7 @@ __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		bool find_next = game::ScriptParams[4].nVar;
 		bool skip_dead = game::ScriptParams[5].nVar;
 
-		int search_index = find_next ? script->m_nLastPedSearchIndex : (*game::ppPedPool)->m_size;
+		int search_index = find_next ? script->last_ped_search_index_ : (*game::ppPedPool)->m_size;
 		int obj_index = 0;
 
 		for (int i = search_index - 1; i >= 0; --i) {
@@ -413,7 +413,7 @@ __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 				}
 		}
 
-		script->m_nLastPedSearchIndex = search_index;
+		script->last_ped_search_index_ = search_index;
 
 		script->UpdateCompareFlag(obj_index);
 
@@ -437,7 +437,7 @@ __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		bool find_next = game::ScriptParams[4].nVar;
 		bool skip_wrecked = game::ScriptParams[5].nVar;
 
-		int search_index = find_next ? script->m_nLastVehicleSearchIndex : (*game::ppVehiclePool)->m_size;
+		int search_index = find_next ? script->last_vehicle_search_index_ : (*game::ppVehiclePool)->m_size;
 		int obj_index = 0;
 
 		for (int i = search_index - 1; i >= 0; --i) {
@@ -460,7 +460,7 @@ __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 				}
 		}
 
-		script->m_nLastVehicleSearchIndex = search_index;
+		script->last_vehicle_search_index_ = search_index;
 
 		script->UpdateCompareFlag(obj_index);
 
@@ -480,7 +480,7 @@ __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 		float radius = game::ScriptParams[3].fVar;
 		bool find_next = game::ScriptParams[4].nVar;
 
-		int search_index = find_next ? script->m_nLastObjectSearchIndex : (*game::ppObjectPool)->m_size;
+		int search_index = find_next ? script->last_object_search_index_ : (*game::ppObjectPool)->m_size;
 		int obj_index = 0;
 
 		for (int i = search_index - 1; i >= 0; --i) {
@@ -500,7 +500,7 @@ __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 				}
 		}
 
-		script->m_nLastObjectSearchIndex = search_index;
+		script->last_object_search_index_ = search_index;
 
 		script->UpdateCompareFlag(obj_index);
 
@@ -553,12 +553,12 @@ __stdcall CLEO_CALL(Script* script)
 
 		/*
 			We didn't actually read all params this opcode provides just yet: after we read values that caller 
-			passes to callee with script->CollectParameters(), there are indexes of caller's m_aLVars where callee's 
+			passes to callee with script->CollectParameters(), there are indexes of caller's local_vars_ where callee's 
 			retvals should be stored. We will continue reading them after returning from callee.
 		*/
-		script->PushStackFrame();
+		script->push_stack_frame();
 
-		std::memcpy(&script->m_aLVars, &game::ScriptParams, param_count * sizeof(ScriptParam));
+		std::memcpy(&script->local_vars_, &game::ScriptParams, param_count * sizeof(ScriptParam));
 		script->JumpTo(address);
 
 		return OR_CONTINUE;
@@ -574,13 +574,13 @@ __stdcall CLEO_RETURN(Script* script)
 		script->CollectParameters(param_count);
 
 		// return to caller
-		script->PopStackFrame();
+		script->pop_stack_frame();
 
-		// continue reading indexes of caller's m_aLVars to store callee's retvals
+		// continue reading indexes of caller's local_vars_ to store callee's retvals
 		script->StoreParameters(param_count);
 
 		// variadic opcodes like 0AB1: CLEO_CALL end with PARAM_TYPE_END_OF_PARAMS; consume it.
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -596,8 +596,8 @@ __stdcall GET_LABEL_POINTER(Script* script)
 		if (address >= 0)
 				result = &game::ScriptSpace[address];
 		else {
-				if (script->m_bIsCustom)
-						result = &script->m_pCodeData[-address];
+				if (script->is_custom_)
+						result = &script->code_data_[-address];
 				else
 						result = &game::ScriptSpace[game::MainSize + (-address)];
 		}
@@ -914,9 +914,9 @@ __stdcall STREAM_CUSTOM_SCRIPT(Script* script)
 
 		for (int i = 0; script->GetNextParamType(); ++i) {
 				script->CollectParameters(1);
-				new_script->m_aLVars[i].nVar = game::ScriptParams[0].nVar;
+				new_script->local_vars_[i].nVar = game::ScriptParams[0].nVar;
 		}
-		script->m_nIp++; // consume PARAM_TYPE_END_OF_PARAMS
+		script->ip_++; // consume PARAM_TYPE_END_OF_PARAMS
 
 		return OR_CONTINUE;
 }
@@ -1033,7 +1033,7 @@ __stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 		// skip redundant params
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 };
@@ -1206,7 +1206,7 @@ __stdcall OPEN_FILE(Script* script)
 		}
 
 		auto file* = new std::fstream(game::ScriptParams[0].szVar, openmode);
-		script->RegisterObject(file);
+		script->register_object(file);
 
 		script->UpdateCompareFlag(*file); // check for ill-formed fstream with bool()
 
@@ -1221,7 +1221,7 @@ __stdcall CLOSE_FILE(Script* script)
 {
 		script->CollectParameters(1);
 
-		script->DeleteRegisteredObject(game::ScriptParams[0].pVar);
+		script->delete_registered_object(game::ScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 }
@@ -1269,8 +1269,8 @@ __stdcall WRITE_TO_FILE(Script* script)
 eOpcodeResult CustomOpcodes::OPCODE_0AA0(Script *script)
 {
 	script->CollectParameters(1);
-	script->m_anGosubStack[script->m_nGosubStackPointer++] = script->m_nIp;
-	if (!script->m_bCondResult)
+	script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
+	if (!script->cond_result())
 		script->JumpTo(game::ScriptParams[0].nVar);
 	return OR_CONTINUE;
 }
@@ -1278,8 +1278,8 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA0(Script *script)
 //0AA1=0,return_if_false
 eOpcodeResult CustomOpcodes::OPCODE_0AA1(Script *script)
 {
-	if (script->m_bCondResult) return OR_CONTINUE;
-	script->m_nIp = script->m_anGosubStack[--script->m_nGosubStackPointer];
+	if (script->cond_result()) return OR_CONTINUE;
+	script->ip_ = script->gosub_stack_[--script->gosub_stack_pointer_];
 	return OR_CONTINUE;
 }
 
@@ -1465,7 +1465,7 @@ __stdcall ALLOCATE_MEMORY(Script* script)
 		script->CollectParameters(1);
 
 		auto* mem = new(game::ScriptParams[0].nVar);
-		script->RegisterObject(mem);
+		script->register_object(mem);
 
 		script->UpdateCompareFlag(true); // will throw otherwise
 
@@ -1480,7 +1480,7 @@ __stdcall FREE_MEMORY(Script* script)
 {
 		script->CollectParameters(1);
 
-		script->DeleteRegisteredObject(game::ScriptParams[0].pVar);
+		script->delete_registered_object(game::ScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 }
@@ -1553,7 +1553,7 @@ __stdcall PRINT_HELP_FORMATTED(Script* script)
 		// skip redundant params
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -1576,7 +1576,7 @@ __stdcall PRINT_BIG_FORMATTED(Script* script)
 		// skip redundant params
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -1598,7 +1598,7 @@ __stdcall PRINT_FORMATTED(Script* script)
 		// skip redundant params
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -1620,7 +1620,7 @@ __stdcall PRINT_FORMATTED_NOW(Script* script)
 		// skip redundant params
 		while (script->GetNextParamType())
 				script->CollectParameters(1);
-		script->m_nIp++;
+		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -1633,9 +1633,9 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD3(Script *script)
 	dst = (char*)game::ScriptParams[0].pVar;
 	strcpy(fmt, game::ScriptParams[1].szVar);
 	format(script, dst, static_cast<size_t>(-1), fmt);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
+	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
 		script->CollectParameters(1);
-	script->m_nIp++;
+	script->ip_++;
 	return OR_CONTINUE;
 };
 
@@ -1651,11 +1651,11 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD4(Script *script)
 	ScriptParam *ExParams[35];
 	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
 	// read extra params
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
+	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
 	{
 		ExParams[cExParams++] = (ScriptParam *)script->GetPointerToScriptVariable();
 	}
-	script->m_nIp++;
+	script->ip_++;
 
 	*result = sscanf(src, fmt,
 		ExParams[0], ExParams[1], ExParams[2], ExParams[3], ExParams[4], ExParams[5],
@@ -1722,9 +1722,9 @@ eOpcodeResult CustomOpcodes::OPCODE_0AD9(Script *script)
 	format(script, text, sizeof(text), fmt);
 	fputs(text, file);
 	fflush(file);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
+	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
 		script->CollectParameters(1);
-	script->m_nIp++;
+	script->ip_++;
 	return OR_CONTINUE;
 };
 
@@ -1740,11 +1740,11 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADA(Script *script)
 	ScriptParam *ExParams[35];
 	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
 	// read extra params
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->m_nIp])).type)
+	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
 	{
 		ExParams[cExParams++] = (ScriptParam *)script->GetPointerToScriptVariable();
 	}
-	script->m_nIp++;
+	script->ip_++;
 
 	*result = fscanf(file, fmt,
 		ExParams[0], ExParams[1], ExParams[2], ExParams[3], ExParams[4], ExParams[5],
@@ -1896,7 +1896,7 @@ __stdcall FIND_FIRST_FILE(Script* script)
 		script->CollectParameters(1);
 
 		auto* handle = new fs::directory_iterator(game::ScriptParams[0].szVar);
-		script->RegisterObject(handle);
+		script->register_object(handle);
 
 		script->UpdateCompareFlag(*handle != end(*handle)); // check if directory is not empty
 
@@ -1928,7 +1928,7 @@ __stdcall FIND_CLOSE(Script* script)
 {
 		script->CollectParameters(1);
 
-		script->DeleteRegisteredObject(game::ScriptParams[0].pVar);
+		script->delete_registered_object(game::ScriptParams[0].pVar);
 
 		return OR_CONTINUE;
 }
