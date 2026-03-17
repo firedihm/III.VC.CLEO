@@ -46,7 +46,7 @@ void
 script_mgr::UnloadScripts(bool game_shutdown)
 {
 		for (auto it = g_custom_scripts.begin(); it != g_custom_scripts.end(); ) {
-				if (!it->m_bIsPersistent || game_shutdown) {
+				if (!it->is_persistent_ || game_shutdown) {
 						game::RemoveScriptFromList(&(*it), game::ppActiveScripts);
 						it = g_custom_scripts.erase(it);
 				} else {
@@ -73,13 +73,13 @@ Script*
 script_mgr::FindScriptNamed(const char* name, bool search_generic)
 {
 		for (Script& script : g_custom_scripts) {
-				if (!std::strncmp(&script.m_acName, name, KEY_LENGTH_IN_SCRIPT))
+				if (!std::strncmp(&script.name_, name, KEY_LENGTH_IN_SCRIPT))
 						return &script;
 		}
 
 		if (search_generic) {
-				for (Script* script = *game::ppActiveScripts; script; script = script->m_pNext) {
-						if (!script->m_bIsCustom && !std::strncmp(&script->m_acName, name, KEY_LENGTH_IN_SCRIPT))
+				for (Script* script = *game::ppActiveScripts; script; script = script->next_) {
+						if (!script->is_custom_ && !std::strncmp(&script->name_, name, KEY_LENGTH_IN_SCRIPT))
 								return script;
 				}
 		}
