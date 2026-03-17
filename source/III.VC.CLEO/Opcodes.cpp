@@ -401,9 +401,9 @@ __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 				if (!((*game::ppPedPool)->m_flags[i] & 0x80) && *(uint*)(obj + offset_nPedType)) {
 						// !PED_DIE && !PED_DEAD 
 						if (!skip_dead || *(uint*)(obj + offset_nPedState) != 48 && *(uint*)(obj + offset_nPedState) != 49) {
-								float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // m_matrix.px
-								float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // m_matrix.py
-								float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // m_matrix.pz
+								float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // CPlaceable::m_matrix.px
+								float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // CPlaceable::m_matrix.py
+								float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // CPlaceable::m_matrix.pz
 								float dist_sqr = px * px + py * py + pz * pz;
 								if (dist_sqr <= radius * radius) {
 										obj_index = game::PedPoolGetIndex(*game::ppPedPool, obj);
@@ -448,9 +448,9 @@ __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 				if (!((*game::ppVehiclePool)->m_flags[i] & 0x80)) {
 						// !STATUS_WRECKED && !VEHICLE_TYPE_BOAT && !bIsInWater
 						if (!skip_wrecked || (*(uchar*)(obj + offset_status) & 0xF8) != 40 && *(uint*)(obj + offset_vehType) != 1 && !(*(uchar*)(obj + offset_flags) & 8)) {
-								float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // m_matrix.px
-								float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // m_matrix.py
-								float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // m_matrix.pz
+								float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // CPlaceable::m_matrix.px
+								float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // CPlaceable::m_matrix.py
+								float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // CPlaceable::m_matrix.pz
 								float dist_sqr = px * px + py * py + pz * pz;
 								if (dist_sqr <= radius * radius) {
 										obj_index = game::VehiclePoolGetIndex(*game::ppVehiclePool, obj);
@@ -489,9 +489,9 @@ __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 
 				// !POOLFLAG_ISFREE
 				if (!((*game::ppObjectPool)->m_flags[i] & 0x80)) {
-						float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // m_matrix.px
-						float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // m_matrix.py
-						float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // m_matrix.pz
+						float px = *(float*)(obj + 0x34) - game::ScriptParams[0].fVar; // CPlaceable::m_matrix.px
+						float py = *(float*)(obj + 0x38) - game::ScriptParams[1].fVar; // CPlaceable::m_matrix.py
+						float pz = *(float*)(obj + 0x3C) - game::ScriptParams[2].fVar; // CPlaceable::m_matrix.pz
 						float dist_sqr = px * px + py * py + pz * pz;
 						if (dist_sqr <= radius * radius) {
 								obj_index = game::ObjectPoolGetIndex(*game::ppObjectPool, obj);
@@ -694,67 +694,55 @@ __stdcall BIT_SHL(Script* script)
 		return OR_CONTINUE;
 }
 
-//0400=7,store_coords_to %5d% %6d% %7d% from_object %1d% with_offset %2d% %3d% %4d%
-eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_OBJECT_WITH_OFFSET(Script *script)
+eOpcodeResult
+__stdcall GET_OFFSET_FROM_OBJECT_IN_WORLD_COORDS(Script* script)
 {
-	script->CollectParameters(4);
-	void* object = game::ObjectPoolGetAt(*game::ppObjectPool, game::ScriptParams[0].nVar);
+		script->CollectParameters(4);
+		void* object = game::ObjectPoolGetAt(*game::ppObjectPool, game::ScriptParams[0].nVar);
+		CVector offset{game::ScriptParams[1].fVar, game::ScriptParams[2].fVar, game::ScriptParams[3].fVar};
 
-	CVector offset;
-	offset.x = game::ScriptParams[1].fVar;
-	offset.y = game::ScriptParams[2].fVar;
-	offset.z = game::ScriptParams[3].fVar;
+		game::RwV3dTransformPoints(&offset, &offset, 1, (uchar*)object + 0x04); // CPlaceable::m_matrix
 
-	game::RwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)object + 4));
+		game::ScriptParams[0].fVar = offset.x;
+		game::ScriptParams[1].fVar = offset.y;
+		game::ScriptParams[2].fVar = offset.z;
+		script->StoreParameters(3);
 
-	game::ScriptParams[0].fVar = offset.x;
-	game::ScriptParams[1].fVar = offset.y;
-	game::ScriptParams[2].fVar = offset.z;
-
-	script->StoreParameters(3);
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
-//0407=7,store_coords_to %5d% %6d% %7d% from_car %1d% with_offset %2d% %3d% %4d%
-eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_CAR_WITH_OFFSET(Script *script)
+eOpcodeResult
+__stdcall GET_OFFSET_FROM_CAR_IN_WORLD_COORDS(Script* script)
 {
-	script->CollectParameters(4);
-	void* car = game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar);
+		script->CollectParameters(4);
+		void* car = game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar);
+		CVector offset{game::ScriptParams[1].fVar, game::ScriptParams[2].fVar, game::ScriptParams[3].fVar};
 
-	CVector offset;
-	offset.x = game::ScriptParams[1].fVar;
-	offset.y = game::ScriptParams[2].fVar;
-	offset.z = game::ScriptParams[3].fVar;
+		game::RwV3dTransformPoints(&offset, &offset, 1, (uchar*)car + 0x04); // CPlaceable::m_matrix
 
-	game::RwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)car + 4));
+		game::ScriptParams[0].fVar = offset.x;
+		game::ScriptParams[1].fVar = offset.y;
+		game::ScriptParams[2].fVar = offset.z;
+		script->StoreParameters(3);
 
-	game::ScriptParams[0].fVar = offset.x;
-	game::ScriptParams[1].fVar = offset.y;
-	game::ScriptParams[2].fVar = offset.z;
-
-	script->StoreParameters(3);
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
-//04C4=7,store_coords_to %5d% %6d% %7d% from_actor %1d% with_offset %2d% %3d% %4d%
-eOpcodeResult CustomOpcodes::STORE_COORDS_FROM_ACTOR_WITH_OFFSET(Script *script)
+eOpcodeResult
+__stdcall GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS(Script* script)
 {
-	script->CollectParameters(4);
-	void* actor = game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar);
+		script->CollectParameters(4);
+		void* actor = game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar);
+		CVector offset{game::ScriptParams[1].fVar, game::ScriptParams[2].fVar, game::ScriptParams[3].fVar};
 
-	CVector offset;
-	offset.x = game::ScriptParams[1].fVar;
-	offset.y = game::ScriptParams[2].fVar;
-	offset.z = game::ScriptParams[3].fVar;
+		game::RwV3dTransformPoints(&offset, &offset, 1, (uchar*)actor + 4); // CPlaceable::m_matrix
 
-	game::RwV3dTransformPoints(&offset, &offset, 1, (uintptr_t*)((uintptr_t)actor + 4));
+		game::ScriptParams[0].fVar = offset.x;
+		game::ScriptParams[1].fVar = offset.y;
+		game::ScriptParams[2].fVar = offset.z;
+		script->StoreParameters(3);
 
-	game::ScriptParams[0].fVar = offset.x;
-	game::ScriptParams[1].fVar = offset.y;
-	game::ScriptParams[2].fVar = offset.z;
-
-	script->StoreParameters(3);
-	return OR_CONTINUE;
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1019,8 +1007,8 @@ __stdcall DISPLAY_TEXT_STRING(Script* script)
 {
 		script->CollectParameters(3);
 
-		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = game::ScriptParams[0].fVar;
-		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = game::ScriptParams[1].fVar;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtX = game::ScriptParams[0].fVar;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtY = game::ScriptParams[1].fVar;
 		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", game::ScriptParams[2].szVar);
 		(*game::pNumberOfIntroTextLinesThisFrame)++;
 
@@ -1037,8 +1025,8 @@ __stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 		char fmt[INTRO_TEXT_LENGTH];
 		script->FormatString(&fmt, game::ScriptParams[2].szVar);
 
-		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].x = x;
-		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].y = y;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtX = x;
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtY = y;
 		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", &fmt);
 		(*game::pNumberOfIntroTextLinesThisFrame)++;
 
@@ -1050,13 +1038,18 @@ __stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 		return OR_CONTINUE;
 };
 
-//0673=4,play_animation on actor %1d% animgroup %2d% anim %3d% blendfactor %4f%
-eOpcodeResult WINAPI CustomOpcodes::PLAY_ANIMATION(Script *script)
+eOpcodeResult
+__stdcall PLAY_ANIMATION(Script* script)
 {
-	script->CollectParameters(4);
-	void* actor = game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar);
-	game::BlendAnimation(*(DWORD *)((uintptr_t)actor + 0x4C), game::ScriptParams[1].nVar, game::ScriptParams[2].nVar, game::ScriptParams[3].fVar);
-	return OR_CONTINUE;
+		script->CollectParameters(4);
+		int char_handle = game::ScriptParams[0].nVar;
+		int anim_group = game::ScriptParams[1].nVar;
+		int anim = game::ScriptParams[2].nVar;
+		float blend = game::ScriptParams[3].fVar;
+
+		game::BlendAnimation((uchar*)game::PedPoolGetAt(*game::ppPedPool, char_handle) + 0x4C) /* CEntity::m_rwObject */, anim_group, anim, blend);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult CustomOpcodes::DRAW_SHADOW(Script *script)
@@ -1120,18 +1113,19 @@ eOpcodeResult CustomOpcodes::DRAW_SHADOW(Script *script)
 	return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::SET_TEXT_DRAW_FONT(Script *script)
+eOpcodeResult
+__stdcall SET_TEXT_FONT(Script* script)
 {
-	script->CollectParameters(1);
-	game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].fontStyle = game::ScriptParams[0].nVar;
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_nFont = game::ScriptParams[0].nVar;
+
+		return OR_CONTINUE;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 /*****************************************************************************************************/
 ////////////////////////////////CLEO4 SA opcodes///////////////////////////////////////////////////////
-//0A8C=4,write_memory %1d% size %2d% value %3d% virtual_protect %4d% //dup
-//0A8D=4,%4d% = read_memory %1d% size %2d% virtual_protect %3d% //dup
 
 eOpcodeResult
 __stdcall INT_ADD(Script* script)
@@ -1324,11 +1318,6 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA4(Script *script)
 	return OR_CONTINUE;
 }
 
-//0AA5=-1,call %1d% num_params %2h% pop %3h% //dup
-//0AA6=-1,call_method %1d% struct %2d% num_params %3h% pop %4h% //dup
-//0AA7=-1,call_function %1d% num_params %2h% pop %3h% //dup
-//0AA8=-1,call_function_method %1d% struct %2d% num_params %3h% pop %4h% //dup
-
 eOpcodeResult
 __stdcall IS_GAME_VERSION_ORIGINAL(Script* script)
 {
@@ -1351,11 +1340,6 @@ eOpcodeResult CustomOpcodes::OPCODE_0AAB(Script *script)
 //0AAD=2,set_mp3 %1d% perform_action %2d%
 //0AAE=1,release_mp3 %1d%
 //0AAF=2,%2d% = get_mp3_length %1d%
-
-//0AB0=1,  key_pressed %1d% // dup
-
-//0AB1=-1,call_scm_func %1p% //dup
-//0AB2=-1,ret  //dup
 
 eOpcodeResult
 __stdcall SET_CLEO_SHARED_VAR(Script* script)
@@ -1949,50 +1933,48 @@ __stdcall FIND_CLOSE(Script* script)
 		return OR_CONTINUE;
 }
 
-//0AEA=2,%2d% = actor_struct %1d% handle //dup
-//0AEB=2,%2d% = car_struct %1d% handle //dup
-//0AEC=2,%2d% = object_struct %1d% handle //dup
-//0AED=3,%3d% = float %1d% to_string_format %2d%
-//0AEE=3,%3d% = exp %1d% base %2d% //all floats //dup
-//0AEF=3,%3d% = log %1d% base %2d% //all floats //dup
-
-//0AF8=2,cleo_array %1d% = %2d%
-eOpcodeResult __stdcall CustomOpcodes::SET_CLEO_ARRAY(Script *script)
+eOpcodeResult
+__stdcall SET_CLEO_ARRAY(Script* script)
 {
-	script->CollectParameters(2);
-	script->CLEO_array_[game::ScriptParams[0].nVar].nVar = game::ScriptParams[1].nVar;
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		script->CLEO_array_[game::ScriptParams[0].nVar].nVar = game::ScriptParams[1].nVar;
+
+		return OR_CONTINUE;
 }
 
-//0AF9=2,%2d% = cleo_array %1d%
-eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY(Script *script)
+eOpcodeResult
+__stdcall GET_CLEO_ARRAY(Script* script)
 {
-	script->CollectParameters(1);
-	game::ScriptParams[0].nVar = script->CLEO_array_[game::ScriptParams[0].nVar].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		game::ScriptParams[0].nVar = script->CLEO_array_[game::ScriptParams[0].nVar].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-//0AFA=2,%2d% = cleo_array %1d% pointer
-eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_OFFSET(Script *script)
+eOpcodeResult
+__stdcall GET_CLEO_ARRAY_OFFSET(Script* script)
 {
-	script->CollectParameters(1);
-	game::ScriptParams[0].pVar = &script->CLEO_array_[game::ScriptParams[0].nVar].nVar;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		game::ScriptParams[0].pVar = &script->CLEO_array_[game::ScriptParams[0].nVar].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-//0AFB=3,%3d% = script %1d% cleo_array %2d% pointer
-eOpcodeResult __stdcall CustomOpcodes::GET_CLEO_ARRAY_SCRIPT(Script *script)
+eOpcodeResult
+__stdcall GET_CLEO_ARRAY_SCRIPT(Script* script)
 {
-	script->CollectParameters(2);
-	Script *pScript = reinterpret_cast<Script*>(game::ScriptParams[0].pVar);
-	if (pScript)
-	{
-		game::ScriptParams[0].pVar = &pScript->CLEO_array_[game::ScriptParams[1].nVar].nVar;
-	}
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+		Script* param_script = (Script*)game::ScriptParams[0].pVar;
+
+		game::ScriptParams[0].pVar = &param_script->CLEO_array_[game::ScriptParams[1].nVar].nVar;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -2165,13 +2147,13 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 
 #if CLEO_VC
 		//Scrapped opcodes (VC)
-		opcodes::Register(0x016F, DRAW_SHADOW);
-		opcodes::Register(0x0349, SET_TEXT_DRAW_FONT);
+		opcodes::Register(0x016F, DRAW_SHADOW); // was scrapped in VC
+		opcodes::Register(0x0349, SET_TEXT_FONT); // was scrapped in VC
 #else
 		//Original opcodes added since VC
-		opcodes::Register(0x04C2, STORE_COORDS_FROM_OBJECT_WITH_OFFSET); //0400
-		opcodes::Register(0x04C3, STORE_COORDS_FROM_CAR_WITH_OFFSET); //0407
-		opcodes::Register(0x04C4, STORE_COORDS_FROM_ACTOR_WITH_OFFSET);
+		opcodes::Register(0x04C2, GET_OFFSET_FROM_OBJECT_IN_WORLD_COORDS); // 0400 in VC
+		opcodes::Register(0x04C3, GET_OFFSET_FROM_CAR_IN_WORLD_COORDS); // 0407 in VC
+		opcodes::Register(0x04C4, GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS);
 
 		opcodes::Register(0x046F, GET_CURRENT_PLAYER_WEAPON);
 		opcodes::Register(0x04DD, GET_CHAR_ARMOUR);
