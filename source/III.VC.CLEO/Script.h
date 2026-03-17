@@ -15,25 +15,30 @@ protected:
 		constexpr int NUM_LOCAL_VARS = 16;
 		constexpr int NUM_TIMERS = 2;
 
-		CRunningScript* m_pNext;
-		CRunningScript* m_pPrev;
-		char m_acName[KEY_LENGTH_IN_SCRIPT];
-		uint m_nIp;
-		uint m_anGosubStack[MAX_STACK_DEPTH];
-		ushort m_nGosubStackPointer;
-		ScriptParam m_aLVars[NUM_LOCAL_VARS];
-		ScriptParam m_aTimers[NUM_TIMERS];
-		union { bool m_bCondResultIII, m_bSkipWakeTimeVC; };
-		union { bool m_bIsMissionScriptIII, m_bCondResultVC; };
-		union { bool m_bSkipWakeTimeIII, m_bIsMissionScriptVC; };
-		uint m_nWakeTime;
-		ushort m_nAndOrState;
-		bool m_bNotFlag;
-		bool m_bDeatharrestEnabled;
-		bool m_bDeatharrestExecuted;
-		bool m_bMissionFlag;
+		CRunningScript* next_;
+		CRunningScript* prev_;
+		char name_[KEY_LENGTH_IN_SCRIPT];
+		uint ip_;
+		uint gosub_stack_[MAX_STACK_DEPTH];
+		ushort gosub_stack_pointer_;
+		ScriptParam local_vars_[NUM_LOCAL_VARS];
+		ScriptParam local_timers_[NUM_TIMERS];
+		union { bool cond_result_III_, skip_wake_time_VC_; };
+		union { bool is_mission_script_III_, cond_result_VC_; };
+		union { bool skip_wake_time_III_, is_mission_script_VC_; };
+		uint wake_time_;
+		ushort and_or_state_;
+		bool not_flag_;
+		bool deatharrest_enabled_;
+		bool deatharrest_executed_;
+		bool mission_flag_;
 
 		CRunningScript();
+
+		// getters for flags defined in unions above
+		bool cond_result();
+		bool is_mission_script();
+		bool skip_wake_time();
 };
 
 // make sure CRunningScript's composition wasn't changed; as long as member order is correct...
@@ -44,27 +49,27 @@ class CCustomScript : protected CRunningScript
 protected:
 		constexpr int CLEO_ARRAY_SIZE = 256;
 
-		uchar* m_pCodeData;
-		bool m_bIsCustom;
-		bool m_bIsPersistent;
-		int m_nLastPedSearchIndex;
-		int m_nLastVehicleSearchIndex;
-		int m_nLastObjectSearchIndex;
+		uchar* code_data_;
+		bool is_custom_;
+		bool is_persistent_;
+		int last_ped_search_index_;
+		int last_vehicle_search_index_;
+		int last_object_search_index_;
 		ScriptParam* cleo_array_;
 
 		CCustomScript();
 		~CCustomScript();
 
-		void PushStackFrame();
-		void PopStackFrame();
+		void push_stack_frame();
+		void pop_stack_frame();
 
 		/*
 			We register objects script creates (allocated memory, opened files...) and their dtors 
 			to avoid memory leaks: in case of programmer's fault or premature termination.
 		*/
 		template <typename T>
-		void RegisterObject(T* obj) { register_ = new RegData{register_, obj, [](void* self) { static_cast<T*>(self)->~T(); }}; }
-		void DeleteRegisteredObject(void* obj);
+		void register_object(T* obj) { register_ = new RegData{register_, obj, [](void* self) { static_cast<T*>(self)->~T(); }}; }
+		void delete_registered_object(void* obj);
 
 private:
 		struct StackFrame {
@@ -91,7 +96,7 @@ public:
 
 		eOpcodeResult ProcessOneCommand();
 
-		__declspec(dllexport) void CollectParameters(uint* pIp, short num_params);
+		__declspec(dllexport) void CollectParameters(uint* p_ip, short num_params);
 		__declspec(dllexport) int CollectNextParameterWithoutIncreasingPC(uint ip);
 		__declspec(dllexport) void CollectParameters(short num_params) { CollectParameters(&m_nIp, num_params); }
 		__declspec(dllexport) void StoreParameters(short num_params);
