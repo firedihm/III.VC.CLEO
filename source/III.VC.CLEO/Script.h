@@ -3,7 +3,7 @@
 #include "domain.h"
 
 /*
-	We "inherit" CRunningScript from base game, and add custom data in CCustomScript. 
+	We "inherit" CRunningScript from base game, and add custom data in Script. 
 	III and VC have equal number and types of class' members. Order of members differs 
 	only for 3 flags; they are defined in unions below.
 */
