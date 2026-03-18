@@ -32,67 +32,44 @@ protected:
 		bool deatharrest_enabled_;
 		bool deatharrest_executed_;
 		bool mission_flag_;
-
-		CRunningScript();
-
-		// getters for flags defined in unions above
-		bool cond_result();
-		bool is_mission_script();
-		bool skip_wake_time();
 };
 
 // make sure CRunningScript's composition wasn't changed; as long as member order is correct...
 static_assert(sizeof(CRunningScript) == 0x88);
 
-class CCustomScript : protected CRunningScript
+class Script : protected CRunningScript
 {
-protected:
+public:
 		constexpr int CLEO_ARRAY_SIZE = 256;
 
 		uchar* code_data_;
 		bool is_custom_;
 		bool is_persistent_;
+		bool is_III_; // lets opcode extensions know game version without importing game namespace
 		int last_ped_search_index_;
 		int last_vehicle_search_index_;
 		int last_object_search_index_;
 		ScriptParam* cleo_array_;
 
-		CCustomScript();
-		~CCustomScript();
+		Script() = default;
+		Script(const char* filepath);
+		~Script();
 
+		// this is a hook; game never calls ctors
+		void Init();
+
+		// getters for flags defined in CRunningScript's unions
+		bool cond_result() { return is_III_ ? cond_result_III_ : cond_result_VC_; }
+		bool is_mission_script() { return is_III_ ? is_mission_script_III_ : is_mission_script_VC_; }
+		bool skip_wake_time() { return is_III_ ? skip_wake_time_III_ : skip_wake_time_VC_; }
+
+		// used by 0AB1: CLEO_CALL and 0AB2: CLEO_RETURN
 		void push_stack_frame();
 		void pop_stack_frame();
 
-		/*
-			We register objects script creates (allocated memory, opened files...) and their dtors 
-			to avoid memory leaks: in case of programmer's fault or premature termination.
-		*/
-		template <typename T>
-		void register_object(T* obj) { register_ = new RegData{register_, obj, [](void* self) { static_cast<T*>(self)->~T(); }}; }
-		void delete_registered_object(void* obj);
-
-private:
-		struct StackFrame {
-				StackFrame* next;
-				uint ret_addr;
-				ScriptParam vars[NUM_LOCAL_VARS];
-		}* call_stack_;
-
-		struct RegData {
-				RegData* next;
-				void* obj;
-				void (__thiscall* destruct)(void* self); // non-capturing, dtor-invoking lambda
-		}* register_;
-};
-
-// this is introduced to provide laconic, forward-declarable type alias for CCustomScript.
-class Script : protected CCustomScript
-{
-public:
-		Script() = default;
-		Script(const char* filepath);
-
-		void Init(); // this is a hook
+		// keep track of dynamically allocated memory
+		template <typename T> void register_object(T* obj) { register_ = new RegData{register_, obj, [](void* self) { static_cast<T*>(self)->~T(); }}; }
+		__declspec(dllexport) void delete_registered_object(void* obj);
 
 		eOpcodeResult ProcessOneCommand();
 
@@ -106,4 +83,17 @@ public:
 		__declspec(dllexport) void UpdateCompareFlag(bool result);
 		__declspec(dllexport) void JumpTo(int address);
 		__declspec(dllexport) void FormatString(char* out, const char* format);
+
+private:
+		struct StackFrame {
+				StackFrame* next;
+				uint ret_addr;
+				ScriptParam vars[NUM_LOCAL_VARS];
+		}* call_stack_;
+
+		struct RegData {
+				RegData* next;
+				void* obj;
+				void (__thiscall* destruct)(void* self); // non-capturing, dtor-invoking lambda
+		}* register_;
 };
