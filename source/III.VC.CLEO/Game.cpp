@@ -212,8 +212,8 @@ game::ExpandMemory()
 
 		memory::Write(gaddr(Address::ScriptsArray_0), ScriptsArray);
 		if (IsVC()) {
-				memory::Write(gaddr(Address::ScriptsArray_1), &ScriptsArray->m_pNext);
-				memory::Write(gaddr(Address::ScriptsArray_2), &ScriptsArray->m_pPrev);
+				memory::Write(gaddr(Address::ScriptsArray_1), &ScriptsArray->next_);
+				memory::Write(gaddr(Address::ScriptsArray_2), &ScriptsArray->prev_);
 		}
 		memory::Write(gaddr(Address::sizeofScript_0), sizeof(Script));
 		if (IsVC()) {
