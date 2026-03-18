@@ -13,7 +13,7 @@ namespace game
 		constexpr uchar MAX_NUM_INTRO_RECTANGLES  = 32; // 16 in both games
 		constexpr uchar MAX_NUM_SCRIPT_SRPITES = 32; // 16 in both games
 
-		enum class Release {
+		enum class Version {
 				VC_1_0,
 				VC_1_1,
 				VC_Steam,
@@ -37,10 +37,9 @@ namespace game
 				count
 		};
 
-		extern const Release Version;
-		extern const size_t MainSize;
-		extern const size_t MissionSize;
-		extern const size_t ScriptSpaceSize;
+		extern const Version version;
+		extern const size_t main_size;
+		extern const size_t mission_size;
 
 		// Scripts
 		extern uchar* ScriptSpace;
@@ -115,8 +114,8 @@ namespace game
 		extern CSprite2d* ScriptSprites;
 		extern void* CjkSupportLib; // adds unicode support to game
 
-		bool IsVC() { Version >= Release::VC_1_0 && Version <= Release::VC_Steam; }
-		bool IsIII() { Version >= Release::III_1_0 && Version <= Release::III_Steam; }
+		bool IsVC() { version >= Version::VC_1_0 && version <= Version::VC_Steam; }
+		bool IsIII() { version >= Version::III_1_0 && version <= Version::III_Steam; }
 
 		// first member of CPlayerInfo is a CPed*
 		uchar* FindPlayerPed(int player_id) { return static_cast<uchar*>(*(uint*)(Players + (IsVC() ? 0x170 : 0x13C) * player_id)); }
