@@ -111,7 +111,7 @@ namespace game
                 count
         };
 
-        inline void* LookUpTable[Address::count][Release::count] = {
+        inline void* LookUpTable[Address::count][Version::count] = {
                 // Scripts
                 // VC_1_0  VC_1_1    VC_Steam           III_1_0   III_1_1   III_Steam
                 {0x450CF0, 0x450CF0, 0x450C00, /*    */ 0x4386C0, 0x4386C0, 0x4386C0}, // InitScript
@@ -220,5 +220,5 @@ namespace game
                 {0x450B0E, nullptr,  nullptr,  /*    */ 0x43EC4A, nullptr,  nullptr }  // ScriptSprites_0
         };
 
-        void* gaddr(Address addr) { return LookUpTable[addr][Version]; }
+        void* gaddr(Address addr) { return LookUpTable[addr][game::version]; }
 }
