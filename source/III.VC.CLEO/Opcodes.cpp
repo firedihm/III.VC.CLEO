@@ -272,8 +272,8 @@ __stdcall CALL_METHOD_RETURN(Script* script)
 eOpcodeResult
 __stdcall GET_GAME_VERSION(Script* script)
 {
-		int result = (game::Version == game::Release::VC_1_0 || game::Version == game::Release::III_1_0) ? 0 :
-					 (game::Version == game::Release::VC_1_1 || game::Version == game::Release::III_1_1) ? 1 : 2;
+		int result = (game::version == game::Version::VC_1_0 || game::version == game::Version::III_1_0) ? 0 :
+					 (game::version == game::Version::VC_1_1 || game::version == game::Version::III_1_1) ? 1 : 2;
 
 		game::ScriptParams[0].nVar = result;
 		script->StoreParameters(1);
@@ -599,7 +599,7 @@ __stdcall GET_LABEL_POINTER(Script* script)
 				if (script->is_custom_)
 						result = &script->code_data_[-address];
 				else
-						result = &game::ScriptSpace[game::MainSize + (-address)];
+						result = &game::ScriptSpace[game::main_size + (-address)];
 		}
 
 		game::ScriptParams[0].pVar = result;
@@ -1321,7 +1321,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0AA4(Script *script)
 eOpcodeResult
 __stdcall IS_GAME_VERSION_ORIGINAL(Script* script)
 {
-		script->UpdateCompareFlag(game::Version == game::Release::VC_1_0 || game::Version == game::Release::III_1_0);
+		script->UpdateCompareFlag(game::version == game::Version::VC_1_0 || game::version == game::Version::III_1_0);
 
 		return OR_CONTINUE;
 }
