@@ -8,92 +8,13 @@
 #include <fstream>
 #include <cstdio>
 
-CRunningScript::CRunningScript() : next_(nullptr), prev_(nullptr), name_({'n', 'o', 'n', 'a', 'm', 'e', '\0'}),
-								   ip_(0), gosub_stack_({0}), gosub_stack_pointer_(0), local_vars_({0}), local_timers_({0}),
-								   cond_result_III_(false), is_mission_script_III_(false), skip_wake_time_III_(false), wake_time_(0),
-								   and_or_state_(0), not_flag_(false), deatharrest_enabled_(true), deatharrest_executed_(false), mission_flag_(false) {}
-
-bool
-CRunningScript::cond_result()
-{
-		return game::IsIII() ? cond_result_III_ : cond_result_VC_;
-}
-
-bool
-CRunningScript::is_mission_script()
-{
-		return game::IsIII() ? is_mission_script_III_ : is_mission_script_VC_;
-}
-
-bool
-CRunningScript::skip_wake_time()
-{
-		return game::IsIII() ? skip_wake_time_III_ : skip_wake_time_VC_;
-}
-
-CCustomScript::CCustomScript() : code_data_(nullptr), is_custom_(true), is_persistent_(false), last_ped_search_index_(0), last_vehicle_search_index_(0), last_object_search_index_(0),
-								 cleo_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr) {}
-
-CCustomScript::~CCustomScript()
-{
-		while (register_)
-				delete_registered_object(register_->obj);
-
-		while (call_stack_)
-				pop_stack_frame();
-
-		delete[] cleo_array_;
-		delete[] code_data_;
-}
-
-void
-CCustomScript::push_stack_frame()
-{
-		StackFrame* frame = new StackFrame();
-		frame->next = call_stack_;
-		call_stack_ = frame;
-
-		frame->ret_addr = ip_;
-		std::memcpy(&frame->vars, &local_vars_, sizeof(frame->vars));
-}
-
-void
-CCustomScript::pop_stack_frame()
-{
-		ip_ = call_stack_->ret_addr;
-		std::memcpy(&local_vars_, &call_stack_->vars, sizeof(local_vars_));
-
-		StackFrame* head_next = call_stack_->next;
-		delete call_stack_;
-		call_stack_ = head_next;
-}
-
-void
-CCustomScript::delete_registered_object(void* obj)
-{
-		RegData* target = register_;
-		RegData* pentarget = nullptr;
-
-		while (target) {
-				if (target->obj == obj) {
-						if (pentarget)
-								pentarget->next = target->next;
-						else
-								register_ = target->next;
-
-						target->destruct(target->obj); // call dtor
-						delete target->obj; // release memory
-
-						delete target;
-						return;
-				} else {
-						pentarget = target;
-						target = target->next;
-				}
-		}
-}
-
-Script::Script(const char* filepath)
+Script::Script(const char* filepath) : next_(nullptr), prev_(nullptr), name_({'n', 'o', 'n', 'a', 'm', 'e', '\0'}),
+									   ip_(0), gosub_stack_({0}), gosub_stack_pointer_(0), local_vars_({0}), local_timers_({0}),
+									   cond_result_III_(false), is_mission_script_III_(false), skip_wake_time_III_(false), wake_time_(0),
+									   and_or_state_(0), not_flag_(false), deatharrest_enabled_(true), deatharrest_executed_(false), mission_flag_(false),
+									   code_data_(nullptr), is_custom_(true), is_persistent_(false), is_III_(game::IsIII()),
+									   last_ped_search_index_(0), last_vehicle_search_index_(0), last_object_search_index_(0),
+									   cleo_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr)
 {
 		std::ifstream file(filepath, std::ios::binary);
 
@@ -116,13 +37,71 @@ Script::Script(const char* filepath)
 				is_persistent_ = true;
 }
 
+Script::~Script()
+{
+		while (register_)
+				delete_registered_object(register_->obj);
+
+		while (call_stack_)
+				pop_stack_frame();
+
+		delete[] cleo_array_;
+		delete[] code_data_;
+}
+
 void
 Script::Init()
 {
 		std::memset(this, 0, sizeof(Script));
 		std::strncpy(&name_, "noname", KEY_LENGTH_IN_SCRIPT);
 		deatharrest_enabled_ = true;
-		cleo_array_ = new ScriptParam[CLEO_ARRAY_SIZE];
+}
+
+void
+Script::push_stack_frame()
+{
+		StackFrame* frame = new StackFrame();
+		frame->next = call_stack_;
+		call_stack_ = frame;
+
+		frame->ret_addr = ip_;
+		std::memcpy(&frame->vars, &local_vars_, sizeof(frame->vars));
+}
+
+void
+Script::pop_stack_frame()
+{
+		ip_ = call_stack_->ret_addr;
+		std::memcpy(&local_vars_, &call_stack_->vars, sizeof(local_vars_));
+
+		StackFrame* head_next = call_stack_->next;
+		delete call_stack_;
+		call_stack_ = head_next;
+}
+
+void
+Script::delete_registered_object(void* obj)
+{
+		RegData* target = register_;
+		RegData* pentarget = nullptr;
+
+		while (target) {
+				if (target->obj == obj) {
+						if (pentarget)
+								pentarget->next = target->next;
+						else
+								register_ = target->next;
+
+						target->destruct(target->obj); // call dtor
+						delete target->obj; // release memory
+
+						delete target;
+						return;
+				} else {
+						pentarget = target;
+						target = target->next;
+				}
+		}
 }
 
 eOpcodeResult
@@ -182,7 +161,7 @@ Script::CollectParameters(uint* p_ip, short num_params)
 						*p_ip += 2;
 						break;
 				case PARAM_TYPE_FLOAT:
-						if (game::IsIII()) {
+						if (is_III_) {
 								game::ScriptParams[i].fVar = *(short*)&game::ScriptSpace[*p_ip] / 16.0f;
 								*p_ip += 2;
 								break;
@@ -229,7 +208,7 @@ Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 		case PARAM_TYPE_INT16:
 				return *(short*)&game::ScriptSpace[ip];
 		case PARAM_TYPE_FLOAT:
-				if (game::IsIII())
+				if (is_III_)
 						return (int)(*(short*)&game::ScriptSpace[ip] / 16.0f);
 				else
 						return *(int*)&game::ScriptSpace[ip];
@@ -281,7 +260,7 @@ Script::JumpTo(int address)
 				if (is_custom_)
 						ip_ = (uint)(code_data_ - game::ScriptSpace) + (-address); // see Script ctor for details
 				else
-						ip_ = game::MainSize + (-address);
+						ip_ = game::main_size + (-address);
 		}
 }
 
