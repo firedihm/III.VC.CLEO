@@ -73,28 +73,28 @@ OnGameShutdown()
 
 namespace game
 {
-		const Release Version = []() -> Release {
+		const Version version = []() -> Version {
 				if (uint scan = *(uint*)0x61C11C; scan == 0x74FF5064) {
-						return Release::VC_1_0;
+						return Version::VC_1_0;
 				} else if (scan == 0x00408DC0) {
-						return Release::VC_1_1;
+						return Version::VC_1_1;
 				} else if (scan == 0x00004824) {
-						return Release::VC_Steam;
+						return Version::VC_Steam;
 				} else if (scan == 0x00598B80) {
-						return Release::III_1_0;
+						return Version::III_1_0;
 				} else if (scan == 0x00598E40) {
-						return Release::III_1_1;
+						return Version::III_1_1;
 				} else if (scan == 0x646E6957) {
-						return Release::III_Steam;
+						return Version::III_Steam;
 				} else {
 						// compressed steam executables; wait for them to decompress
 						while (scan == 0x24E58287 || scan == 0x00FFFFFF) {
 								std::this_thread::yield();
 
 								if (scan = *(uint*)0x61C11C; scan == 0x00004824) {
-										return Release::VC_Steam;
+										return Version::VC_Steam;
 								else if (scan == 0x646E6957) {
-										return Release::III_Steam;
+										return Version::III_Steam;
 								}
 						}
 				}
@@ -102,9 +102,8 @@ namespace game
 				throw "Unsupported game version";
 		}();
 
-		const size_t MainSize = IsVC() ? 225512 : 128*1024;
-		const size_t MissionSize = IsIII() ? 35000 : 32*1024;
-		const size_t ScriptSpaceSize = MainSize + MissionSize;
+		const size_t main_size = IsVC() ? 225512 : 128*1024;
+		const size_t mission_size = IsIII() ? 35000 : 32*1024;
 
 		memory::MakeJump(gaddr(Address::InitScript), Script::Init);
 		memory::MakeJump(gaddr(Address::ProcessOneCommand), Script::ProcessOneCommand);
@@ -222,7 +221,7 @@ game::ExpandMemory()
 		}
 
 		// rather messy and incomplete: addresses below only apply to v1.0
-		if (Version == Release::VC_1_0) {
+		if (version == Version::VC_1_0) {
 				// memory::Write(0x451E72, IntroRectangles);
 				// memory::Write(0x451EFA, IntroRectangles);
 				memory::Write(0x4591FB, IntroRectangles);
@@ -310,7 +309,7 @@ game::ExpandMemory()
 				memory::Write(0x450C9E, NUM_SCRIPT_SRPITES); // jb
 				// memory::Write(0x451681, NUM_SCRIPT_SRPITES); // jb; skipped to keep compatibility with default mission cleanup routines
 				memory::Write(0x451692, 0xEB); // don't remove 'script' txd slot during mission cleanup routines
-		} else if (Version == Release::III_1_0) {
+		} else if (version == Version::III_1_0) {
 				// memory::Write(0x43EBEC, IntroTextLines);
 				// memory::Write(0x43ECDD, IntroTextLines);
 				memory::Write(0x44943B, IntroTextLines);
