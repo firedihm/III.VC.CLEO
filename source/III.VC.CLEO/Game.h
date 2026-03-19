@@ -52,7 +52,6 @@ namespace game
 		extern void (__thiscall* RemoveScriptFromList)(Script*, Script** list);
 		extern void (__thiscall* StoreParameters)(Script*, uint* pIp, short num);
 		extern void (__thiscall* UpdateCompareFlag)(Script*, bool result);
-		extern void* (__thiscall* GetPointerToScriptVariable)(Script*, uint* pIp, short type); // last param is unused
 
 		// Text
 		extern void* TheText; // CText::TheText
