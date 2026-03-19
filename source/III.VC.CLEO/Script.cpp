@@ -240,16 +240,26 @@ Script::StoreParameters(short num_params)
 		game::StoreParameters(this, &ip_, num_params);
 }
 
-void*
-Script::GetPointerToScriptVariable()
-{
-		return game::GetPointerToScriptVariable(this, &ip_, 1);
-}
-
 void
 Script::UpdateCompareFlag(bool result)
 {
 		game::UpdateCompareFlag(this, result);
+}
+
+void*
+Script::GetPointerToScriptVariable()
+{
+		ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[ip_];
+		ip_ += 1;
+
+		switch (param_type->type) {
+		case PARAM_TYPE_GVAR:
+				return &game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip]];
+		case PARAM_TYPE_LVAR:
+				return &local_vars_[*(ushort*)&game::ScriptSpace[ip]];
+		default:
+				return nullptr;
+		}
 }
 
 void
