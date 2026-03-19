@@ -14,6 +14,7 @@ namespace game
                 RemoveScriptFromList,
                 StoreParameters,
                 UpdateCompareFlag,
+                GetPointerToScriptVariable,
                 OpcodeHandler_0,
                 OpcodeHandler_1,
                 OpcodeHandler_2,
@@ -121,6 +122,7 @@ namespace game
                 {0x450300, 0x450300, 0x450210, /*    */ 0x438FB0, 0x438FB0, 0x438FB0}, // RemoveScriptFromList
                 {0x450E50, 0x450E50, 0x450D60, /*    */ 0x4385A0, 0x4385A0, 0x4385A0}, // StoreParameters
                 {0x463F00, 0x463F00, 0x463DE0, /*    */ 0x44FD90, 0x44FD90, 0x44FD90}, // UpdateCompareFlag
+                {0x450DD0, 0x450DD0, 0x450CE0, /*    */ 0x438640, 0x438640, 0x438640}, // GetPointerToScriptVariable
                 {0x44B400, 0x44B400, 0x44B310, /*    */ 0x439650, 0x439650, 0x439650}, // OpcodeHandler_0
                 {0x446390, 0x446390, 0x4462A0, /*    */ 0x43AEA0, 0x43AEA0, 0x43AEA0}, // OpcodeHandler_1
                 {0x444BE0, 0x444BE0, 0x444AF0, /*    */ 0x43D530, 0x43D530, 0x43D530}, // OpcodeHandler_2
