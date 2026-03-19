@@ -140,7 +140,7 @@ Script::CollectParameters(uint* p_ip, short num_params)
 
 		int collected = 0;
 		for (short i = 0; i < num_params; i++) {
-				ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[*p_ip];
+				auto* param_type = (ScriptParamType*)&game::ScriptSpace[*p_ip];
 				*p_ip += 1;
 
 				switch (param_type->type) {
@@ -201,7 +201,7 @@ Script::CollectParameters(uint* p_ip, short num_params)
 int
 Script::CollectNextParameterWithoutIncreasingPC(uint ip)
 {
-		ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[ip];
+		auto* param_type = (ScriptParamType*)&game::ScriptSpace[ip];
 		ip += 1;
 
 		switch (param_type->type) {
@@ -246,19 +246,19 @@ Script::UpdateCompareFlag(bool result)
 		game::UpdateCompareFlag(this, result);
 }
 
-void*
+ScriptParam*
 Script::GetPointerToScriptVariable()
 {
-		ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[ip_];
+		auto* param_type = (ScriptParamType*)&game::ScriptSpace[ip_];
 		ip_ += 1;
 
 		switch (param_type->type) {
 		case PARAM_TYPE_GVAR:
-				void* addr = &game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip_]];
+				auto* addr = (ScriptParam*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip_]];
 				ip_ += 2;
 				return addr;
 		case PARAM_TYPE_LVAR:
-				void* addr = &local_vars_[*(ushort*)&game::ScriptSpace[ip_]];
+				auto* addr = (ScriptParam*)&local_vars_[*(ushort*)&game::ScriptSpace[ip_]];
 				ip_ += 2;
 				return addr;
 		default:
