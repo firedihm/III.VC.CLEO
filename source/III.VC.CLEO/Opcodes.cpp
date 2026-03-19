@@ -18,34 +18,10 @@ namespace fs = std::filesystem;
 
 ScriptParam g_cleo_shared_vars[0xFFFF];
 
-/*
-// Exports
-CLEOAPI unsigned CLEO_GetVersion() { return CLEO_VERSION; }
-CLEOAPI char* CLEO_GetScriptSpaceAddress() { return game::ScriptSpace; }
-CLEOAPI ScriptParam* CLEO_GetParamsAddress() { return game::ScriptParams; }
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-	unsigned __stdcall _CLEO_GetVersion() { return CLEO_GetVersion(); }
-	char* __stdcall _CLEO_GetScriptSpaceAddress() { return CLEO_GetScriptSpaceAddress(); }
-	ScriptParam* __stdcall _CLEO_GetParamsAddress() { return CLEO_GetParamsAddress(); }
-	bool __stdcall CLEO_RegisterOpcode(unsigned short id, Opcode func) { return opcodes::Register(id, func); }
-
-	// Script methods
-	void __stdcall CLEO_Collect(Script* script, unsigned int numParams) { script->CollectParameters(numParams); }
-	void __stdcall CLEO_CollectAt(Script* script, unsigned int* pIp, unsigned int numParams) { script->CollectParameters(pIp, numParams); }
-	int __stdcall CLEO_CollectNextWithoutIncreasingPC(Script* script, unsigned int ip) { return script->CollectNextWithoutIncreasingPC(ip); }
-	eParamType __stdcall CLEO_GetNextParamType(Script* script) { return script->GetNextParamType(); }
-	void __stdcall CLEO_Store(Script* script, unsigned int numParams) { script->StoreParameters(numParams); }
-	void __stdcall CLEO_ReadShortString(Script* script, char* out) { script->ReadShortString(out); }
-	void __stdcall CLEO_UpdateCompareFlag(Script* script, bool result) { script->UpdateCompareFlag(result); }
-	void* __stdcall CLEO_GetPointerToScriptVariable(Script* script) { return script->GetPointerToScriptVariable(); }
-	void __stdcall CLEO_JumpTo(Script* script, int address) { script->JumpTo(address); }
-#ifdef __cplusplus
-}
-#endif
-*/
+//0AAC=2,%2d% = load_audiostream %1d%
+//0AAD=2,set_mp3 %1d% perform_action %2d%
+//0AAE=1,release_mp3 %1d%
+//0AAF=2,%2d% = get_mp3_length %1d%
 
 eOpcodeResult
 __stdcall DUMMY(Script* script)
@@ -58,7 +34,7 @@ __stdcall GOTO(Script* script)
 {
 		script->CollectParameters(1);
 
-		script->JumpTo(game::ScriptParams[0].nVar);
+		script->Jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -69,7 +45,7 @@ __stdcall GOTO_IF_TRUE(Script* script)
 		script->CollectParameters(1);
 
 		if (script->cond_result())
-				script->JumpTo(game::ScriptParams[0].nVar);
+				script->Jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -80,7 +56,7 @@ __stdcall GOTO_IF_FALSE(Script* script)
 		script->CollectParameters(1);
 
 		if (!script->cond_result())
-				script->JumpTo(game::ScriptParams[0].nVar);
+				script->Jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -91,7 +67,7 @@ __stdcall GOSUB(Script* script)
 		script->CollectParameters(1);
 
 		script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
-		script->JumpTo(game::ScriptParams[0].nVar);
+		script->Jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -131,11 +107,8 @@ __stdcall START_CUSTOM_SCRIPT(Script* script)
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
 		Script* new_script = script_mgr::StartScript(filepath.c_str());
 
-		for (int i = 0; i < Script::NUM_LOCAL_VARS && script->GetNextParamType(); ++i) {
-				script->CollectParameters(1);
-				new_script->local_vars_[i].nVar = game::ScriptParams[0].nVar;
-		}
-		script->ip_++; // consume PARAM_TYPE_END_OF_PARAMS
+		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
+				new_script->local_vars_[i].nVar = game::ScriptParams[i].nVar;
 
 		return OR_CONTINUE;
 }
@@ -169,19 +142,12 @@ __stdcall CALL_FUNCTION(Script* script)
 		int argc = game::ScriptParams[1].nVar;
 		int popsize = game::ScriptParams[2].nVar * sizeof(ScriptParam);
 
-		script->CollectParameters(argc);
-
 		// we push them in read order; params have to be compiled in reverse order
-		for (int i = 0; i < argc; ++i)
+		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
 				__asm push game::ScriptParams[i].nVar
 
 		__asm call func
 		__asm add esp, popsize
-
-		// what is this?
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -194,21 +160,14 @@ __stdcall CALL_FUNCTION_RETURN(Script* script)
 		int argc = game::ScriptParams[1].nVar;
 		int popsize = game::ScriptParams[2].nVar * sizeof(ScriptParam);
 
-		script->CollectParameters(argc);
-
 		// we push them in read order; params have to be compiled in reverse order
-		for (int i = 0; i < argc; ++i)
+		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
 				__asm push game::ScriptParams[i].nVar
 
 		__asm call func
 		__asm add esp, popsize
 		__asm mov game::ScriptParams[0].nVar, eax
 		script->StoreParameters(1);
-
-		// what is this?
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -222,20 +181,13 @@ __stdcall CALL_METHOD(Script* script)
 		int argc = game::ScriptParams[2].nVar;
 		int popsize = game::ScriptParams[3].nVar * sizeof(ScriptParam);
 
-		script->CollectParameters(argc);
-
 		// we push them in read order; params have to be compiled in reverse order
-		for (int i = 0; i < argc; ++i)
+		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
 				__asm push game::ScriptParams[i].nVar
 
 		__asm mov ecx, object
 		__asm call func
 		__asm add esp, popsize
-
-		// what is this?
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -249,10 +201,8 @@ __stdcall CALL_METHOD_RETURN(Script* script)
 		int argc = game::ScriptParams[2].nVar;
 		int popsize = game::ScriptParams[3].nVar * sizeof(ScriptParam);
 
-		script->CollectParameters(argc);
-
 		// we push them in read order; params have to be compiled in reverse order
-		for (int i = 0; i < argc; ++i)
+		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
 				__asm push game::ScriptParams[i].nVar
 
 		__asm mov ecx, object
@@ -260,11 +210,6 @@ __stdcall CALL_METHOD_RETURN(Script* script)
 		__asm add esp, popsize
 		__asm mov game::ScriptParams[0].nVar, eax
 		script->StoreParameters(1);
-
-		// what is this?
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -559,7 +504,7 @@ __stdcall CLEO_CALL(Script* script)
 		script->push_stack_frame();
 
 		std::memcpy(&script->local_vars_, &game::ScriptParams, param_count * sizeof(ScriptParam));
-		script->JumpTo(address);
+		script->Jump(address);
 
 		return OR_CONTINUE;
 }
@@ -912,11 +857,8 @@ __stdcall STREAM_CUSTOM_SCRIPT(Script* script)
 		LOGL(LOG_PRIORITY_OPCODE, "STREAM_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
 		Script* new_script = script_mgr::StartScript(filepath.c_str());
 
-		for (int i = 0; script->GetNextParamType(); ++i) {
-				script->CollectParameters(1);
-				new_script->local_vars_[i].nVar = game::ScriptParams[0].nVar;
-		}
-		script->ip_++; // consume PARAM_TYPE_END_OF_PARAMS
+		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
+				new_script->local_vars_[i].nVar = game::ScriptParams[i].nVar;
 
 		return OR_CONTINUE;
 }
@@ -1029,11 +971,6 @@ __stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtY = y;
 		std::swprintf(&game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].text, INTRO_TEXT_LENGTH, L"%hs", &fmt);
 		(*game::pNumberOfIntroTextLinesThisFrame)++;
-
-		// skip redundant params
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
 
 		return OR_CONTINUE;
 };
@@ -1265,57 +1202,62 @@ __stdcall WRITE_TO_FILE(Script* script)
 		return OR_CONTINUE;
 }
 
-//0AA0=1,gosub_if_false %1p%
-eOpcodeResult CustomOpcodes::OPCODE_0AA0(Script *script)
+eOpcodeResult
+__stdcall GOSUB_IF_FALSE(Script* script)
 {
-	script->CollectParameters(1);
-	script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
-	if (!script->cond_result())
-		script->JumpTo(game::ScriptParams[0].nVar);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		if (!script->cond_result()) {
+				script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
+				script->Jump(game::ScriptParams[0].nVar);
+		}
+
+		return OR_CONTINUE;
 }
 
-//0AA1=0,return_if_false
-eOpcodeResult CustomOpcodes::OPCODE_0AA1(Script *script)
+eOpcodeResult
+__stdcall RETURN_IF_FALSE(Script* script)
 {
-	if (script->cond_result()) return OR_CONTINUE;
-	script->ip_ = script->gosub_stack_[--script->gosub_stack_pointer_];
-	return OR_CONTINUE;
+		if (!script->cond_result())
+				script->ip_ = script->gosub_stack_[--script->gosub_stack_pointer_];
+
+		return OR_CONTINUE;
 }
 
-//0AA2=2,%2h% = load_library %1s% ; IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AA2(Script *script)
+eOpcodeResult
+__stdcall LOAD_DYNAMIC_LIBRARY(Script* script)
 {
-	script->CollectParameters(1);
-	auto libHandle = LoadLibrary(game::ScriptParams[0].szVar);
-	game::ScriptParams[0].pVar = libHandle;
-	script->StoreParameters(1);
-	script->UpdateCompareFlag(libHandle);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		game::ScriptParams[0].pVar = memory::LoadLibrary(game::ScriptParams[0].szVar);
+		script->StoreParameters(1);
+
+		script->UpdateCompareFlag(game::ScriptParams[0].pVar);
+
+		return OR_CONTINUE;
 }
 
-//0AA3=1,free_library %1h%
-eOpcodeResult CustomOpcodes::OPCODE_0AA3(Script *script)
+eOpcodeResult
+__stdcall FREE_DYNAMIC_LIBRARY(Script* script)
 {
-	script->CollectParameters(1);
-	HMODULE libHandle;
-	libHandle = (HMODULE)game::ScriptParams[0].pVar;
-	FreeLibrary(libHandle);
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		memory::FreeLibrary(game::ScriptParams[0].pVar);
+
+		return OR_CONTINUE;
 }
 
-//0AA4=3,%3d% = get_proc_address %1s% library %2d% ; IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AA4(Script *script)
+eOpcodeResult
+__stdcall GET_DYNAMIC_LIBRARY_PROCEDURE(Script* script)
 {
-	script->CollectParameters(2);
-	char *funcName = game::ScriptParams[0].szVar;
-	HMODULE libHandle;
-	libHandle = (HMODULE)game::ScriptParams[1].pVar;
-	void *funcAddr = (void *)GetProcAddress(libHandle, funcName);
-	game::ScriptParams[0].pVar = funcAddr;
-	script->StoreParameters(1);
-	script->UpdateCompareFlag(funcAddr);
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		game::ScriptParams[0].pVar = memory::GetProcAddress(game::ScriptParams[1].pVar, game::ScriptParams[0].szVar);
+		script->StoreParameters(1);
+
+		script->UpdateCompareFlag(game::ScriptParams[0].pVar);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1335,11 +1277,6 @@ eOpcodeResult CustomOpcodes::OPCODE_0AAB(Script *script)
 		!(fAttr & FILE_ATTRIBUTE_DIRECTORY));
 	return OR_CONTINUE;
 }
-
-//0AAC=2,%2d% = load_audiostream %1d%
-//0AAD=2,set_mp3 %1d% perform_action %2d%
-//0AAE=1,release_mp3 %1d%
-//0AAF=2,%2d% = get_mp3_length %1d%
 
 eOpcodeResult
 __stdcall SET_CLEO_SHARED_VAR(Script* script)
@@ -1550,11 +1487,6 @@ __stdcall PRINT_HELP_FORMATTED(Script* script)
 
 		game::SetHelpMessage(&wfmt, false, false);
 
-		// skip redundant params
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
-
 		return OR_CONTINUE;
 }
 
@@ -1573,11 +1505,6 @@ __stdcall PRINT_BIG_FORMATTED(Script* script)
 
 		game::AddBigMessageQ(&wfmt, time, style - 1);
 
-		// skip redundant params
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
-
 		return OR_CONTINUE;
 }
 
@@ -1595,11 +1522,6 @@ __stdcall PRINT_FORMATTED(Script* script)
 
 		game::AddMessage(&wfmt, time, 0);
 
-		// skip redundant params
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
-
 		return OR_CONTINUE;
 }
 
@@ -1616,11 +1538,6 @@ __stdcall PRINT_FORMATTED_NOW(Script* script)
 		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
 
 		game::AddMessageJumpQ(&wfmt, time, 0);
-
-		// skip redundant params
-		while (script->GetNextParamType())
-				script->CollectParameters(1);
-		script->ip_++;
 
 		return OR_CONTINUE;
 }
@@ -2051,11 +1968,11 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0A9D, READ_FROM_FILE);
 		opcodes::Register(0x0A9E, WRITE_TO_FILE);
 		opcodes::Register(0x0A9F, GET_THIS_SCRIPT_STRUCT);
-		opcodes::Register(0x0AA0, OPCODE_0AA0);
-		opcodes::Register(0x0AA1, OPCODE_0AA1);
-		opcodes::Register(0x0AA2, OPCODE_0AA2);
-		opcodes::Register(0x0AA3, OPCODE_0AA3);
-		opcodes::Register(0x0AA4, OPCODE_0AA4);
+		opcodes::Register(0x0AA0, GOSUB_IF_FALSE);
+		opcodes::Register(0x0AA1, RETURN_IF_FALSE);
+		opcodes::Register(0x0AA2, LOAD_DYNAMIC_LIBRARY);
+		opcodes::Register(0x0AA3, FREE_DYNAMIC_LIBRARY);
+		opcodes::Register(0x0AA4, GET_DYNAMIC_LIBRARY_PROCEDURE);
 		opcodes::Register(0x0AA5, CALL_FUNCTION);
 		opcodes::Register(0x0AA6, CALL_METHOD);
 		opcodes::Register(0x0AA7, CALL_FUNCTION_RETURN);
