@@ -254,9 +254,13 @@ Script::GetPointerToScriptVariable()
 
 		switch (param_type->type) {
 		case PARAM_TYPE_GVAR:
-				return &game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip]];
+				void* addr = &game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip_]];
+				ip_ += 2;
+				return addr;
 		case PARAM_TYPE_LVAR:
-				return &local_vars_[*(ushort*)&game::ScriptSpace[ip]];
+				void* addr = &local_vars_[*(ushort*)&game::ScriptSpace[ip_]];
+				ip_ += 2;
+				return addr;
 		default:
 				return nullptr;
 		}
