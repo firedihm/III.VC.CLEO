@@ -77,8 +77,8 @@ public:
 		__declspec(dllexport) int CollectNextParameterWithoutIncreasingPC(uint ip);
 		__declspec(dllexport) int CollectParameters(short num_params) { return CollectParameters(&m_nIp, num_params); }
 		__declspec(dllexport) void StoreParameters(short num_params);
-
 		__declspec(dllexport) void UpdateCompareFlag(bool result);
+
 		__declspec(dllexport) void* GetPointerToScriptVariable();
 		__declspec(dllexport) void Jump(int address);
 		__declspec(dllexport) void FormatString(char* out, const char* format);
