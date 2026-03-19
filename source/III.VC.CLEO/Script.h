@@ -73,9 +73,9 @@ public:
 
 		eOpcodeResult ProcessOneCommand();
 
-		__declspec(dllexport) void CollectParameters(uint* p_ip, short num_params);
+		__declspec(dllexport) int CollectParameters(uint* p_ip, short num_params);
 		__declspec(dllexport) int CollectNextParameterWithoutIncreasingPC(uint ip);
-		__declspec(dllexport) void CollectParameters(short num_params) { CollectParameters(&m_nIp, num_params); }
+		__declspec(dllexport) int CollectParameters(short num_params) { return CollectParameters(&m_nIp, num_params); }
 		__declspec(dllexport) void StoreParameters(short num_params);
 
 		__declspec(dllexport) ScriptParamType GetNextParamType();
