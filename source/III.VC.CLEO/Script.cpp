@@ -132,14 +132,20 @@ Script::ProcessOneCommand()
 		}
 }
 
-void
+int
 Script::CollectParameters(uint* p_ip, short num_params)
 {
+		// -1 is a symbolic value to read params of variadic opcodes; read until PARAM_TYPE_END_OF_PARAMS
+		num_params = (num_params == -1) ? game::MAX_NUM_SCRIPT_PARAMS : num_params;
+
+		int collected = 0;
 		for (short i = 0; i < num_params; i++) {
 				ScriptParamType* param_type = (ScriptParamType*)&game::ScriptSpace[*p_ip];
 				*p_ip += 1;
 
 				switch (param_type->type) {
+				case: PARAM_TYPE_END_OF_PARAMS:
+						return collected;
 				case PARAM_TYPE_INT32:
 						game::ScriptParams[i].nVar = *(int*)&game::ScriptSpace[*p_ip];
 						*p_ip += 4;
@@ -187,7 +193,9 @@ Script::CollectParameters(uint* p_ip, short num_params)
 						*p_ip += KEY_LENGTH_IN_SCRIPT;
 						break;
 				}
+				collected++;
 		}
+		return collected;
 }
 
 int
@@ -306,13 +314,16 @@ Script::FormatString(char* out, const char* format)
 
 						conv_spec[i] = '\0';
 
-						// "%%" needs no argument: it formats to '%'
+						// "%%" needs no parameters: it formats to '%'
 						if (!(conv_spec[0] == '%' && conv_spec[1] == '%'))
 								CollectParameters(1);
 
-						out += std::sprintf(out, &conv_spec, game::ScriptParams[0].nVar); // pass argument as binary; junk value if "%%"
+						// pass param as binary; junk value if "%%"
+						out += std::sprintf(out, &conv_spec, game::ScriptParams[0].nVar);
+
+						// skip redundant params
+						CollectParameters(-1);
 				}
 		}
-
 		*out = '\0';
 }
