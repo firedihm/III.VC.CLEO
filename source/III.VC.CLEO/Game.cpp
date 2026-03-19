@@ -109,6 +109,7 @@ namespace game
 		memory::MakeJump(gaddr(Address::ProcessOneCommand), Script::ProcessOneCommand);
 		memory::MakeJump(gaddr(Address::CollectParameters), Script::CollectParameters);
 		memory::MakeJump(gaddr(Address::CollectNextParameterWithoutIncreasingPC), Script::CollectNextParameterWithoutIncreasingPC);
+		memory::MakeJump(gaddr(Address::GetPointerToScriptVariable), Script::GetPointerToScriptVariable);
 		auto* AddScriptToList = (void (__thiscall*)(Script*, Script**))gaddr(Address::AddScriptToList);
 		auto* RemoveScriptFromList = (void (__thiscall*)(Script*, Script**))gaddr(Address::RemoveScriptFromList);
 		auto* StoreParameters = (void (__thiscall*)(Script*, uint*, short))gaddr(Address::StoreParameters);
