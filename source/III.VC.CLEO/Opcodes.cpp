@@ -1532,50 +1532,37 @@ __stdcall PRINT_FORMATTED_NOW(Script* script)
 		return OR_CONTINUE;
 }
 
-//0AD3=-1,string %1d% format %2d%
-eOpcodeResult CustomOpcodes::OPCODE_0AD3(Script *script)
+eOpcodeResult
+__stdcall STRING_FORMAT(Script* script)
 {
-	script->CollectParameters(2);
-	char fmt[HELP_MSG_LENGTH], *dst;
-	dst = (char*)game::ScriptParams[0].pVar;
-	strcpy(fmt, game::ScriptParams[1].szVar);
-	format(script, dst, static_cast<size_t>(-1), fmt);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
-		script->CollectParameters(1);
-	script->ip_++;
-	return OR_CONTINUE;
-};
+		script->CollectParameters(2);
 
-//0AD4=-1,  scan_string %1d% format %2s% store_num_results_to %3d%
-eOpcodeResult CustomOpcodes::OPCODE_0AD4(Script *script)
+		script->FormatString(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall SCAN_STRING(Script *script)
 {
-	script->CollectParameters(2);
-	char fmt[HELP_MSG_LENGTH], *src;
-	src = game::ScriptParams[0].szVar;
-	strcpy(fmt, game::ScriptParams[1].szVar);
-	size_t cExParams = 0;
-	int *result = (int *)script->GetPointerToScriptVariable();
-	ScriptParam *ExParams[35];
-	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
-	// read extra params
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
-	{
-		ExParams[cExParams++] = (ScriptParam *)script->GetPointerToScriptVariable();
-	}
-	script->ip_++;
+		script->CollectParameters(2);
 
-	*result = sscanf(src, fmt,
-		ExParams[0], ExParams[1], ExParams[2], ExParams[3], ExParams[4], ExParams[5],
-		ExParams[6], ExParams[7], ExParams[8], ExParams[9], ExParams[10], ExParams[11],
-		ExParams[12], ExParams[13], ExParams[14], ExParams[15], ExParams[16], ExParams[17],
-		ExParams[18], ExParams[19], ExParams[20], ExParams[21], ExParams[22], ExParams[23],
-		ExParams[24], ExParams[25], ExParams[26], ExParams[27], ExParams[28], ExParams[29],
-		ExParams[30], ExParams[31], ExParams[32], ExParams[33], ExParams[34]);
+		ScriptParam* num_assigned = script->GetPointerToScriptVariable();
 
-	if (*result)
-		script->UpdateCompareFlag(true);
-	return OR_CONTINUE;
-};
+		ScriptParam* vars[Script::NUM_LOCAL_VARS + Script::NUM_TIMERS];
+		while (ScriptParam* addr = script->GetPointerToScriptVariable()) {
+				vars[cExParams++] = addr;
+		}
+
+		// uninitialised elements of vars won't be written to, as long as command was compiled correctly
+		*num_assigned = std::sscanf(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar,
+									vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], vars[6], vars[7], vars[8], vars[9],
+									vars[10], vars[11], vars[12], vars[13], vars[14], vars[15], vars[16], vars[17]);
+
+		script->UpdateCompareFlag(*num_assigned);
+
+		return OR_CONTINUE;
+}
 
 //0AD5=3,file %1d% seek %2d% from_origin %3d% //IF and SET
 eOpcodeResult CustomOpcodes::OPCODE_0AD5(Script *script)
@@ -2009,8 +1996,8 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AD0, PRINT_FORMATTED);
 		opcodes::Register(0x0AD1, PRINT_FORMATTED_NOW);
 		opcodes::Register(0x0AD2, DUMMY);
-		opcodes::Register(0x0AD3, OPCODE_0AD3);
-		opcodes::Register(0x0AD4, OPCODE_0AD4);
+		opcodes::Register(0x0AD3, STRING_FORMAT);
+		opcodes::Register(0x0AD4, SCAN_STRING);
 		opcodes::Register(0x0AD5, OPCODE_0AD5);
 		opcodes::Register(0x0AD6, OPCODE_0AD6);
 		opcodes::Register(0x0AD7, OPCODE_0AD7);
