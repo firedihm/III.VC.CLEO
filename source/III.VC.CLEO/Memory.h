@@ -19,6 +19,7 @@ namespace memory
 
 		void* LoadLibrary(const char* name);
 		void FreeLibrary(const void* handle);
+		void* GetProcAddress(const void* handle, const char* proc_name);
 
 		short GetKeyState(int virtual_key);
 }
