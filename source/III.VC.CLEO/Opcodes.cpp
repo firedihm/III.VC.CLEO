@@ -325,10 +325,9 @@ __stdcall IS_KEY_PRESSED(Script* script)
 eOpcodeResult
 __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint sizeof_CPlayerPed = gta3 ? 0x5F0 : 0x6D8;
-		uint offset_nPedType = gta3 ? 0x32C : 0x3D4; // CPed::m_nPedType
-		uint offset_nPedState = gta3 ? 0x224 : 0x244; // CPed::m_nPedState
+		uint sizeof_CPlayerPed = script->is_III_ ? 0x5F0 : 0x6D8;
+		uint offset_nPedType = script->is_III_ ? 0x32C : 0x3D4; // CPed::m_nPedType
+		uint offset_nPedState = script->is_III_ ? 0x224 : 0x244; // CPed::m_nPedState
 
 		script->CollectParameters(6);
 		float radius = game::ScriptParams[3].fVar;
@@ -371,10 +370,9 @@ __stdcall GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 eOpcodeResult
 __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint sizeof_CAutomobile = gta3 ? 0x5A8 : 0x5DC;
-		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
-		uint offset_flags = gta3 ? 0x122 : 0x11A; // CPhysical::flags
+		uint sizeof_CAutomobile = script->is_III_ ? 0x5A8 : 0x5DC;
+		uint offset_vehType = script->is_III_ ? 0x284 : 0x29C; // CVehicle::m_vehType
+		uint offset_flags = script->is_III_ ? 0x122 : 0x11A; // CPhysical::flags
 		uint offset_status = 0x50; // CEntity::m_status
 
 		script->CollectParameters(6);
@@ -418,8 +416,7 @@ __stdcall GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 eOpcodeResult
 __stdcall GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint sizeof_CCutsceneObject = gta3 ? 0x19C : 0x1A0; // CCutsceneHead for III
+		uint sizeof_CCutsceneObject = script->is_III_ ? 0x19C : 0x1A0; // CCutsceneHead for III
 
 		script->CollectParameters(5);
 		float radius = game::ScriptParams[3].fVar;
@@ -693,9 +690,8 @@ __stdcall GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS(Script* script)
 eOpcodeResult
 __stdcall GET_CURRENT_PLAYER_WEAPON(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint offset_currentWeapon = gta3 ? 0x498 : 0x504; // CPed::m_currentWeapon
-		uint offset_weapons = gta3 ? 0x35C : 0x408; // CPed::m_weapons[]
+		uint offset_currentWeapon = script->is_III_ ? 0x498 : 0x504; // CPed::m_currentWeapon
+		uint offset_weapons = script->is_III_ ? 0x35C : 0x408; // CPed::m_weapons[]
 		uint sizeof_CWeapon = 0x18;
 
 		script->CollectParameters(1);
@@ -711,7 +707,7 @@ __stdcall GET_CURRENT_PLAYER_WEAPON(Script* script)
 eOpcodeResult
 __stdcall GET_CHAR_ARMOUR(Script* script)
 {
-		uint offset_fArmour = game::IsIII() ? 0x2C4 : 0x358; // CPed::m_fArmour
+		uint offset_fArmour = script->is_III_ ? 0x2C4 : 0x358; // CPed::m_fArmour
 
 		script->CollectParameters(1);
 		uchar* ped = (uchar*)(game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar));
@@ -725,13 +721,12 @@ __stdcall GET_CHAR_ARMOUR(Script* script)
 eOpcodeResult
 __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 {
-		bool gta3 = game::IsIII();
-		short mi_dodo = gta3 ? 126 : 190; // skimmer for VC
-		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
+		short mi_dodo = script->is_III_ ? 126 : 190; // skimmer for VC
+		uint offset_bInVehicle = script->is_III_ ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = script->is_III_ ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
 		uint offset_modelIndex = 0x5C; // CEntity::m_modelIndex
-		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
-		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
+		uint offset_pHandling = script->is_III_ ? 0x128 : 0x120; // CVehicle::pHandling
+		uint offset_Flags = script->is_III_ ? 0xC8 : 0xCC; // tHandlingData::Flags
 
 		script->CollectParameters(1);
 		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
@@ -759,10 +754,9 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 eOpcodeResult
 __stdcall IS_PLAYER_IN_ANY_BOAT(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
-		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
+		uint offset_bInVehicle = script->is_III_ ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = script->is_III_ ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
+		uint offset_vehType = script->is_III_ ? 0x284 : 0x29C; // CVehicle::m_vehType
 
 		script->CollectParameters(1);
 		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
@@ -781,11 +775,10 @@ __stdcall IS_PLAYER_IN_ANY_BOAT(Script* script)
 eOpcodeResult
 __stdcall IS_PLAYER_IN_ANY_HELI(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
-		uint offset_pHandling = gta3 ? 0x128 : 0x120; // CVehicle::pHandling
-		uint offset_Flags = gta3 ? 0xC8 : 0xCC; // tHandlingData::Flags
+		uint offset_bInVehicle = script->is_III_ ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = script->is_III_ ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
+		uint offset_pHandling = script->is_III_ ? 0x128 : 0x120; // CVehicle::pHandling
+		uint offset_Flags = script->is_III_ ? 0xC8 : 0xCC; // tHandlingData::Flags
 
 		script->CollectParameters(1);
 		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
@@ -812,10 +805,9 @@ __stdcall IS_PLAYER_IN_ANY_HELI(Script* script)
 eOpcodeResult
 __stdcall IS_PLAYER_ON_ANY_BIKE(Script* script)
 {
-		bool gta3 = game::IsIII();
-		uint offset_bInVehicle = gta3 ? 0x314 : 0x3AC; // CPed::bInVehicle
-		uint offset_pMyVehicle = gta3 ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
-		uint offset_vehType = gta3 ? 0x284 : 0x29C; // CVehicle::m_vehType
+		uint offset_bInVehicle = script->is_III_ ? 0x314 : 0x3AC; // CPed::bInVehicle
+		uint offset_pMyVehicle = script->is_III_ ? 0x310 : 0x3A8; // CPed::m_pMyVehicle
+		uint offset_vehType = script->is_III_ ? 0x284 : 0x29C; // CVehicle::m_vehType
 
 		script->CollectParameters(1);
 		uchar* player = game::FindPlayerPed(game::ScriptParams[0].nVar);
