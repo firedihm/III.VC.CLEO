@@ -43,9 +43,9 @@ public:
 		constexpr int CLEO_ARRAY_SIZE = 256;
 
 		uchar* code_data_;
+		bool is_III_; // lets opcode extensions know game version without importing game namespace
 		bool is_custom_;
 		bool is_persistent_;
-		bool is_III_; // lets opcode extensions know game version without importing game namespace
 		int last_ped_search_index_;
 		int last_vehicle_search_index_;
 		int last_object_search_index_;
