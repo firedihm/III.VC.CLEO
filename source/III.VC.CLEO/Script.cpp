@@ -240,12 +240,6 @@ Script::StoreParameters(short num_params)
 		game::StoreParameters(this, &ip_, num_params);
 }
 
-ScriptParamType
-Script::GetNextParamType()
-{
-		return ((ScriptParamType*)&game::ScriptSpace[ip_])->type;
-}
-
 void*
 Script::GetPointerToScriptVariable()
 {
@@ -259,7 +253,7 @@ Script::UpdateCompareFlag(bool result)
 }
 
 void
-Script::JumpTo(int address)
+Script::Jump(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		if (address >= 0) {
