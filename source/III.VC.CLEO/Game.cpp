@@ -113,7 +113,6 @@ namespace game
 		auto* RemoveScriptFromList = (void (__thiscall*)(Script*, Script**))gaddr(Address::RemoveScriptFromList);
 		auto* StoreParameters = (void (__thiscall*)(Script*, uint*, short))gaddr(Address::StoreParameters);
 		auto* UpdateCompareFlag = (void (__thiscall*)(Script*, bool))gaddr(Address::UpdateCompareFlag);
-		auto* GetPointerToScriptVariable = (void* (__thiscall*)(Script*, uint*, short))gaddr(Address::GetPointerToScriptVariable);
 		auto* OpcodeHandlers[0] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_0);
 		auto* OpcodeHandlers[1] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_1);
 		auto* OpcodeHandlers[2] = (eOpcodeResult (__thiscall*)(Script*, int))gaddr(Address::OpcodeHandler_2);
