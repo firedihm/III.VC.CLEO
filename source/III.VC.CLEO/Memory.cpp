@@ -66,6 +66,12 @@ memory::FreeLibrary(const void* handle)
 		::FreeLibrary(handle);
 }
 
+void*
+memory::GetProcAddress(const void* handle, const char* proc_name)
+{
+		return ::GetProcAddress(handle, proc_name);
+}
+
 short
 memory::GetKeyState(int virtual_key)
 {
