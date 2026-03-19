@@ -22,6 +22,14 @@ ScriptParam g_cleo_shared_vars[0xFFFF];
 //0AAD=2,set_mp3 %1d% perform_action %2d%
 //0AAE=1,release_mp3 %1d%
 //0AAF=2,%2d% = get_mp3_length %1d%
+//0AB5=3,store_actor %1d% closest_vehicle_to %2d% closest_ped_to %3d%
+//0AB6=3,store_target_marker_coords_to %1d% %2d% %3d% // IF and SET //not supported
+//0AC0=2,audiostream %1d% loop %2d%
+//0AC1=2,%2d% = load_audiostream_with_3d_support %1d% ; IF and SET
+//0AC2=4,set_audiostream %1d% 3d_position %2d% %3d% %4d%
+//0AC3=2,link_3d_audiostream %1d% to_object %2d%
+//0AC4=2,link_3d_audiostream %1d% to_actor %2d%
+//0AC5=2,link_3d_audiostream %1d% to_vehicle %2d%
 
 eOpcodeResult
 __stdcall DUMMY(Script* script)
@@ -1260,14 +1268,14 @@ __stdcall IS_GAME_VERSION_ORIGINAL(Script* script)
 		return OR_CONTINUE;
 }
 
-//0AAB=1,   file_exists %1s%
-eOpcodeResult CustomOpcodes::OPCODE_0AAB(Script *script)
+eOpcodeResult
+__stdcall DOES_FILE_EXIST(Script* script)
 {
-	script->CollectParameters(1);
-	DWORD fAttr = GetFileAttributes(game::ScriptParams[0].szVar);
-	script->UpdateCompareFlag((fAttr != INVALID_FILE_ATTRIBUTES) &&
-		!(fAttr & FILE_ATTRIBUTE_DIRECTORY));
-	return OR_CONTINUE;
+		script->CollectParameters(1);
+
+		script->UpdateCompareFlag(fs::exists(game::ScriptParams[0].szVar));
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1290,9 +1298,6 @@ __stdcall GET_CLEO_SHARED_VAR(Script* script)
 
 		return OR_CONTINUE;
 }
-
-//0AB5=3,store_actor %1d% closest_vehicle_to %2d% closest_ped_to %3d%
-//0AB6=3,store_target_marker_coords_to %1d% %2d% %3d% // IF and SET //not supported
 
 //0AB7=2,get_vehicle %1d% number_of_gears_to %2d%
 eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB7(Script *script)
@@ -1380,13 +1385,6 @@ eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(Script *script)
 	}
 	return OR_CONTINUE;
 }
-
-//0AC0=2,audiostream %1d% loop %2d%
-//0AC1=2,%2d% = load_audiostream_with_3d_support %1d% ; IF and SET
-//0AC2=4,set_audiostream %1d% 3d_position %2d% %3d% %4d%
-//0AC3=2,link_3d_audiostream %1d% to_object %2d%
-//0AC4=2,link_3d_audiostream %1d% to_actor %2d%
-//0AC5=2,link_3d_audiostream %1d% to_vehicle %2d%
 
 eOpcodeResult
 __stdcall ALLOCATE_MEMORY(Script* script)
@@ -1971,7 +1969,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AA8, CALL_METHOD_RETURN);
 		opcodes::Register(0x0AA9, IS_GAME_VERSION_ORIGINAL);
 		opcodes::Register(0x0AAA, GET_SCRIPT_STRUCT_NAMED);
-		opcodes::Register(0x0AAB, OPCODE_0AAB);
+		opcodes::Register(0x0AAB, DOES_FILE_EXIST);
 		opcodes::Register(0x0AAC, DUMMY);
 		opcodes::Register(0x0AAD, DUMMY);
 		opcodes::Register(0x0AAE, DUMMY);
