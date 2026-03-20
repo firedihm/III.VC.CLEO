@@ -136,7 +136,7 @@ int
 Script::CollectParameters(uint* p_ip, short num_params)
 {
 		// -1 is a symbolic value to read params of variadic opcodes; read until PARAM_TYPE_END_OF_PARAMS
-		num_params = (num_params == -1) ? game::MAX_NUM_SCRIPT_PARAMS : num_params;
+		num_params = (num_params < 0 || num_params >= game::MAX_NUM_SCRIPT_PARAMS) ? game::MAX_NUM_SCRIPT_PARAMS : num_params;
 
 		int collected = 0;
 		for (short i = 0; i < num_params; i++) {
