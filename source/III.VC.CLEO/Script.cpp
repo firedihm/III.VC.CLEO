@@ -4,6 +4,7 @@
 #include "Script.h"
 
 #include <cctype>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <cstdio>
@@ -280,15 +281,17 @@ Script::Jump(int address)
 		}
 }
 
-void
+int
 Script::FormatString(char* out, const char* format)
 {
+		char* init_pos = out;
+
+		// https://en.cppreference.com/w/cpp/io/c/printf.html
 		while (*format) {
 				if (*format != '%') {
 						*(out++) = *(format++);
 				} else {
 						// read conversion specification (flags + length modifiers + specifier) and resolve it
-						// https://en.cppreference.com/w/cpp/io/c/printf.html
 						char conv_spec[32];
 						int i = 0;
 
@@ -311,15 +314,7 @@ Script::FormatString(char* out, const char* format)
 								conv_spec[i++] = *(format++);
 
 						// conversion specifier
-						while (*format == '%' || *format == 'c' || *format == 's' ||
-							   *format == 'd' || *format == 'i' ||
-							   *format == 'o' || *format == 'x' || *format == 'X' || *format == 'u' ||
-							   *format == 'f' || *format == 'F' || *format == 'e' || *format == 'E' ||
-							   *format == 'a' || *format == 'A' || *format == 'g' || *format == 'G' ||
-							   *format == 'n' || *format == 'p') {
-								conv_spec[i++] = *(format++);
-						}
-
+						conv_spec[i++] = *(format++);
 						conv_spec[i] = '\0';
 
 						// "%%" needs no parameters: it formats to '%'
@@ -328,10 +323,70 @@ Script::FormatString(char* out, const char* format)
 
 						// pass param as binary; junk value if "%%"
 						out += std::sprintf(out, &conv_spec, game::ScriptParams[0].nVar);
-
-						// skip redundant params
-						CollectParameters(-1);
 				}
 		}
 		*out = '\0';
+
+		// skip redundant params and consume PARAM_TYPE_END_OF_PARAMS
+		CollectParameters(-1);
+
+		return out - init_pos;
+}
+
+int
+Script::ScanString(const char* in, const char* format)
+{
+		int num_assigned = 0;
+
+		// https://en.cppreference.com/w/cpp/io/c/fscanf
+		while (*format) {
+				if (std::isspace(*format)) {
+						format++;
+						while (std::isspace(*in))
+								in++;
+				} else if (*format != '%') {
+						if (*format == *in) {
+								format++;
+								in++;
+						} else {
+								break;
+						}
+				} else {
+						// read conversion specification (flags + length modifiers + specifier) and resolve it
+						char conv_spec[32];
+						int i = 0;
+
+						conv_spec[i++] = *(format++); // '%'
+
+						// assignment suppression flag
+						bool suppress = (*format == '*') ? (format++, true) : false;
+
+						// field width
+						while (std::isdigit(*format))
+								conv_spec[i++] = *(format++);
+
+						// length modifiers
+						while (*format == 'h' || *format == 'l' || *format == 'j' || *format == 'z' || *format == 't' || *format == 'L')
+								conv_spec[i++] = *(format++);
+
+						// conversion specifier; can be a charset
+						if (*format == '[') {
+								if (*(format + 1) == ']' || *(format + 1) == '^' && *(format + 2) == ']') {
+										while (*format != ']');
+								}
+						} else {
+								conv_spec[i++] = *(format++);
+						}
+
+						// append "%n" to advance in*
+						conv_spec[i++] = '%';
+						conv_spec[i++] = 'n';
+						conv_spec[i] = '\0';
+				}
+		}
+
+		// skip redundant params and consume PARAM_TYPE_END_OF_PARAMS
+		while (ScriptParam* ptr = GetPointerToScriptVariable());
+
+		return num_assigned;
 }
