@@ -81,7 +81,8 @@ public:
 
 		__declspec(dllexport) ScriptParam* GetPointerToScriptVariable();
 		__declspec(dllexport) void Jump(int address);
-		__declspec(dllexport) void FormatString(char* out, const char* format);
+		__declspec(dllexport) int FormatString(char* out, const char* format);
+		__declspec(dllexport) int ScanString(const char* in, const char* format);
 
 private:
 		struct StackFrame {
