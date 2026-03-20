@@ -115,7 +115,7 @@ __stdcall START_CUSTOM_SCRIPT(Script* script)
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
 		Script* new_script = script_mgr::StartScript(filepath.c_str());
 
-		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
+		for (int i = 0, collected = script->CollectParameters(-1); i < Script::NUM_LOCAL_VARS && i < collected; ++i)
 				new_script->local_vars_[i].nVar = game::ScriptParams[i].nVar;
 
 		return OR_CONTINUE;
@@ -857,7 +857,7 @@ __stdcall STREAM_CUSTOM_SCRIPT(Script* script)
 		LOGL(LOG_PRIORITY_OPCODE, "STREAM_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
 		Script* new_script = script_mgr::StartScript(filepath.c_str());
 
-		for (int i = 0, collected = script->CollectParameters(-1); i < collected; ++i)
+		for (int i = 0, collected = script->CollectParameters(-1); i < Script::NUM_LOCAL_VARS && i < collected; ++i)
 				new_script->local_vars_[i].nVar = game::ScriptParams[i].nVar;
 
 		return OR_CONTINUE;
@@ -1543,21 +1543,21 @@ __stdcall STRING_FORMAT(Script* script)
 }
 
 eOpcodeResult
-__stdcall SCAN_STRING(Script *script)
+__stdcall SCAN_STRING(Script* script)
 {
 		script->CollectParameters(2);
 
 		ScriptParam* num_assigned = script->GetPointerToScriptVariable();
 
-		ScriptParam* vars[Script::NUM_LOCAL_VARS + Script::NUM_TIMERS];
-		while (ScriptParam* addr = script->GetPointerToScriptVariable()) {
-				vars[cExParams++] = addr;
-		}
+		ScriptParam* vars[game::MAX_NUM_SCRIPT_PARAMS];
+		for (int i = 0; vars[i] = script->GetPointerToScriptVariable(); ++i) {}
 
 		// uninitialised elements of vars won't be written to, as long as command was compiled correctly
 		*num_assigned = std::sscanf(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar,
-									vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], vars[6], vars[7], vars[8], vars[9],
-									vars[10], vars[11], vars[12], vars[13], vars[14], vars[15], vars[16], vars[17]);
+									vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], vars[6], vars[7],
+									vars[8], vars[9], vars[10], vars[11], vars[12], vars[13], vars[14], vars[15],
+									vars[16], vars[17], vars[18], vars[19], vars[20], vars[21], vars[22], vars[23],
+									vars[24], vars[25], vars[26], vars[27], vars[28], vars[29], vars[30], vars[31]);
 
 		script->UpdateCompareFlag(*num_assigned);
 
