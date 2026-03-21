@@ -133,6 +133,26 @@ Script::ProcessOneCommand()
 		}
 }
 
+ScriptParam*
+Script::GetPointerToScriptVariable()
+{
+		auto* param_type = (ScriptParamType*)&game::ScriptSpace[ip_];
+		ip_ += 1;
+
+		switch (param_type->type) {
+		case PARAM_TYPE_GVAR:
+				auto* addr = (ScriptParam*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip_]];
+				ip_ += 2;
+				return addr;
+		case PARAM_TYPE_LVAR:
+				auto* addr = (ScriptParam*)&local_vars_[*(ushort*)&game::ScriptSpace[ip_]];
+				ip_ += 2;
+				return addr;
+		default:
+				return nullptr;
+		}
+}
+
 int
 Script::CollectParameters(uint* p_ip, short num_params)
 {
@@ -247,26 +267,6 @@ Script::UpdateCompareFlag(bool result)
 		game::UpdateCompareFlag(this, result);
 }
 
-ScriptParam*
-Script::GetPointerToScriptVariable()
-{
-		auto* param_type = (ScriptParamType*)&game::ScriptSpace[ip_];
-		ip_ += 1;
-
-		switch (param_type->type) {
-		case PARAM_TYPE_GVAR:
-				auto* addr = (ScriptParam*)&game::ScriptSpace[*(ushort*)&game::ScriptSpace[ip_]];
-				ip_ += 2;
-				return addr;
-		case PARAM_TYPE_LVAR:
-				auto* addr = (ScriptParam*)&local_vars_[*(ushort*)&game::ScriptSpace[ip_]];
-				ip_ += 2;
-				return addr;
-		default:
-				return nullptr;
-		}
-}
-
 void
 Script::Jump(int address)
 {
@@ -370,9 +370,15 @@ Script::ScanString(const char* in, const char* format)
 								conv_spec[i++] = *(format++);
 
 						// conversion specifier; can be a charset
-						if (*format == '[') {
-								if (*(format + 1) == ']' || *(format + 1) == '^' && *(format + 2) == ']') {
-										while (*format != ']');
+						if (*format == '[') { // if conv_spec[i++] = *(format++) == '['...;
+								bool escape_seq = (format[1] == ']' || format[1] == '^' && format[2] == ']') ? true : false;
+								for (int set_i = 0; set_i >= 0; set_i++) {
+										char c = conv_spec[i++] = *(format++);
+										abort = (c ) ;
+								}
+
+								for (bool reverse = false, abort = false; !abort; ) {
+										;
 								}
 						} else {
 								conv_spec[i++] = *(format++);
