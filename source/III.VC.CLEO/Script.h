@@ -37,7 +37,7 @@ protected:
 // make sure CRunningScript's composition wasn't changed; as long as member order is correct...
 static_assert(sizeof(CRunningScript) == 0x88);
 
-class Script : protected CRunningScript
+class __declspec(dllexport) Script : protected CRunningScript
 {
 public:
 		constexpr int CLEO_ARRAY_SIZE = 256;
@@ -68,21 +68,22 @@ public:
 		void pop_stack_frame();
 
 		// keep track of dynamically allocated memory
-		template <typename T> void register_object(T* obj) { register_ = new RegData{register_, obj, [](void* self) { static_cast<T*>(self)->~T(); }}; }
-		__declspec(dllexport) void delete_registered_object(void* obj);
+		template <typename T>
+		void register_object(T* obj) { register_ = new RegData{register_, obj, [](void* self) { static_cast<T*>(self)->~T(); }}; }
+		void delete_registered_object(void* obj);
 
 		eOpcodeResult ProcessOneCommand();
 
-		__declspec(dllexport) int CollectParameters(uint* p_ip, short num_params);
-		__declspec(dllexport) int CollectNextParameterWithoutIncreasingPC(uint ip);
-		__declspec(dllexport) int CollectParameters(short num_params) { return CollectParameters(&m_nIp, num_params); }
-		__declspec(dllexport) void StoreParameters(short num_params);
-		__declspec(dllexport) void UpdateCompareFlag(bool result);
+		ScriptParam* GetPointerToScriptVariable();
+		int CollectParameters(uint* p_ip, short num_params);
+		int CollectParameters(short num_params) { return CollectParameters(&m_nIp, num_params); }
+		int CollectNextParameterWithoutIncreasingPC(uint ip);
+		void StoreParameters(short num_params);
+		void UpdateCompareFlag(bool result);
 
-		__declspec(dllexport) ScriptParam* GetPointerToScriptVariable();
-		__declspec(dllexport) void Jump(int address);
-		__declspec(dllexport) int FormatString(char* out, const char* format);
-		__declspec(dllexport) int ScanString(const char* in, const char* format);
+		void Jump(int address);
+		int FormatString(char* out, const char* format);
+		int ScanString(const char* in, const char* format);
 
 private:
 		struct StackFrame {
