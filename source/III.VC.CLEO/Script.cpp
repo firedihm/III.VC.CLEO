@@ -369,19 +369,14 @@ Script::ScanString(const char* in, const char* format)
 						while (*format == 'h' || *format == 'l' || *format == 'j' || *format == 'z' || *format == 't' || *format == 'L')
 								conv_spec[i++] = *(format++);
 
-						// conversion specifier; can be a charset
-						if (*format == '[') { // if conv_spec[i++] = *(format++) == '['...;
-								bool escape_seq = (format[1] == ']' || format[1] == '^' && format[2] == ']') ? true : false;
-								for (int set_i = 0; set_i >= 0; set_i++) {
-										char c = conv_spec[i++] = *(format++);
-										abort = (c ) ;
+						// conversion specifier; can be a charset "[...]"
+						if (char c = conv_spec[i++] = *(format++); c == '[') {
+								// charset beggining with ']' will include ']' into set: "[]]"
+								int num_to_read = (*format == ']' || *format == '^' && *(format + 1) == ']') ? 2 : 1;
+								while (num_to_read) {
+										char read = conv_spec[i++] = *(format++);
+										num_to_read = (read == ']') ? --num_to_read : num_to_read;
 								}
-
-								for (bool reverse = false, abort = false; !abort; ) {
-										;
-								}
-						} else {
-								conv_spec[i++] = *(format++);
 						}
 
 						// append "%n" to advance in*
