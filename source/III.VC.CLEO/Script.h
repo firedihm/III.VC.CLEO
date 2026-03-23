@@ -81,9 +81,9 @@ public:
 		void StoreParameters(short num_params);
 		void UpdateCompareFlag(bool result);
 
-		void Jump(int address);
-		int FormatString(char* out, const char* format);
-		int ScanString(const char* in, const char* format);
+		void jump(int address);
+		int format_string(char* out, const char* format);
+		int scan_string(const char* in, const char* format);
 
 private:
 		struct StackFrame {
