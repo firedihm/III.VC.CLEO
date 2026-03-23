@@ -344,9 +344,9 @@ Script::ScanString(const char* in, const char* format)
 						format++;
 						while (std::isspace(*in))
 								in++;
-				} else if (*format != '%') {
+				} else if (*format != '%' || *format == '%' && *(format + 1) == '%') {
 						if (*format == *in) {
-								format++;
+								format += (*format == '%') ? 2 : 1;
 								in++;
 						} else {
 								break;
@@ -383,6 +383,10 @@ Script::ScanString(const char* in, const char* format)
 						conv_spec[i++] = '%';
 						conv_spec[i++] = 'n';
 						conv_spec[i] = '\0';
+
+						ScriptParam junk, num_read;
+						num_assigned += std::sscanf(in, &conv_spec, (suppress ? &junk : GetPointerToScriptVariable()), &num_read.nVar);
+						in += num_read.nVar;
 				}
 		}
 
