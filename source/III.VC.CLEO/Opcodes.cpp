@@ -42,7 +42,7 @@ __stdcall GOTO(Script* script)
 {
 		script->CollectParameters(1);
 
-		script->Jump(game::ScriptParams[0].nVar);
+		script->jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -53,7 +53,7 @@ __stdcall GOTO_IF_TRUE(Script* script)
 		script->CollectParameters(1);
 
 		if (script->cond_result())
-				script->Jump(game::ScriptParams[0].nVar);
+				script->jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -64,7 +64,7 @@ __stdcall GOTO_IF_FALSE(Script* script)
 		script->CollectParameters(1);
 
 		if (!script->cond_result())
-				script->Jump(game::ScriptParams[0].nVar);
+				script->jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -75,7 +75,7 @@ __stdcall GOSUB(Script* script)
 		script->CollectParameters(1);
 
 		script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
-		script->Jump(game::ScriptParams[0].nVar);
+		script->jump(game::ScriptParams[0].nVar);
 
 		return OR_CONTINUE;
 }
@@ -509,7 +509,7 @@ __stdcall CLEO_CALL(Script* script)
 		script->push_stack_frame();
 
 		std::memcpy(&script->local_vars_, &game::ScriptParams, param_count * sizeof(ScriptParam));
-		script->Jump(address);
+		script->jump(address);
 
 		return OR_CONTINUE;
 }
@@ -965,7 +965,7 @@ __stdcall DISPLAY_TEXT_FORMATTED(Script* script)
 		float y = game::ScriptParams[1].fVar;
 
 		char fmt[INTRO_TEXT_LENGTH];
-		script->FormatString(&fmt, game::ScriptParams[2].szVar);
+		script->format_string(&fmt, game::ScriptParams[2].szVar);
 
 		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtX = x;
 		game::IntroTextLines[*game::pNumberOfIntroTextLinesThisFrame].m_fAtY = y;
@@ -1173,7 +1173,6 @@ __stdcall GET_FILE_SIZE(Script* script)
 		game::ScriptParams[0].nVar = file->seekg(0, std::ios::beg).ignore(size_t(-1) >> 1).gcount();
 		script->StoreParameters(1);
 
-		file->clear();
 		file->seekg(saved_pos);
 
 		return OR_CONTINUE;
@@ -1209,7 +1208,7 @@ __stdcall GOSUB_IF_FALSE(Script* script)
 
 		if (!script->cond_result()) {
 				script->gosub_stack_[script->gosub_stack_pointer_++] = script->ip_;
-				script->Jump(game::ScriptParams[0].nVar);
+				script->jump(game::ScriptParams[0].nVar);
 		}
 
 		return OR_CONTINUE;
@@ -1470,7 +1469,7 @@ __stdcall PRINT_HELP_FORMATTED(Script* script)
 		script->CollectParameters(1);
 
 		char fmt[HELP_MSG_LENGTH];
-		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+		script->format_string(&fmt, game::ScriptParams[0].szVar);
 
 		wchar_t wfmt[HELP_MSG_LENGTH];
 		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
@@ -1488,7 +1487,7 @@ __stdcall PRINT_BIG_FORMATTED(Script* script)
 		int style = game::ScriptParams[2].nVar;
 
 		char fmt[HELP_MSG_LENGTH];
-		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+		script->format_string(&fmt, game::ScriptParams[0].szVar);
 
 		wchar_t wfmt[HELP_MSG_LENGTH];
 		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
@@ -1505,7 +1504,7 @@ __stdcall PRINT_FORMATTED(Script* script)
 		int time = game::ScriptParams[1].nVar;
 
 		char fmt[HELP_MSG_LENGTH];
-		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+		script->format_string(&fmt, game::ScriptParams[0].szVar);
 
 		wchar_t wfmt[HELP_MSG_LENGTH];
 		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
@@ -1522,7 +1521,7 @@ __stdcall PRINT_FORMATTED_NOW(Script* script)
 		int time = game::ScriptParams[1].nVar;
 
 		char fmt[HELP_MSG_LENGTH];
-		script->FormatString(&fmt, game::ScriptParams[0].szVar);
+		script->format_string(&fmt, game::ScriptParams[0].szVar);
 
 		wchar_t wfmt[HELP_MSG_LENGTH];
 		std::swprintf(&wfmt, HELP_MSG_LENGTH, L"%hs", &fmt);
@@ -1537,7 +1536,7 @@ __stdcall STRING_FORMAT(Script* script)
 {
 		script->CollectParameters(2);
 
-		script->FormatString(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar);
+		script->format_string(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar);
 
 		return OR_CONTINUE;
 }
@@ -1546,80 +1545,74 @@ eOpcodeResult
 __stdcall SCAN_STRING(Script* script)
 {
 		script->CollectParameters(2);
-
 		ScriptParam* num_assigned = script->GetPointerToScriptVariable();
 
-		ScriptParam* vars[game::MAX_NUM_SCRIPT_PARAMS];
-		for (int i = 0; vars[i] = script->GetPointerToScriptVariable(); ++i) {}
-
-		// uninitialised elements of vars won't be written to, as long as command was compiled correctly
-		*num_assigned = std::sscanf(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar,
-									vars[0], vars[1], vars[2], vars[3], vars[4], vars[5], vars[6], vars[7],
-									vars[8], vars[9], vars[10], vars[11], vars[12], vars[13], vars[14], vars[15],
-									vars[16], vars[17], vars[18], vars[19], vars[20], vars[21], vars[22], vars[23],
-									vars[24], vars[25], vars[26], vars[27], vars[28], vars[29], vars[30], vars[31]);
-
-		script->UpdateCompareFlag(*num_assigned);
+		*num_assigned.nVar = script->scan_string(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar);
+		script->UpdateCompareFlag(*num_assigned.nVar);
 
 		return OR_CONTINUE;
 }
 
-//0AD5=3,file %1d% seek %2d% from_origin %3d% //IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AD5(Script *script)
+eOpcodeResult
+__stdcall FILE_SEEK(Script* script)
 {
-	script->CollectParameters(3);
-	std::FILE* file = (std::FILE*)game::ScriptParams[0].pVar;
-	int seek = game::ScriptParams[1].nVar;
-	int origin = game::ScriptParams[2].nVar;
-	script->UpdateCompareFlag(fseek(file, seek, origin) == 0);
-	return OR_CONTINUE;
-};
+		script->CollectParameters(3);
+		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
 
-//0AD6=1, end_of_file %1d% reached
-eOpcodeResult CustomOpcodes::OPCODE_0AD6(Script *script)
-{
-	script->CollectParameters(1);
-	std::FILE* file = (std::FILE*)game::ScriptParams[0].pVar;
-	script->UpdateCompareFlag(feof(file) != 0);
-	return OR_CONTINUE;
-};
+		file->seekg(game::ScriptParams[1].nVar, game::ScriptParams[2].nVar);
+		script->UpdateCompareFlag(*file);
 
-//0AD7=3,read_string_from_file %1d% to %2d% size %3d% // IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AD7(Script *script)
-{
-	script->CollectParameters(3);
-	std::FILE* file = (std::FILE*)game::ScriptParams[0].pVar;
-	char* buf = (char*)game::ScriptParams[1].pVar;
-	unsigned size = game::ScriptParams[2].nVar;
-	script->UpdateCompareFlag(fgets(buf, size, file) == buf);
-	return OR_CONTINUE;
-};
+		return OR_CONTINUE;
+}
 
-//0AD8=2,write_string_to_file %1d% from %2d% //IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0AD8(Script *script)
+eOpcodeResult
+__stdcall IS_END_OF_FILE_REACHED(Script* script)
 {
-	script->CollectParameters(2);
-	std::FILE* file = (std::FILE*)game::ScriptParams[0].pVar;
-	char* buf = (char*)game::ScriptParams[1].pVar;
-	script->UpdateCompareFlag(fputs(buf, file) > 0);
-	fflush(file);
-	return OR_CONTINUE;
-};
-
-//0AD9=-1,write_formatted_text %2d% in_file %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0AD9(Script *script)
-{
-	script->CollectParameters(2);
-	char fmt[HELP_MSG_LENGTH]; char text[HELP_MSG_LENGTH];
-	std::FILE* file = (std::FILE*)game::ScriptParams[0].pVar;
-	strcpy(fmt, game::ScriptParams[1].szVar);
-	format(script, text, sizeof(text), fmt);
-	fputs(text, file);
-	fflush(file);
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
 		script->CollectParameters(1);
-	script->ip_++;
-	return OR_CONTINUE;
+		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
+
+		script->UpdateCompareFlag(!(*file));
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall READ_STRING_FROM_FILE(Script* script)
+{
+		script->CollectParameters(3);
+		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
+
+		file->getline(game::ScriptParams[1].szVar, game::ScriptParams[2].nVar);
+		script->UpdateCompareFlag(*file);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult
+__stdcall WRITE_STRING_TO_FILE(Script* script)
+{
+		script->CollectParameters(2);
+		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
+
+		file->write(game::ScriptParams[1].szVar, std::strlen(game::ScriptParams[1].szVar));
+		file->flush();
+
+		return OR_CONTINUE;
+};
+
+eOpcodeResult
+__stdcall WRITE_FORMATTED_STRING_TO_FILE(Script* script)
+{
+		script->CollectParameters(2);
+		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
+
+		char fmt[HELP_MSG_LENGTH];
+		int length = script->format_string(&fmt, game::ScriptParams[1].szVar);
+
+		file->write(&fmt, length);
+		file->flush();
+
+		return OR_CONTINUE;
 };
 
 //0ADA=-1,%3d% = scan_file %1d% format %2d% //IF and SET
@@ -1998,11 +1991,11 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AD2, DUMMY);
 		opcodes::Register(0x0AD3, STRING_FORMAT);
 		opcodes::Register(0x0AD4, SCAN_STRING);
-		opcodes::Register(0x0AD5, OPCODE_0AD5);
-		opcodes::Register(0x0AD6, OPCODE_0AD6);
-		opcodes::Register(0x0AD7, OPCODE_0AD7);
-		opcodes::Register(0x0AD8, OPCODE_0AD8);
-		opcodes::Register(0x0AD9, OPCODE_0AD9);
+		opcodes::Register(0x0AD5, FILE_SEEK);
+		opcodes::Register(0x0AD6, IS_END_OF_FILE_REACHED);
+		opcodes::Register(0x0AD7, READ_STRING_FROM_FILE);
+		opcodes::Register(0x0AD8, WRITE_STRING_TO_FILE);
+		opcodes::Register(0x0AD9, WRITE_FORMATTED_STRING_TO_FILE);
 		opcodes::Register(0x0ADA, OPCODE_0ADA);
 		opcodes::Register(0x0ADB, OPCODE_0ADB);
 		opcodes::Register(0x0ADC, OPCODE_0ADC);
