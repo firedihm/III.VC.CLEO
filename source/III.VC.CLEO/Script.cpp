@@ -31,7 +31,6 @@ Script::Script(const char* filepath) : next_(nullptr), prev_(nullptr), name_({'n
 		*/
 		code_data_ = new uchar[filesize];
 		ip_ = (uint)(code_data_ - game::ScriptSpace);
-		file->clear();
 		file.seekg(0, std::ios::beg).read(code_data_, filesize);
 
 		if (const char* ext = std::strrchr(filepath, '.'); !std::strcmp(ext, ".csp"))
