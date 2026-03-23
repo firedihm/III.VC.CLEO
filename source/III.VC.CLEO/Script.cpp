@@ -268,7 +268,7 @@ Script::UpdateCompareFlag(bool result)
 }
 
 void
-Script::Jump(int address)
+Script::jump(int address)
 {
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		if (address >= 0) {
@@ -282,7 +282,7 @@ Script::Jump(int address)
 }
 
 int
-Script::FormatString(char* out, const char* format)
+Script::format_string(char* out, const char* format)
 {
 		char* init_pos = out;
 
@@ -334,7 +334,7 @@ Script::FormatString(char* out, const char* format)
 }
 
 int
-Script::ScanString(const char* in, const char* format)
+Script::scan_string(const char* in, const char* format)
 {
 		int num_assigned = 0;
 
