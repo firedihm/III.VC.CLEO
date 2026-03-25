@@ -358,7 +358,8 @@ Script::scan_string(const char* in, const char* format)
 						conv_spec[i++] = *(format++); // '%'
 
 						// assignment suppression flag
-						bool suppress = (*format == '*') ? (format++, true) : false;
+						if (*format == '*')
+								conv_spec[i++] = *(format++);
 
 						// field width
 						while (std::isdigit(*format))
