@@ -1598,7 +1598,7 @@ __stdcall WRITE_STRING_TO_FILE(Script* script)
 		file->flush();
 
 		return OR_CONTINUE;
-};
+}
 
 eOpcodeResult
 __stdcall WRITE_FORMATTED_STRING_TO_FILE(Script* script)
@@ -1613,17 +1613,19 @@ __stdcall WRITE_FORMATTED_STRING_TO_FILE(Script* script)
 		file->flush();
 
 		return OR_CONTINUE;
-};
+}
 
-//0ADA=-1,%3d% = scan_file %1d% format %2d% //IF and SET
-eOpcodeResult CustomOpcodes::OPCODE_0ADA(Script *script)
+eOpcodeResult
+__stdcall SCAN_FILE(Script* script)
 {
-	script->CollectParameters(2);
+		script->CollectParameters(2);
+		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
+		char* format = game::ScriptParams[1].szVar
+		ScriptParam* num_assigned = script->GetPointerToScriptVariable();
+
 	char fmt[HELP_MSG_LENGTH];
-	std::FILE* file = (std::FILE*)game::ScriptParams[0].pVar;
-	strcpy(fmt, game::ScriptParams[1].szVar);
+	strcpy(fmt, format);
 	size_t cExParams = 0;
-	int *result = (int *)script->GetPointerToScriptVariable();
 	ScriptParam *ExParams[35];
 	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
 	// read extra params
@@ -1633,7 +1635,7 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADA(Script *script)
 	}
 	script->ip_++;
 
-	*result = fscanf(file, fmt,
+	*num_assigned = fscanf(file, fmt,
 		ExParams[0], ExParams[1], ExParams[2], ExParams[3], ExParams[4], ExParams[5],
 		ExParams[6], ExParams[7], ExParams[8], ExParams[9], ExParams[10], ExParams[11],
 		ExParams[12], ExParams[13], ExParams[14], ExParams[15], ExParams[16], ExParams[17],
@@ -1996,7 +1998,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AD7, READ_STRING_FROM_FILE);
 		opcodes::Register(0x0AD8, WRITE_STRING_TO_FILE);
 		opcodes::Register(0x0AD9, WRITE_FORMATTED_STRING_TO_FILE);
-		opcodes::Register(0x0ADA, OPCODE_0ADA);
+		opcodes::Register(0x0ADA, SCAN_FILE);
 		opcodes::Register(0x0ADB, OPCODE_0ADB);
 		opcodes::Register(0x0ADC, OPCODE_0ADC);
 		opcodes::Register(0x0ADD, OPCODE_0ADD);
