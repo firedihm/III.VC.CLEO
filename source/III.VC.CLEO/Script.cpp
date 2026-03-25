@@ -320,7 +320,7 @@ Script::format_string(char* out, const char* format)
 						if (!(conv_spec[0] == '%' && conv_spec[1] == '%'))
 								CollectParameters(1);
 
-						// pass param as binary; junk value if "%%"
+						// params are passed as binaries: no type-checking; junk value if "%%"
 						out += std::sprintf(out, &conv_spec, game::ScriptParams[0].nVar);
 				}
 		}
@@ -343,9 +343,9 @@ Script::scan_string(const char* in, const char* format)
 						format++;
 						while (std::isspace(*in))
 								in++;
-				} else if (*format != '%' || *format == '%' && *(format + 1) == '%') {
+				} else if (*format != '%') {
 						if (*format == *in) {
-								format += (*format == '%') ? 2 : 1;
+								format++;
 								in++;
 						} else {
 								break;
@@ -354,6 +354,7 @@ Script::scan_string(const char* in, const char* format)
 						// read conversion specification (flags + length modifiers + specifier) and resolve it
 						char conv_spec[32];
 						int i = 0;
+						int chars_read = 0;
 
 						conv_spec[i++] = *(format++); // '%'
 
@@ -384,9 +385,12 @@ Script::scan_string(const char* in, const char* format)
 						conv_spec[i++] = 'n';
 						conv_spec[i] = '\0';
 
-						ScriptParam junk, num_read;
-						num_assigned += std::sscanf(in, &conv_spec, (suppress ? &junk : GetPointerToScriptVariable()), &num_read.nVar);
-						in += num_read.nVar;
+						// sscanf() expects no param if suppression flag is set or "%%" format is passed
+						bool ignore_first_param = (conv_spec[1] == '*' || conv_spec[0] == '%' && conv_spec[1] == '%') ? true : false;
+
+						// params are passed as binaries: no type-checking; second param is redundant if check above passes
+						num_assigned += std::sscanf(in, &conv_spec, (ignore_first_param ? &chars_read : GetPointerToScriptVariable()), &chars_read);
+						in += chars_read;
 				}
 		}
 
