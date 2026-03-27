@@ -20,7 +20,7 @@ Script::Script(const char* filepath) : next_(nullptr), prev_(nullptr), name_({'n
 		std::ifstream file(filepath, std::ios::binary);
 
 		size_t filesize = file.seekg(0, std::ios::end).tellg(); // ok for binary mode
-		if (!file || !filesize)
+		if (!file || filesize == -1)
 				throw "File is empty or corrupt";
 
 		/*
@@ -215,6 +215,7 @@ Script::CollectParameters(uint* p_ip, short num_params)
 				}
 				collected++;
 		}
+
 		return collected;
 }
 
@@ -333,9 +334,10 @@ Script::format_string(char* out, const char* format)
 }
 
 int
-Script::scan_string(const char* in, const char* format)
+Script::scan_string(const char* in, const char* format, bool return_packed_data)
 {
 		int num_assigned = 0;
+		char* init_pos = in;
 
 		// https://en.cppreference.com/w/cpp/io/c/fscanf
 		while (*format) {
@@ -397,5 +399,10 @@ Script::scan_string(const char* in, const char* format)
 		// skip redundant params and consume PARAM_TYPE_END_OF_PARAMS
 		while (ScriptParam* ptr = GetPointerToScriptVariable());
 
-		return num_assigned;
+		// TODO: get rid of this monstrosity by implementing proper parsers with scnlib and fmt
+		if (return_packed_data) {
+				return num_assigned | ((in - init_pos) << 8);
+		} else {
+				return num_assigned;
+		}
 }
