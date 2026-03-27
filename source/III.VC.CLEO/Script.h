@@ -83,7 +83,7 @@ public:
 
 		void jump(int address);
 		int format_string(char* out, const char* format);
-		int scan_string(const char* in, const char* format);
+		int scan_string(const char* in, const char* format, bool return_packed_data = false);
 
 private:
 		struct StackFrame {
