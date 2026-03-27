@@ -1620,30 +1620,23 @@ __stdcall SCAN_FILE(Script* script)
 {
 		script->CollectParameters(2);
 		auto* file = (std::fstream*)game::ScriptParams[0].pVar;
-		char* format = game::ScriptParams[1].szVar
 		ScriptParam* num_assigned = script->GetPointerToScriptVariable();
 
-	char fmt[HELP_MSG_LENGTH];
-	strcpy(fmt, format);
-	size_t cExParams = 0;
-	ScriptParam *ExParams[35];
-	memset(ExParams, 0, 35 * sizeof(ScriptParam*));
-	// read extra params
-	while ((*(ScriptParamType *)(&game::ScriptSpace[script->ip_])).type)
-	{
-		ExParams[cExParams++] = (ScriptParam *)script->GetPointerToScriptVariable();
-	}
-	script->ip_++;
+		// TODO: get rid of this monstrosity by implementing proper parsers with scnlib and fmt
+		char buf[2048];
+		auto saved_pos = file->tellg();
 
-	*num_assigned = fscanf(file, fmt,
-		ExParams[0], ExParams[1], ExParams[2], ExParams[3], ExParams[4], ExParams[5],
-		ExParams[6], ExParams[7], ExParams[8], ExParams[9], ExParams[10], ExParams[11],
-		ExParams[12], ExParams[13], ExParams[14], ExParams[15], ExParams[16], ExParams[17],
-		ExParams[18], ExParams[19], ExParams[20], ExParams[21], ExParams[22], ExParams[23],
-		ExParams[24], ExParams[25], ExParams[26], ExParams[27], ExParams[28], ExParams[29],
-		ExParams[30], ExParams[31], ExParams[32], ExParams[33], ExParams[34]);
-	return OR_CONTINUE;
-};
+		file->read(&buf, 2048);
+		buf[file->gcount()] = '\0';
+
+		int retval = script->scan_string(&in, game::ScriptParams[1].szVar, true);
+		*num_assigned.nVar = retval & 0xFF;
+		script->UpdateCompareFlag(*num_assigned.nVar);
+
+		file->seekg(saved_pos + (retval >> 8));
+
+		return OR_CONTINUE;
+}
 
 //0ADB=2,%2d% = car_model %1o% name
 eOpcodeResult CustomOpcodes::OPCODE_0ADB(Script *script)
