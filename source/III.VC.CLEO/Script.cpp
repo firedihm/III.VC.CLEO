@@ -19,7 +19,7 @@ Script::Script(const char* filepath) : next_(nullptr), prev_(nullptr), name_({'n
 {
 		std::ifstream file(filepath, std::ios::binary);
 
-		size_t filesize = file.ignore(size_t(-1) >> 1).gcount();
+		size_t filesize = file.seekg(0, std::ios::end).tellg(); // ok for binary mode
 		if (!file || !filesize)
 				throw "File is empty or corrupt";
 
