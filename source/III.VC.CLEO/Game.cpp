@@ -16,9 +16,9 @@ OnGameStart()
 		game::InitScripts();
 
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
-		script_mgr::LoadScripts(false);
+		script_mgr::load_scripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
-		fxt::LoadEntries();
+		fxt::load_entries();
 }
 
 void
@@ -30,9 +30,9 @@ OnGameLoad()
 
 		// if game is cold-started by loading a save, then OnGameStart() is called first, then OnGameReload(), and only then OnGameLoad()
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Loading custom scripts");
-		script_mgr::LoadScripts(false);
+		script_mgr::load_scripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Loading fxt entries");
-		fxt::LoadEntries();
+		fxt::load_entries();
 }
 
 void
@@ -41,9 +41,9 @@ OnGameReload()
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Shutdown For Load Game--");
 
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
-		script_mgr::UnloadScripts(false);
+		script_mgr::unload_scripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
-		fxt::UnloadEntries();
+		fxt::unload_entries();
 
 		game::InitScripts();
 }
@@ -53,9 +53,9 @@ OnGameSaveAllScripts(uchar* buf, uint* size)
 {
 		LOGL(LOG_PRIORITY_GAME_EVENT, "--Disabling Cutom Scripts For Save Game--");
 
-		script_mgr::DisableScripts();
+		script_mgr::disable_scripts();
 		game::SaveAllScripts(buf, size);
-		script_mgr::EnableScripts();
+		script_mgr::enable_scripts();
 }
 
 void
@@ -66,9 +66,9 @@ OnGameShutdown()
 		game::CdStreamRemoveImages();
 
 		LOGL(LOG_PRIORITY_SCRIPT_LOADING, "Unloading custom scripts");
-		script_mgr::UnloadScripts(false);
+		script_mgr::unload_scripts(false);
 		LOGL(LOG_PRIORITY_CUSTOM_TEXT, "Unloading fxt entries");
-		fxt::UnloadEntries();
+		fxt::unload_entries();
 }
 
 namespace game
@@ -142,7 +142,7 @@ namespace game
 				memory::Write<uint>(gaddr(Address::SearchText_asm1), 0xE940EC83); // sub esp,40
 				memory::Write<uint>(gaddr(Address::SearchText_asm2), 0x00000189); // jmp 584F37
 		}
-		memory::MakeJump(gaddr(Address::GetText), fxt::Get);
+		memory::MakeJump(gaddr(Address::GetText), fxt::get);
 		auto* TheText = (void*)gaddr(Address::TheText);
 		auto* pNumberOfIntroTextLinesThisFrame = (ushort*)gaddr(Address::NumberOfIntroTextLinesThisFrame);
 		auto* KeyboardCheatString = (char*)gaddr(Address::KeyboardCheatString);
@@ -203,7 +203,7 @@ namespace game
 }
 
 void
-game::ExpandMemory()
+game::expand_memory()
 {
 		ScriptsArray = new Script[MAX_NUM_SCRIPTS];
 		IntroTextLines = new intro_text_line[MAX_NUM_INTRO_TEXT_LINES];
@@ -581,7 +581,7 @@ game::ExpandMemory()
 }
 
 void
-game::FreeMemory()
+game::free_memory()
 {
 		memory::FreeLibrary(CjkSupportLib);
 
