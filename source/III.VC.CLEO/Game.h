@@ -111,7 +111,7 @@ namespace game
 		extern intro_text_line* IntroTextLines;
 		extern intro_script_rectangle* IntroRectangles;
 		extern CSprite2d* ScriptSprites;
-		extern void* CjkSupportLib; // adds unicode support to game
+		extern void* cjk_lib; // adds unicode support to game
 
 		// first member of CPlayerInfo is a CPed*
 		inline uchar* FindPlayerPed(int player_id) { return static_cast<uchar*>(*(uint*)(Players + (IsVC() ? 0x170 : 0x13C) * player_id)); }
