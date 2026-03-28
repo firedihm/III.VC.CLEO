@@ -18,10 +18,13 @@ std::string
 to_upper(const char* c_str)
 {
 		std::string result;
-		result.reserve(std::strlen(c_str));
+		result.resize_and_overwrite(std::strlen(c_str), [c_str](char* buf, size_t buf_size) {
+				buf[buf_size] = '\0';
+				for (int i = 0; i < buf_size; ++i)
+						buf[i] = std::toupper(c_str[i]);
 
-		for (int i = 0, c_str[i]; ++i)
-				result[i] = std::toupper(c_str[i]);
+				return buf_size;
+		});
 
 		return result;
 }
