@@ -13,7 +13,7 @@ Script::Script(const char* filepath) : next_(nullptr), prev_(nullptr), name_({'n
 									   ip_(0), gosub_stack_({0}), gosub_stack_pointer_(0), local_vars_({0}), local_timers_({0}),
 									   cond_result_III_(false), is_mission_script_III_(false), skip_wake_time_III_(false), wake_time_(0),
 									   and_or_state_(0), not_flag_(false), deatharrest_enabled_(true), deatharrest_executed_(false), mission_flag_(false),
-									   code_data_(nullptr), is_III_(game::IsIII()), is_custom_(true), is_persistent_(false),
+									   code_data_(nullptr), is_III_(game::is_III()), is_custom_(true), is_persistent_(false),
 									   last_ped_search_index_(0), last_vehicle_search_index_(0), last_object_search_index_(0),
 									   cleo_array_(new ScriptParam[CLEO_ARRAY_SIZE]), call_stack_(nullptr), register_(nullptr)
 {
