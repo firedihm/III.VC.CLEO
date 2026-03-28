@@ -17,9 +17,11 @@ std::map<std::string, std::wstring> g_fxt_entries;
 std::string
 to_upper(const char* c_str)
 {
-		std::string result(c_str);
-		for (char& c : result)
-				c = std::toupper(c);
+		std::string result;
+		result.reserve(std::strlen(c_str));
+
+		for (int i = 0, c_str[i]; ++i)
+				result[i] = std::toupper(c_str[i]);
 
 		return result;
 }
@@ -49,11 +51,11 @@ void
 fxt::load_entries()
 {
 		fs::path dir = fs::path(game::RootDirName) / "CLEO" / "CLEO_TEXT";
+		std::string line(512, '\0');
 
 		for (const auto& entry : fs::directory_iterator(dir)) {
 				if (entry.is_regular_file() && entry.path().extension().string() == ".fxt") {
 						std::ifstream file(entry.path().string());
-						std::string line(512, '\0');
 
 						while (std::getline(file, line)) {
 								const char* whitespaces = " \f\n\r\t\v";
