@@ -4,15 +4,15 @@ class Script;
 
 namespace script_mgr
 {
-		Script* StartScript(const char* filepath);
-		void TerminateScript(Script* script);
+		Script* start_script(const char* filepath);
+		void terminate_script(Script* script);
 
-		void LoadScripts(bool game_start);
-		void UnloadScripts(bool game_shutdown);
+		void load_scripts(bool game_start);
+		void unload_scripts(bool game_shutdown);
 
 		// temporarily disables custom scripts to prevent them from being saved during saving
-		void EnableScripts();
-		void DisableScripts();
+		void enable_scripts();
+		void disable_scripts();
 
-		Script* FindScriptNamed(const char* name, bool search_generic = false);
+		Script* find_script(const char* name, bool search_generic = false);
 };
