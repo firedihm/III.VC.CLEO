@@ -102,8 +102,8 @@ namespace game
 				throw "Unsupported game version";
 		}();
 
-		const size_t main_size = IsVC() ? 225512 : 128*1024;
-		const size_t mission_size = IsIII() ? 35000 : 32*1024;
+		const size_t main_size = is_VC() ? 225512 : 128*1024;
+		const size_t mission_size = is_III() ? 35000 : 32*1024;
 
 		memory::MakeJump(gaddr(Address::InitScript), Script::Init);
 		memory::MakeJump(gaddr(Address::ProcessOneCommand), Script::ProcessOneCommand);
@@ -136,7 +136,7 @@ namespace game
 		auto* UsedObjectArray = (tUsedObject*)gaddr(Address::UsedObjectArray);
 
 		auto* GetText = (wchar_t* (__thiscall*)(void*, const char*))gaddr(Address::SearchText);
-		if (IsVC()) {
+		if (is_VC()) {
 				// VC needs to have a relay call coded in
 				memory::Write<uint>(gaddr(Address::SearchText_asm0), 0xD98B5553); // push ebx; push ebp; mov ebx,ecx
 				memory::Write<uint>(gaddr(Address::SearchText_asm1), 0xE940EC83); // sub esp,40
@@ -211,12 +211,12 @@ game::expand_memory()
 		ScriptSprites = new CSprite2d[MAX_NUM_SCRIPT_SRPITES];
 
 		memory::Write(gaddr(Address::ScriptsArray_0), ScriptsArray);
-		if (IsVC()) {
+		if (is_VC()) {
 				memory::Write(gaddr(Address::ScriptsArray_1), &ScriptsArray->next_);
 				memory::Write(gaddr(Address::ScriptsArray_2), &ScriptsArray->prev_);
 		}
 		memory::Write(gaddr(Address::sizeofScript_0), sizeof(Script));
-		if (IsVC()) {
+		if (is_VC()) {
 				memory::Write(gaddr(Address::sizeofScript_1), sizeof(Script));
 		}
 
