@@ -7,6 +7,7 @@
 #include "Script.h"
 #include "ScriptManager.h"
 
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <cwchar>
@@ -84,7 +85,7 @@ eOpcodeResult
 __stdcall TERMINATE_THIS_CUSTOM_SCRIPT(Script* script)
 {
 		LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_THIS_CUSTOM_SCRIPT: Terminating custom script \"%s\"", &script->name_);
-		script_mgr::TerminateScript(script);
+		script_mgr::terminate_script(script);
 
 		return OR_TERMINATE;
 }
@@ -95,9 +96,9 @@ __stdcall TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME(Script* script)
 		script->CollectParameters(1);
 
 		bool terminate_self = false;
-		while (Script* found = script_mgr::FindScriptNamed(game::ScriptParams[0].szVar)) {
+		while (Script* found = script_mgr::find_script(game::ScriptParams[0].szVar)) {
 				LOGL(LOG_PRIORITY_OPCODE, "TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME: Terminating custom script \"%s\"", &found->name_);
-				script_mgr::TerminateScript(found);
+				script_mgr::terminate_script(found);
 
 				terminate_self = (found == script) ? true : false;
 		}
@@ -113,7 +114,7 @@ __stdcall START_CUSTOM_SCRIPT(Script* script)
 		fs::path filepath = fs::path(game::RootDirName) / "CLEO" / game::ScriptParams[0].szVar;
 
 		LOGL(LOG_PRIORITY_OPCODE, "START_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
-		Script* new_script = script_mgr::StartScript(filepath.c_str());
+		Script* new_script = script_mgr::start_script(filepath.c_str());
 
 		for (int i = 0, collected = script->CollectParameters(-1); i < Script::NUM_LOCAL_VARS && i < collected; ++i)
 				new_script->local_vars_[i].nVar = game::ScriptParams[i].nVar;
@@ -314,7 +315,7 @@ __stdcall GET_SCRIPT_STRUCT_NAMED(Script* script)
 {
 		script->CollectParameters(1);
 
-		game::ScriptParams[0].pVar = script_mgr::FindScriptNamed(game::ScriptParams[0].szVar, true);
+		game::ScriptParams[0].pVar = script_mgr::find_script(game::ScriptParams[0].szVar, true);
 		script->StoreParameters(1);
 
 		return OR_CONTINUE;
@@ -855,7 +856,7 @@ __stdcall STREAM_CUSTOM_SCRIPT(Script* script)
 		fs::path filepath = fs::path(game::RootDirName) / "CLEO" / game::ScriptParams[0].szVar;
 
 		LOGL(LOG_PRIORITY_OPCODE, "STREAM_CUSTOM_SCRIPT: Starting new script \"%s\"", filepath.c_str());
-		Script* new_script = script_mgr::StartScript(filepath.c_str());
+		Script* new_script = script_mgr::start_script(filepath.c_str());
 
 		for (int i = 0, collected = script->CollectParameters(-1); i < Script::NUM_LOCAL_VARS && i < collected; ++i)
 				new_script->local_vars_[i].nVar = game::ScriptParams[i].nVar;
@@ -1667,27 +1668,23 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADB(Script *script)
 	return OR_CONTINUE;
 }
 
-//0ADC=1,   test_cheat %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0ADC(Script *script)
+eOpcodeResult
+__stdcall TEST_CHEAT(Script* script)
 {
-	script->CollectParameters(1);
+		script->CollectParameters(1);
+		char* input = game::ScriptParams[0].szVar;
 
-	char *c = game::KeyboardCheatString;
-	char buf[30];
-	strcpy(buf, game::ScriptParams[0].szVar);
-	char *s = _strrev(buf);
-	while (*s)
-	{
-		if (toupper(*s++) != *c++)
-		{
-			script->UpdateCompareFlag(false);
-			return OR_CONTINUE;
-		}
-	}
-	game::KeyboardCheatString[0] = 0;
-	script->UpdateCompareFlag(true);
+		// KeyboardCheatString registers user input as LIFO, so we'll mirror user input
+		bool result = true;
+		for (uint i = --std::strlen(input), j = 0; result && i >= 0; --i, ++j)
+				result = (std::toupper(input[i]) == game::KeyboardCheatString[j]) ? true : false;
 
-	return OR_CONTINUE;
+		script->UpdateCompareFlag(result);
+
+		// prevent circular execution
+		game::KeyboardCheatString[0] = result ? '\0' : game::KeyboardCheatString[0];
+
+		return OR_CONTINUE;
 }
 
 //0ADD=1,spawn_car_with_model %1o% like_a_cheat
@@ -1737,7 +1734,7 @@ __stdcall ADD_TEXT_LABEL(Script* script)
 {
 		script->CollectParameters(2);
 
-		fxt::Add(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar);
+		fxt::add(game::ScriptParams[0].szVar, game::ScriptParams[1].szVar);
 
 		return OR_CONTINUE;
 }
@@ -1747,7 +1744,7 @@ __stdcall REMOVE_TEXT_LABEL(Script* script)
 {
 		script->CollectParameters(1);
 
-		fxt::Remove(game::ScriptParams[0].szVar);
+		fxt::remove(game::ScriptParams[0].szVar);
 
 		return OR_CONTINUE;
 }
@@ -1993,7 +1990,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AD9, WRITE_FORMATTED_STRING_TO_FILE);
 		opcodes::Register(0x0ADA, SCAN_FILE);
 		opcodes::Register(0x0ADB, OPCODE_0ADB);
-		opcodes::Register(0x0ADC, OPCODE_0ADC);
+		opcodes::Register(0x0ADC, TEST_CHEAT);
 		opcodes::Register(0x0ADD, OPCODE_0ADD);
 		opcodes::Register(0x0ADE, OPCODE_0ADE);
 		opcodes::Register(0x0ADF, ADD_TEXT_LABEL);
