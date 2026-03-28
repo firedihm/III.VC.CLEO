@@ -562,7 +562,7 @@ game::expand_memory()
 				memory::Write(0x5097C6, ScriptSprites);
 		}
 
-		void* CjkSupportLib = []() -> void* {
+		void* cjk_lib = []() -> void* {
 				// CJK support mod may have any of these names
 				const char* names[4] = {
 						"wm_vcchs.asi",
@@ -583,7 +583,7 @@ game::expand_memory()
 void
 game::free_memory()
 {
-		memory::FreeLibrary(CjkSupportLib);
+		memory::FreeLibrary(cjk_lib);
 
 		delete[] ScriptSprites;
 		delete[] IntroRectangles;
