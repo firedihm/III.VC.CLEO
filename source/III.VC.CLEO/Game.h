@@ -113,12 +113,12 @@ namespace game
 		extern CSprite2d* ScriptSprites;
 		extern void* CjkSupportLib; // adds unicode support to game
 
-		bool IsVC() { version >= Version::VC_1_0 && version <= Version::VC_Steam; }
-		bool IsIII() { version >= Version::III_1_0 && version <= Version::III_Steam; }
-
 		// first member of CPlayerInfo is a CPed*
-		uchar* FindPlayerPed(int player_id) { return static_cast<uchar*>(*(uint*)(Players + (IsVC() ? 0x170 : 0x13C) * player_id)); }
+		inline uchar* FindPlayerPed(int player_id) { return static_cast<uchar*>(*(uint*)(Players + (IsVC() ? 0x170 : 0x13C) * player_id)); }
 
-		void ExpandMemory();
-		void FreeMemory();
+		inline bool is_VC() { version >= Version::VC_1_0 && version <= Version::VC_Steam; }
+		inline bool is_III() { version >= Version::III_1_0 && version <= Version::III_Steam; }
+
+		void expand_memory();
+		void free_memory();
 }
