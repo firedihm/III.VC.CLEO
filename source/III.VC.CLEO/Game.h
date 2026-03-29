@@ -114,10 +114,10 @@ namespace game
 		extern void* cjk_lib; // adds unicode support to game
 
 		// first member of CPlayerInfo is a CPed*
-		inline uchar* FindPlayerPed(int player_id) { return static_cast<uchar*>(*(uint*)(Players + (IsVC() ? 0x170 : 0x13C) * player_id)); }
+		inline uchar* FindPlayerPed(int player_id) { return static_cast<uchar*>(*(uint*)(Players + player_id * (is_III() ? 0x13C : 0x170))); }
 
-		inline bool is_VC() { version >= Version::VC_1_0 && version <= Version::VC_Steam; }
-		inline bool is_III() { version >= Version::III_1_0 && version <= Version::III_Steam; }
+		inline bool is_VC() { return version >= Version::VC_1_0 && version <= Version::VC_Steam; }
+		inline bool is_III() { return version >= Version::III_1_0 && version <= Version::III_Steam; }
 
 		void expand_memory();
 		void free_memory();
