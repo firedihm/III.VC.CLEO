@@ -25,6 +25,9 @@ ScriptParam g_cleo_shared_vars[0xFFFF];
 //0AAF=2,%2d% = get_mp3_length %1d%
 //0AB5=3,store_actor %1d% closest_vehicle_to %2d% closest_ped_to %3d%
 //0AB6=3,store_target_marker_coords_to %1d% %2d% %3d% // IF and SET //not supported
+//0AB9=2,get_mp3 %1d% state_to %2d%
+//0ABB=2,%2d% = audiostream %1d% volume
+//0ABC=2,set_audiostream %1d% volume %2d%
 //0AC0=2,audiostream %1d% loop %2d%
 //0AC1=2,%2d% = load_audiostream_with_3d_support %1d% ; IF and SET
 //0AC2=4,set_audiostream %1d% 3d_position %2d% %3d% %4d%
@@ -1299,91 +1302,85 @@ __stdcall GET_CLEO_SHARED_VAR(Script* script)
 		return OR_CONTINUE;
 }
 
-//0AB7=2,get_vehicle %1d% number_of_gears_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB7(Script *script)
+eOpcodeResult
+__stdcall GET_CAR_NUMBER_OF_GEARS(Script* script)
 {
-	script->CollectParameters(1);
-	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
-	if (vehicle)
-#if CLEO_VC
-		game::ScriptParams[0].nVar = *reinterpret_cast<int*>(*reinterpret_cast<uintptr_t*>(vehicle + 0x120) + 0x34 + 0x4A);
-#else
-		game::ScriptParams[0].nVar = *reinterpret_cast<int*>(*reinterpret_cast<uintptr_t*>(vehicle + 0x128) + 0x34 + 0x4A);
-#endif
-	else
-		game::ScriptParams[0].nVar = 0;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		uint offset_pHandling = script->is_III_ ? 0x128 : 0x120; // CVehicle::pHandling
+		uint offset_Transmission = 0x34; // tHandlingData::Transmission
+		uint offset_nNumberOfGears = 0x4A; // cTransmission::nNumberOfGears
+
+		script->CollectParameters(1);
+
+		uchar* vehicle = (uchar*)(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
+		uchar* handling = static_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+		uchar num_gears = *(uchar*)(handling + offset_Transmission + offset_nNumberOfGears);
+
+		game::ScriptParams[0].nVar = num_gears;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-//0AB8=2,get_vehicle %1d% current_gear_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0AB8(Script *script)
+eOpcodeResult
+__stdcall GET_CAR_CURRENT_GEAR(Script* script)
 {
-	script->CollectParameters(1);
-	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
-	if (vehicle)
-#if CLEO_VC
-		game::ScriptParams[0].nVar = *reinterpret_cast<uint8_t*>(vehicle + 0x208);
-#else
-		game::ScriptParams[0].nVar = *reinterpret_cast<uint8_t*>(vehicle + 0x204);
-#endif
-	else 
-		game::ScriptParams[0].nVar = 0;
-	script->StoreParameters(1);
-	return OR_CONTINUE;
+		uint offset_nCurrentGear = script->is_III_ ? 0x204 : 0x208; // CVehicle::m_nCurrentGear
+
+		script->CollectParameters(1);
+
+		uchar* vehicle = (uchar*)(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
+		uchar curr_gear = *(uchar*)(vehicle + offset_nCurrentGear);
+	
+		game::ScriptParams[0].nVar = curr_gear;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
 }
 
-//0AB9=2,get_mp3 %1d% state_to %2d%
-//0ABA=1,end_custom_thread_named %1s% //dup
-//0ABB=2,%2d% = audiostream %1d% volume
-//0ABC=2,set_audiostream %1d% volume %2d%
-
-//0ABD=1,  vehicle %1d% lights_on ( //0ABD=1,  vehicle %1d% siren_on // dup see 0383 )
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABD(Script *script)
+eOpcodeResult
+__stdcall IS_CAR_LIGHTS_ON(Script* script)
 {
-	script->CollectParameters(1);
-	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
-	if (vehicle)
-#if CLEO_VC
-		script->UpdateCompareFlag(reinterpret_cast<GtaGame::bVehicleFlags*>(vehicle + 0x1F9)->bLightsOn);
-#else
-		script->UpdateCompareFlag(reinterpret_cast<GtaGame::bVehicleFlags*>(vehicle + 0x1F5)->bLightsOn);
-#endif
-	else
-		script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
+		uint offset_flags = script->is_III_ ? 0x1F5 : 0x1F9; // CVehicle::flags
+
+		script->CollectParameters(1);
+
+		uchar* vehicle = (uchar*)(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
+		uchar flags = *(uchar*)(vehicle + offset_flags);
+
+		script->UpdateCompareFlag(flags & 0x40); // bLightsOn
+
+		return OR_CONTINUE;
 }
 
-//0ABE=1,  vehicle %1d% engine_on
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABE(Script *script)
+eOpcodeResult
+__stdcall IS_CAR_ENGINE_ON(Script* script)
 {
-	script->CollectParameters(1);
-	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
-	if (vehicle) 
-#if CLEO_VC
-		script->UpdateCompareFlag(reinterpret_cast<GtaGame::bVehicleFlags*>(vehicle + 0x1F9)->bEngineOn);
-#else
-		script->UpdateCompareFlag(reinterpret_cast<GtaGame::bVehicleFlags*>(vehicle + 0x1F5)->bEngineOn);
-#endif
-	else 
-		script->UpdateCompareFlag(false);
-	return OR_CONTINUE;
+		uint offset_flags = script->is_III_ ? 0x1F5 : 0x1F9; // CVehicle::flags
+
+		script->CollectParameters(1);
+
+		uchar* vehicle = (uchar*)(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
+		uchar flags = *(uchar*)(vehicle + offset_flags);
+
+		script->UpdateCompareFlag(flags & 0x10); // bEngineOn
+
+		return OR_CONTINUE;
 }
 
-//0ABF=2,set_vehicle %1d% engine_state_to %2d%
-eOpcodeResult __stdcall CustomOpcodes::OPCODE_0ABF(Script *script)
+eOpcodeResult
+__stdcall SET_CAR_ENGINE_ON(Script* script)
 {
-	script->CollectParameters(2);
-	uintptr_t vehicle = reinterpret_cast<uintptr_t>(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
-	if (vehicle)
-	{
-#if CLEO_VC
-		reinterpret_cast<GtaGame::bVehicleFlags*>(vehicle + 0x1F9)->bEngineOn = game::ScriptParams[1].nVar != false;
-#else
-		reinterpret_cast<GtaGame::bVehicleFlags*>(vehicle + 0x1F5)->bEngineOn = game::ScriptParams[1].nVar != false;
-#endif
-	}
-	return OR_CONTINUE;
+		uint offset_flags = script->is_III_ ? 0x1F5 : 0x1F9; // CVehicle::flags
+
+		script->CollectParameters(2);
+
+		uchar* vehicle = (uchar*)(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
+		uchar* flags = (uchar*)(vehicle + offset_flags);
+
+		uchar flag_mask = (-(uchar)game::ScriptParams[1].nVar); // convert supposed bool to all 0 or 1
+		*flags = (*flags & ~0x10) | (flag_mask & 0x10);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1639,33 +1636,21 @@ __stdcall SCAN_FILE(Script* script)
 		return OR_CONTINUE;
 }
 
-//0ADB=2,%2d% = car_model %1o% name
-eOpcodeResult CustomOpcodes::OPCODE_0ADB(Script *script)
+eOpcodeResult
+__stdcall GET_NAME_OF_VEHICLE_MODEL(Script* script)
 {
-	script->CollectParameters(1);
-	auto modelIdx = game::ScriptParams[0].nVar;
+		uint sizeof_CVehicleModelInfo = script->is_III_ ? 0x1F8 : 0x174;
+		uint offset_gameName = script->is_III_ ? 0x36 : 0x32; // CVehicleModelInfo::m_gameName
+		uint MI_FIRST_VEHICLE = script->is_III_ ? 90 : 130;
 
-#if CLEO_VC
-	char* gxt = (char*)((game::pVehicleModelStore + 0x32) + ((modelIdx - 130) * 0x174)); // pVehicleModelStore.m_gameName + (modelIdx - MI_FIRST_VEHICLE) * sizeof(CVehicleModelInfo)
-#else
-	char* gxt = (char*)((game::pVehicleModelStore + 0x36) + ((modelIdx - 90) * 0x1F8)); // pVehicleModelStore.m_gameName + (modelIdx - MI_FIRST_VEHICLE) * sizeof(CVehicleModelInfo)
-#endif
+		script->CollectParameters(2);
+		int model_id = game::ScriptParams[0].nVar;
 
-	auto resultType = script->GetNextParamType();
-	switch (resultType)
-	{
-	// pointer to target buffer
-	case eParamType::PARAM_TYPE_LVAR:
-	case eParamType::PARAM_TYPE_GVAR:
-		script->CollectParameters(1);
-		strcpy(game::ScriptParams[0].szVar, gxt);
-		script->UpdateCompareFlag(true);
+		uint element_offset = (model_id - MI_FIRST_VEHICLE) * sizeof_CVehicleModelInfo;
+		char* name = (char*)(game::pVehicleModelStore + offset_gameName + element_offset);
+		std::strcpy(game::ScriptParams[1].szVar, name);
+
 		return OR_CONTINUE;
-	}
-
-	// unsupported result param type
-	script->CollectParameters(1); // skip result param
-	return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1676,7 +1661,7 @@ __stdcall TEST_CHEAT(Script* script)
 
 		// KeyboardCheatString registers user input as LIFO, so we'll mirror user input
 		bool result = true;
-		for (uint i = --std::strlen(input), j = 0; result && i >= 0; --i, ++j)
+		for (int i = --std::strlen(input), j = 0; result && i >= 0; --i, ++j)
 				result = (std::toupper(input[i]) == game::KeyboardCheatString[j]) ? true : false;
 
 		script->UpdateCompareFlag(result);
@@ -1953,15 +1938,15 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AB4, GET_CLEO_SHARED_VAR);
 		opcodes::Register(0x0AB5, DUMMY);
 		opcodes::Register(0x0AB6, DUMMY);
-		opcodes::Register(0x0AB7, OPCODE_0AB7);
-		opcodes::Register(0x0AB8, OPCODE_0AB8);
+		opcodes::Register(0x0AB7, GET_CAR_NUMBER_OF_GEARS);
+		opcodes::Register(0x0AB8, GET_CAR_CURRENT_GEAR);
 		opcodes::Register(0x0AB9, DUMMY);
 		opcodes::Register(0x0ABA, TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME);
 		opcodes::Register(0x0ABB, DUMMY);
 		opcodes::Register(0x0ABC, DUMMY);
-		opcodes::Register(0x0ABD, OPCODE_0ABD);
-		opcodes::Register(0x0ABE, OPCODE_0ABE);
-		opcodes::Register(0x0ABF, OPCODE_0ABF);
+		opcodes::Register(0x0ABD, IS_CAR_LIGHTS_ON);
+		opcodes::Register(0x0ABE, IS_CAR_ENGINE_ON);
+		opcodes::Register(0x0ABF, SET_CAR_ENGINE_ON);
 		opcodes::Register(0x0AC0, DUMMY);
 		opcodes::Register(0x0AC1, DUMMY);
 		opcodes::Register(0x0AC2, DUMMY);
@@ -1989,7 +1974,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0AD8, WRITE_STRING_TO_FILE);
 		opcodes::Register(0x0AD9, WRITE_FORMATTED_STRING_TO_FILE);
 		opcodes::Register(0x0ADA, SCAN_FILE);
-		opcodes::Register(0x0ADB, OPCODE_0ADB);
+		opcodes::Register(0x0ADB, GET_NAME_OF_VEHICLE_MODEL);
 		opcodes::Register(0x0ADC, TEST_CHEAT);
 		opcodes::Register(0x0ADD, OPCODE_0ADD);
 		opcodes::Register(0x0ADE, OPCODE_0ADE);
