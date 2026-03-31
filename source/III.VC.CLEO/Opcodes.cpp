@@ -9,6 +9,7 @@
 
 #include <cctype>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <cwchar>
 #include <filesystem>
@@ -689,7 +690,7 @@ __stdcall GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS(Script* script)
 		void* actor = game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar);
 		CVector offset{game::ScriptParams[1].fVar, game::ScriptParams[2].fVar, game::ScriptParams[3].fVar};
 
-		game::RwV3dTransformPoints(&offset, &offset, 1, (uchar*)actor + 4); // CPlaceable::m_matrix
+		game::RwV3dTransformPoints(&offset, &offset, 1, (uchar*)actor + 0x04); // CPlaceable::m_matrix
 
 		game::ScriptParams[0].fVar = offset.x;
 		game::ScriptParams[1].fVar = offset.y;
@@ -745,14 +746,14 @@ __stdcall IS_PLAYER_IN_FLYING_VEHICLE(Script* script)
 
 		/*
 			Planes and helis have to be checked by handling flags, because game treats them as CAutomobile 
-			instances; m_vehType = VEHICLE_TYPE_CAR.
+			instances: m_vehType == VEHICLE_TYPE_CAR.
 		*/
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = *(uchar**)(player + offset_pMyVehicle);
 				short mi = *(short*)(vehicle + offset_modelIndex);
 
-				uchar* handling = static_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+				uchar* handling = *(uchar**)(vehicle + offset_pHandling);
 				uint flags = *(uint*)(handling + offset_Flags);
 
 				result = (mi == mi_dodo || flags & 0x40000) ? true : false;
@@ -775,7 +776,7 @@ __stdcall IS_PLAYER_IN_ANY_BOAT(Script* script)
 
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = *(uchar**)(player + offset_pMyVehicle);
 				result = *(int*)(vehicle + offset_vehType) == 1 ? true : false;
 		}
 
@@ -797,13 +798,13 @@ __stdcall IS_PLAYER_IN_ANY_HELI(Script* script)
 
 		/*
 			Planes and helis have to be checked by handling flags, because game treats them as CAutomobile 
-			instances; m_vehType = VEHICLE_TYPE_CAR.
+			instances: m_vehType == VEHICLE_TYPE_CAR.
 		*/
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = *(uchar**)(player + offset_pMyVehicle);
 
-				uchar* handling = static_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+				uchar* handling = *(uchar**)(vehicle + offset_pHandling);
 				uint flags = *(uint*)(handling + offset_Flags);
 
 				result = (flags & 0x20000) ? true : false;
@@ -826,7 +827,7 @@ __stdcall IS_PLAYER_ON_ANY_BIKE(Script* script)
 
 		bool result = false;
 		if (*(bool*)(player + offset_bInVehicle)) {
-				uchar* vehicle = static_cast<uchar*>(*(uint*)(player + offset_pMyVehicle));
+				uchar* vehicle = *(uchar**)(player + offset_pMyVehicle);
 				result = *(int*)(vehicle + offset_vehType) == 5 ? true : false;
 		}
 
@@ -983,12 +984,12 @@ eOpcodeResult
 __stdcall PLAY_ANIMATION(Script* script)
 {
 		script->CollectParameters(4);
-		int char_handle = game::ScriptParams[0].nVar;
+		uchar* ped = (uchar*)game::PedPoolGetAt(*game::ppPedPool, game::ScriptParams[0].nVar);
 		int anim_group = game::ScriptParams[1].nVar;
 		int anim = game::ScriptParams[2].nVar;
 		float blend = game::ScriptParams[3].fVar;
 
-		game::BlendAnimation((uchar*)game::PedPoolGetAt(*game::ppPedPool, char_handle) + 0x4C) /* CEntity::m_rwObject */, anim_group, anim, blend);
+		game::BlendAnimation(*(uchar**)(ped + 0x4C) /* CEntity::m_rwObject */, anim_group, anim, blend);
 
 		return OR_CONTINUE;
 }
@@ -1312,7 +1313,7 @@ __stdcall GET_CAR_NUMBER_OF_GEARS(Script* script)
 		script->CollectParameters(1);
 
 		uchar* vehicle = (uchar*)(game::VehiclePoolGetAt(*game::ppVehiclePool, game::ScriptParams[0].nVar));
-		uchar* handling = static_cast<uchar*>(*(uint*)(vehicle + offset_pHandling));
+		uchar* handling = *(uchar**)(vehicle + offset_pHandling);
 		uchar num_gears = *(uchar*)(handling + offset_Transmission + offset_nNumberOfGears);
 
 		game::ScriptParams[0].nVar = num_gears;
@@ -1702,16 +1703,15 @@ eOpcodeResult CustomOpcodes::OPCODE_0ADD(Script *script)
 	return OR_CONTINUE;
 }
 
-//0ADE=2,%2d% = text_by_GXT_entry %1d%
-eOpcodeResult CustomOpcodes::OPCODE_0ADE(Script *script)
+eOpcodeResult
+__stdcall GET_TEXT_LABEL_STRING(Script* script)
 {
-	script->CollectParameters(2);
-	char *gxt = game::ScriptParams[0].szVar;
-	char *result = game::ScriptParams[1].szVar;
-	wchar_t *text = CustomText::GetText(game::TheText, 0, gxt);
-	wcstombs(result, text, wcslen(text));
-	result[wcslen(text)] = '\0';
-	return OR_CONTINUE;
+		script->CollectParameters(2);
+
+		wchar_t* text = fxt::get(game::TheText, game::ScriptParams[0].szVar);
+		std::wcstombs(game::ScriptParams[1].szVar, text, std::wcslen(text) + 1);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1977,7 +1977,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0ADB, GET_NAME_OF_VEHICLE_MODEL);
 		opcodes::Register(0x0ADC, TEST_CHEAT);
 		opcodes::Register(0x0ADD, OPCODE_0ADD);
-		opcodes::Register(0x0ADE, OPCODE_0ADE);
+		opcodes::Register(0x0ADE, GET_TEXT_LABEL_STRING);
 		opcodes::Register(0x0ADF, ADD_TEXT_LABEL);
 		opcodes::Register(0x0AE0, REMOVE_TEXT_LABEL);
 		opcodes::Register(0x0AE1, GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE);
