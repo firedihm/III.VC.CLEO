@@ -1768,7 +1768,7 @@ __stdcall FIND_FIRST_FILE(Script* script)
 		script->StoreParameters(1);
 
 		script->CollectParameters(1);
-		std::strcpy(game::ScriptParams[0].szVar, (*handle)->path().filename().c_str());
+		std::strcpy(game::ScriptParams[0].szVar, script->cond_result() ? (*handle)->path().filename().c_str() : "");
 
 		return OR_CONTINUE;
 }
@@ -1782,7 +1782,7 @@ __stdcall FIND_NEXT_FILE(Script* script)
 		(*handle)++;
 		script->UpdateCompareFlag(*handle != end(*handle));
 
-		std::strcpy(game::ScriptParams[1].szVar, (*handle)->path().filename().c_str());
+		std::strcpy(game::ScriptParams[1].szVar, script->cond_result() ? (*handle)->path().filename().c_str() : "");
 
 		return OR_CONTINUE;
 }
