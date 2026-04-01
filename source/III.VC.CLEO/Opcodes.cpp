@@ -548,9 +548,9 @@ __stdcall GET_LABEL_POINTER(Script* script)
 
 		// negated address is a hack that lets us tell custom and mission scripts from regular ones
 		void* result;
-		if (address >= 0)
+		if (address >= 0) {
 				result = &game::ScriptSpace[address];
-		else {
+		} else {
 				if (script->is_custom_)
 						result = &script->code_data_[-address];
 				else
