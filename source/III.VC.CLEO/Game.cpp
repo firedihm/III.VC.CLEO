@@ -314,7 +314,7 @@ game::expand_memory()
 				memory::Write(0x450B20, NUM_SCRIPT_SRPITES); // jb
 				memory::Write(0x450C9E, NUM_SCRIPT_SRPITES); // jb
 				// memory::Write(0x451681, NUM_SCRIPT_SRPITES); // jb; skipped to keep compatibility with default mission cleanup routines
-				memory::Write(0x451692, 0xEB); // don't remove 'script' txd slot during mission cleanup routines
+				memory::Write(0x451692, uchar(0xEB)); // don't remove 'script' txd slot during mission cleanup routines
 		} else if (version == Version::III_1_0) {
 				// memory::Write(0x43EBEC, IntroTextLines);
 				// memory::Write(0x43ECDD, IntroTextLines);
