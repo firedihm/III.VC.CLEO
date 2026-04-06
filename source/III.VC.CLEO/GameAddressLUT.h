@@ -220,5 +220,5 @@ namespace game
                 {0x450B0E, nullptr,  nullptr,  /*    */ 0x43EC4A, nullptr,  nullptr }  // ScriptSprites_0
         };
 
-        void* gaddr(Address addr) { return LookUpTable[addr][game::version]; }
+        void* gaddr(Address addr) { return LookUpTable[addr][game::version()]; }
 }
