@@ -994,65 +994,66 @@ __stdcall PLAY_ANIMATION(Script* script)
 		return OR_CONTINUE;
 }
 
-eOpcodeResult CustomOpcodes::DRAW_SHADOW(Script *script)
+eOpcodeResult
+__stdcall DRAW_SHADOW(Script* script)
 {
-	script->CollectParameters(10);
-	int type = 2;	
-	CVector pos;
-	pos.x = game::ScriptParams[1].fVar;
-	pos.y = game::ScriptParams[2].fVar;
-	pos.z = game::ScriptParams[3].fVar;
-	float angle = game::ScriptParams[4].fVar;
-	float length = game::ScriptParams[5].fVar;
+		script->CollectParameters(10);
+ 		CVector pos{game::ScriptParams[1].fVar, game::ScriptParams[2].fVar, game::ScriptParams[3].fVar};
+		float angle = game::ScriptParams[4].fVar;
+		float length = game::ScriptParams[5].fVar;
+		short intensity = game::ScriptParams[6].nVar;
 
-	void* pShadowTex;
-	switch (game::ScriptParams[0].nVar)
-	{
+		// SHADOWTYPE_NONE = 0, SHADOWTYPE_DARK = 1, SHADOWTYPE_ADDITIVE = 2, SHADOWTYPE_INVCOLOR = 3
+		int type = 2;
+
+		void* pShadowTex;
+		switch (game::ScriptParams[0].nVar) {
 		case 1:
-			pShadowTex = *game::ppShadowCarTex;
-			type = 1;
-			break;
+				pShadowTex = *game::ppShadowCarTex;
+				type = 1;
+				break;
 		case 2:
-			pShadowTex = *game::ppShadowPedTex;
-			break;
+				pShadowTex = *game::ppShadowPedTex;
+				break;
 		case 3:
-			pShadowTex = *game::ppShadowExplosionTex;
-			break;
+				pShadowTex = *game::ppShadowExplosionTex;
+				break;
 		case 4:
-			pShadowTex = *game::ppShadowHeliTex;
-			type = 1;
-			break;
+				pShadowTex = *game::ppShadowHeliTex;
+				type = 1;
+				break;
 		case 5:
-			pShadowTex = *game::ppShadowHeadLightsTex;
-			break;
+				pShadowTex = *game::ppShadowHeadLightsTex;
+				break;
 		case 6:
-			pShadowTex = *game::ppBloodPoolTex;
-			break;
+				pShadowTex = *game::ppBloodPoolTex;
+				break;
 		case 7:
-			pShadowTex = *game::ppShadowBikeTex;
-			break;
+				pShadowTex = *game::ppShadowBikeTex;
+				break;
 		case 8:
-			pShadowTex = *game::ppShadowBaronTex;
-			break;
+				pShadowTex = *game::ppShadowBaronTex;
+				break;
 		default:
-			return OR_CONTINUE;
-	}
+				return OR_CONTINUE;
+		}
 
-	float x, y;
-	if (angle != 0.0f) {
-			y = std::cos(angle) * length;
-			x = std::sin(angle) * length;
-	} else {
-			y = length;
-			x = 0.0f;
-	}
-	float frontX = -x;
-	float frontY = y;
-	float sideX = y;
-	float sideY = x;
+		float x, y;
+		if (angle != 0.0f) {
+				y = std::cos(angle) * length;
+				x = std::sin(angle) * length;
+		} else {
+				y = length;
+				x = 0.0f;
+		}
+		float frontX = -x;
+		float frontY = y;
+		float sideX = y;
+		float sideY = x;
 
-	game::StoreShadowToBeRendered(type, pShadowTex, &pos, frontX, frontY, sideX, sideY, game::ScriptParams[6].nVar, game::ScriptParams[7].nVar, game::ScriptParams[8].nVar, game::ScriptParams[9].nVar, 150.0f, true, 1.0f, nullptr, false);
-	return OR_CONTINUE;
+		game::StoreShadowToBeRendered(type, pShadowTex, &pos, frontX, frontY, sideX, sideY, intensity, game::ScriptParams[7].nVar, game::ScriptParams[8].nVar, game::ScriptParams[9].nVar, 150.0f, true, 1.0f, nullptr, false);
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1673,34 +1674,33 @@ __stdcall TEST_CHEAT(Script* script)
 		return OR_CONTINUE;
 }
 
-//0ADD=1,spawn_car_with_model %1o% like_a_cheat
-eOpcodeResult CustomOpcodes::OPCODE_0ADD(Script *script)
+eOpcodeResult
+__stdcall SPAWN_VEHICLE_BY_CHEATING(Script* script)
 {
-	script->CollectParameters(1);
+		script->CollectParameters(1);
 
-#if CLEO_VC
-	game::SpawnCar(game::ScriptParams[0].nVar);
-#else
-	int modelIdx = game::ScriptParams[0].nVar;
-	int fun = (int)game::SpawnCar;
-	const char oriModelIdx = 122; // by default function spawns tank
+		// VC has VehicleCheat(model) we can call; III only has TankCheat() we have to edit at runtime
+		if (!script->is_III_) {
+				game::SpawnCar(game::ScriptParams[0].nVar);
+		} else {
+				int model = game::ScriptParams[0].nVar;
+				uchar* func = (uchar*)game::SpawnCar;
 
-	// pfSpawnCar checks in models info table if model was loaded
-	// calculate new address of 'model loaded' byte
-	int oriAddress = *(int*)(fun + 0x33);
-	int newAddrres = oriAddress + (modelIdx - oriModelIdx) * 20; // 20 bytes peer model entry
+				uchar orig_model = 122; // MI_RHINO
+				uchar* orig_model_load_state = *(uchar**)(func + 0x33); // CStreaming::ms_aInfoForModel[MI_RHINO].m_loadState
 
-	CPatch::SetChar(fun + 0x22, modelIdx);
-	CPatch::SetInt(fun + 0x33, newAddrres);
-	CPatch::SetChar(fun + 0xA5, modelIdx);
+				memory::Write(func + 0x22, uchar(model)); // param for CStreaming::RequestModel()
+				memory::Write(func + 0x33, orig_model_load_state + (model - orig_model) * 0x14); // CStreaming::ms_aInfoForModel[model].m_loadState
+				memory::Write(func + 0xA5, uchar(model)); // param for CAutomobile::CAutomobile()
 
-	game::SpawnCar(); // TODO: fix crash when model index is >= 128
+				game::SpawnCar(); // TODO: fix crash when model is outside char bounds; 
 
-	CPatch::SetChar(fun + 0x22, oriModelIdx);
-	CPatch::SetInt(fun + 0x33, oriAddress);
-	CPatch::SetChar(fun + 0xA5, oriModelIdx);
-#endif
-	return OR_CONTINUE;
+				memory::Write(func + 0x22, orig_model); // param for CStreaming::RequestModel()
+				memory::Write(func + 0x33, orig_model_load_state); // CStreaming::ms_aInfoForModel[MI_RHINO].m_loadState
+				memory::Write(func + 0xA5, orig_model);  // param for CAutomobile::CAutomobile()
+		}
+
+		return OR_CONTINUE;
 }
 
 eOpcodeResult
@@ -1976,7 +1976,7 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0ADA, SCAN_FILE);
 		opcodes::Register(0x0ADB, GET_NAME_OF_VEHICLE_MODEL);
 		opcodes::Register(0x0ADC, TEST_CHEAT);
-		opcodes::Register(0x0ADD, OPCODE_0ADD);
+		opcodes::Register(0x0ADD, SPAWN_VEHICLE_BY_CHEATING);
 		opcodes::Register(0x0ADE, GET_TEXT_LABEL_STRING);
 		opcodes::Register(0x0ADF, ADD_TEXT_LABEL);
 		opcodes::Register(0x0AE0, REMOVE_TEXT_LABEL);
@@ -2009,26 +2009,28 @@ opcodes::Definition* g_opcode_defs[opcodes::MAX_ID] = []() {
 		opcodes::Register(0x0609, DISPLAY_TEXT_FORMATTED);
 		opcodes::Register(0x0673, PLAY_ANIMATION);
 
-#if CLEO_VC
-		//Scrapped opcodes (VC)
-		opcodes::Register(0x016F, DRAW_SHADOW); // was scrapped in VC
-		opcodes::Register(0x0349, SET_TEXT_FONT); // was scrapped in VC
-#else
-		//Original opcodes added since VC
-		opcodes::Register(0x04C2, GET_OFFSET_FROM_OBJECT_IN_WORLD_COORDS); // 0400 in VC
-		opcodes::Register(0x04C3, GET_OFFSET_FROM_CAR_IN_WORLD_COORDS); // 0407 in VC
-		opcodes::Register(0x04C4, GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS);
+		if (game::is_VC()) {
+				// these are present in III, but were scrapped in VC
+				opcodes::Register(0x016F, DRAW_SHADOW);
+				opcodes::Register(0x0349, SET_TEXT_FONT);
+		} else {
+				// these were added since VC
+				opcodes::Register(0x04C2, GET_OFFSET_FROM_OBJECT_IN_WORLD_COORDS); // 0400 in VC
+				opcodes::Register(0x04C3, GET_OFFSET_FROM_CAR_IN_WORLD_COORDS); // 0407 in VC
+				opcodes::Register(0x04C4, GET_OFFSET_FROM_CHAR_IN_WORLD_COORDS);
 
-		opcodes::Register(0x046F, GET_CURRENT_PLAYER_WEAPON);
-		opcodes::Register(0x04DD, GET_CHAR_ARMOUR);
+				opcodes::Register(0x046F, GET_CURRENT_PLAYER_WEAPON);
+				opcodes::Register(0x04DD, GET_CHAR_ARMOUR);
 
+				opcodes::Register(0x0485, IS_PC_VERSION);
+				opcodes::Register(0x059A, IS_AUSTRALIAN_GAME);
+		}
+
+		// added since VC; we still overload them because our implementation is better and mod-friendly
 		opcodes::Register(0x04C9, IS_PLAYER_IN_FLYING_VEHICLE);
 		opcodes::Register(0x04A8, IS_PLAYER_IN_ANY_BOAT);
 		opcodes::Register(0x04AA, IS_PLAYER_IN_ANY_HELI);
 		opcodes::Register(0x047E, IS_PLAYER_ON_ANY_BIKE);
-		opcodes::Register(0x0485, IS_PC_VERSION);
-		opcodes::Register(0x059A, IS_AUSTRALIAN_GAME);
-#endif
 
 		// CLEO 2.1 opcodes
 		opcodes::Register(0x0AF8, SET_CLEO_ARRAY);
