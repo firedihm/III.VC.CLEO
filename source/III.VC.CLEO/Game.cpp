@@ -205,7 +205,7 @@ namespace game
 		auto* IntroTextLines = (intro_text_line*)gaddr(Address::IntroTextLines_0);
 		auto* IntroRectangles = (intro_script_rectangle*)gaddr(Address::IntroRectangles_0);
 		auto* ScriptSprites = (CSprite2d*)gaddr(Address::ScriptSprites_0);
-		void* CjkSupportLib = nullptr;
+		void* cjk_lib = nullptr;
 }
 
 void
