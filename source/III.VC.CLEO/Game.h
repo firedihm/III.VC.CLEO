@@ -37,7 +37,6 @@ namespace game
 				count
 		};
 
-		extern const Version version;
 		extern const size_t main_size;
 		extern const size_t mission_size;
 
@@ -116,8 +115,9 @@ namespace game
 		// first member of CPlayerInfo is a CPed*
 		inline uchar* FindPlayerPed(int player_id) { return *(uchar**)(Players + player_id * (is_III() ? 0x13C : 0x170)); }
 
-		inline bool is_VC() { return version >= Version::VC_1_0 && version <= Version::VC_Steam; }
-		inline bool is_III() { return version >= Version::III_1_0 && version <= Version::III_Steam; }
+		Version version();
+		inline bool is_VC() { return version() >= Version::VC_1_0 && version() <= Version::VC_Steam; }
+		inline bool is_III() { return version() >= Version::III_1_0 && version() <= Version::III_Steam; }
 
 		void expand_memory();
 		void free_memory();
