@@ -71,9 +71,10 @@ OnGameShutdown()
 		fxt::unload_entries();
 }
 
-namespace game
+game::Version
+game::version()
 {
-		const Version version = []() -> Version {
+		static Version version = []() -> Version {
 				if (uint scan = *(uint*)0x61C11C; scan == 0x74FF5064) {
 						return Version::VC_1_0;
 				} else if (scan == 0x00408DC0) {
@@ -102,8 +103,13 @@ namespace game
 				throw "Unsupported game version";
 		}();
 
-		const size_t main_size = is_VC() ? 225512 : 128*1024;
-		const size_t mission_size = is_III() ? 35000 : 32*1024;
+		return version;
+}
+
+namespace game
+{
+		const size_t main_size = is_VC() ? 225512 : 128 * 1024;
+		const size_t mission_size = is_VC() ? 35000 : 32 * 1024;
 
 		memory::MakeJump(gaddr(Address::InitScript), Script::Init);
 		memory::MakeJump(gaddr(Address::ProcessOneCommand), Script::ProcessOneCommand);
