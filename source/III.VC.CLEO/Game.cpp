@@ -293,7 +293,7 @@ game::expand_memory()
 				memory::Write(0x450AF2, &IntroRectangles->m_sColor.a);
 				memory::Write(0x4501F6, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::Write(0x450AFB, MAX_NUM_INTRO_RECTANGLES); // jl!
-				memory::Write(0x450AFD, 0x82);					   // jl -> jb
+				memory::Write(0x450AFD, uchar(0x82));			   // jl -> jb
 				memory::Write(0x5569C0, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::Write(0x55AE0F, MAX_NUM_INTRO_RECTANGLES); // jb
 
@@ -472,7 +472,7 @@ game::expand_memory()
 				memory::Write(0x5084E3, &IntroTextLines->text);
 				memory::Write(0x509564, &IntroTextLines->text);
 				memory::Write(0x438D1F, MAX_NUM_INTRO_TEXT_LINES); // jl!
-				memory::Write(0x438DE9, 0x82);					   // jl -> jb
+				memory::Write(0x438DE9, uchar(0x82));			   // jl -> jb
 				memory::Write(0x5086B0, MAX_NUM_INTRO_TEXT_LINES); // jb
 				memory::Write(0x439276, MAX_NUM_INTRO_TEXT_LINES); // jb
 				memory::Write(0x50972F, MAX_NUM_INTRO_TEXT_LINES); // jb
@@ -549,7 +549,7 @@ game::expand_memory()
 				memory::Write(0x438E7E, &IntroRectangles->m_sColor.b);
 				memory::Write(0x438E84, &IntroRectangles->m_sColor.a);
 				memory::Write(0x438E8D, MAX_NUM_INTRO_RECTANGLES); // jl!
-				memory::Write(0x438E8F, 0x82);					   // jl -> jb
+				memory::Write(0x438E8F, uchar(0x82));			   // jl -> jb
 				memory::Write(0x439387, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::Write(0x508762, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::Write(0x5097D9, MAX_NUM_INTRO_RECTANGLES); // jb
