@@ -31,7 +31,6 @@ APIENTRY DllMain(HMODULE hModule, DWORD reason_for_call, LPVOID reserved)
 }
 
 namespace cleo {
-        __declspec(dllexport) uint version() { return 2 << 24 | 2 << 16 | 0 << 8; }
-        __declspec(dllexport) uchar* script_space() { return game::ScriptSpace; }
-        __declspec(dllexport) ScriptParam* script_params() { return game::ScriptParams; }
+        __declspec(dllexport) uint version() { return 2 << 24 | 2 << 16 | 0 << 8; } // returns current version
+        __declspec(dllexport) uint version(uint main, uint major, uint minor) { return main << 24 | major << 16 | minor << 8; }
 }
