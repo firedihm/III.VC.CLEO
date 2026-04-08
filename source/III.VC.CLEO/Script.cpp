@@ -113,10 +113,10 @@ Script::ProcessOneCommand()
 		op &= 0x7FFF;
 		ip_ += 2;
 
-		if (opcodes::Definition(op)) {
+		if (opcodes::definition(op)) {
 				// call opcode registered as custom
 				LOGL(LOG_PRIORITY_OPCODE_ID, "%s custom opcode %04X", &name_, op);
-				eOpcodeResult result = opcodes::Definition(op)(this);
+				eOpcodeResult result = opcodes::definition(op)(this);
 				(*game::pNumOpcodesExecuted)++;
 				return result;
 		} else if (op >= opcodes::CUSTOM_START_ID) {
