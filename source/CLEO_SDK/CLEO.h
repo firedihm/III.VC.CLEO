@@ -128,9 +128,14 @@ namespace opcodes
         __declspec(dllimport) Definition* definition(ushort id);
 }
 
-namespace cleo
+namespace game
 {
-		__declspec(dllimport) uint version();
 		__declspec(dllimport) uchar* script_space();
 		__declspec(dllimport) ScriptParam* script_params();
+}
+
+namespace cleo
+{
+		__declspec(dllimport) uint version(); // returns current version
+		__declspec(dllimport) uint version(uint main, uint major, uint minor);
 }
