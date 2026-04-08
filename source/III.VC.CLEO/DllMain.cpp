@@ -3,6 +3,7 @@
 #include "Plugins.h"
 #include "ScriptManager.h"
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 BOOL
