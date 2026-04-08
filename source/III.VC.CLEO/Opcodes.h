@@ -11,6 +11,6 @@ namespace opcodes
 
         using Definition = eOpcodeResult __stdcall(Script*);
 
-        __declspec(dllexport) bool Register(ushort id, Definition* def);
-        __declspec(dllexport) Definition* Definition(ushort id);
+        __declspec(dllexport) bool register(ushort id, Definition* def);
+        __declspec(dllexport) Definition* definition(ushort id);
 }
