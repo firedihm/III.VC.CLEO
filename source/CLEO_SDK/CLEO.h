@@ -1,5 +1,11 @@
 #pragma once
 
+namespace cleo
+{
+		uint version() { return 2 << 24 | 2 << 16 | 0 << 8; } // returns current version
+		uint version(uint main, uint major, uint minor)  { return main << 24 | major << 16 | minor << 8; }
+}
+
 struct ScriptParamType
 {
         enum : char {
@@ -132,10 +138,4 @@ namespace game
 {
 		__declspec(dllimport) uchar* script_space();
 		__declspec(dllimport) ScriptParam* script_params();
-}
-
-namespace cleo
-{
-		__declspec(dllimport) uint version(); // returns current version
-		__declspec(dllimport) uint version(uint main, uint major, uint minor);
 }
