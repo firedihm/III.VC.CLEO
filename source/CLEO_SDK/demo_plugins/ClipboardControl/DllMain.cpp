@@ -14,8 +14,11 @@ __stdcall READ_CLIPBOARD_DATA(Script* script)
 		script->CollectParameters(2);
 
 		if (::OpenClipboard(0)) {
-				if (HANDLE data = ::GetClipboardData(CF_TEXT); data)
+				if (HANDLE hData = ::GetClipboardData(CF_TEXT); hData) {
+						void* data = ::GlobalLock(hData); // handle is not a memory pointer!
 						std::memcpy(ScriptParams[0].pVar, data, ScriptParams[1].nVar);
+						::GlobalUnlock(hData);
+				}
 
 				::CloseClipboard();
 		}
@@ -28,25 +31,16 @@ __stdcall WRITE_CLIPBOARD_DATA(Script* script)
 {
 		script->CollectParameters(2);
 
-		HGLOBAL hGl, hMem;
-		void *Lock;
-
 		if (::OpenClipboard(0)) {
 				::EmptyClipboard();
-				hGl = GlobalAlloc(GMEM_MOVEABLE | GMEM_DDESHARE, 0x800u);
-				hMem = hGl;
-				if (hGl)
-				{
-					Lock = GlobalLock(hGl);
-					if (Lock)
-					{
-						std::memcpy(Lock, ScriptParams[0].pVar, ScriptParams[1].nVar);
-						GlobalUnlock(hMem);
-						SetClipboardData(CF_TEXT, hMem);
-						CloseClipboard();
-						return OR_CONTINUE;
-					}
+				if (HGLOBAL hMem = ::GlobalAlloc(GMEM_MOVEABLE, ScriptParams[1].nVar); hMem) {
+						if (void* data = ::GlobalLock(hMem); data) {
+								std::memcpy(data, ScriptParams[0].pVar, ScriptParams[1].nVar);
+								::GlobalUnlock(hMem);
+								::SetClipboardData(CF_TEXT, hMem);
+						}
 				}
+
 				::CloseClipboard();
 		}
 
