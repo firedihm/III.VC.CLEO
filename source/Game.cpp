@@ -8,6 +8,16 @@
 
 #include <thread>
 
+void* __cdecl
+OnRwRenderStateSet(int state, void* value)
+{
+		constexpr int rwRENDERSTATEVERTEXALPHAENABLE = 0x0C;
+
+		void* result = game::RwRenderStateSet(state, value);
+		game::RwRenderStateSet(rwRENDERSTATEVERTEXALPHAENABLE, value != nullptr ? (void*)true : (void*)false);
+		return result;
+}
+
 __declspec(naked) void
 OnGameIdle()
 {
@@ -161,6 +171,7 @@ namespace game
 		PoolGetIndex_ft* VehiclePoolGetIndex = gaddr<PoolGetIndex_ft*>(Address::VehiclePoolGetIndex);
 		PoolGetIndex_ft* ObjectPoolGetIndex = gaddr<PoolGetIndex_ft*>(Address::ObjectPoolGetIndex);
 
+		RwRenderStateSet_ft* RwRenderStateSet = gaddr<RwRenderStateSet_ft*>(Address::RwRenderStateSet);
 		InitScripts_ft* InitScripts = gaddr<InitScripts_ft*>(Address::InitScripts);
 		SaveAllScripts_ft* SaveAllScripts = gaddr<SaveAllScripts_ft*>(Address::SaveAllScripts);
 		CdStreamRemoveImages_ft* CdStreamRemoveImages = gaddr<CdStreamRemoveImages_ft*>(Address::CdStreamRemoveImages);
@@ -194,6 +205,10 @@ namespace game
 		void* cjk_lib = nullptr;
 
 		bool make_hooks = []() {
+				memory::make_call(gaddr(Address::RwRenderStateSet_call0), &OnRwRenderStateSet);
+				if (is_VC())
+						memory::make_call(gaddr(Address::RwRenderStateSet_call1), &OnRwRenderStateSet);
+
 				memory::write(gaddr(Address::Idle_jumptable), &OnGameIdle);
 				memory::write(gaddr(Address::FrontendIdle_jumptable), &OnGameFrontendIdle);
 
@@ -235,6 +250,11 @@ game::expand_memory()
 		IntroTextLines = new intro_text_line[MAX_NUM_INTRO_TEXT_LINES];
 		IntroRectangles = new intro_script_rectangle[MAX_NUM_INTRO_RECTANGLES];
 		ScriptSprites = new CSprite2d[MAX_NUM_SCRIPT_SRPITES];
+
+		std::memset(ScriptsArray, 0, sizeof(Script) * MAX_NUM_SCRIPTS);
+		std::memset(IntroTextLines, 0, sizeof(intro_text_line) * MAX_NUM_INTRO_TEXT_LINES);
+		std::memset(IntroRectangles, 0, sizeof(intro_script_rectangle) * MAX_NUM_INTRO_RECTANGLES);
+		std::memset(ScriptSprites, 0, sizeof(CSprite2d) * MAX_NUM_SCRIPT_SRPITES);
 
 		memory::write(gaddr(Address::ScriptsArray_0), ScriptsArray);
 		if (is_VC()) {
@@ -318,8 +338,7 @@ game::expand_memory()
 				memory::write(0x450AEC, &IntroRectangles->m_sColor.b);
 				memory::write(0x450AF2, &IntroRectangles->m_sColor.a);
 				memory::write(0x4501F6, MAX_NUM_INTRO_RECTANGLES); // jb
-				memory::write(0x450AFB, MAX_NUM_INTRO_RECTANGLES); // jl!
-				memory::write(0x450AFD, uchar(0x82));			   // jl -> jb
+				memory::write(0x450AFB, MAX_NUM_INTRO_RECTANGLES); // jl
 				memory::write(0x5569C0, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::write(0x55AE0F, MAX_NUM_INTRO_RECTANGLES); // jb
 
@@ -497,8 +516,7 @@ game::expand_memory()
 				memory::write(0x449328, &IntroTextLines->text);
 				memory::write(0x5084E3, &IntroTextLines->text);
 				memory::write(0x509564, &IntroTextLines->text);
-				memory::write(0x438D1F, MAX_NUM_INTRO_TEXT_LINES); // jl!
-				memory::write(0x438DE9, uchar(0x82));			   // jl -> jb
+				memory::write(0x438D1F, MAX_NUM_INTRO_TEXT_LINES); // jl
 				memory::write(0x5086B0, MAX_NUM_INTRO_TEXT_LINES); // jb
 				memory::write(0x439276, MAX_NUM_INTRO_TEXT_LINES); // jb
 				memory::write(0x50972F, MAX_NUM_INTRO_TEXT_LINES); // jb
@@ -574,8 +592,7 @@ game::expand_memory()
 				memory::write(0x438E74, &IntroRectangles->m_sColor.g);
 				memory::write(0x438E7E, &IntroRectangles->m_sColor.b);
 				memory::write(0x438E84, &IntroRectangles->m_sColor.a);
-				memory::write(0x438E8D, MAX_NUM_INTRO_RECTANGLES); // jl!
-				memory::write(0x438E8F, uchar(0x82));			   // jl -> jb
+				memory::write(0x438E8D, MAX_NUM_INTRO_RECTANGLES); // jl
 				memory::write(0x439387, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::write(0x508762, MAX_NUM_INTRO_RECTANGLES); // jb
 				memory::write(0x5097D9, MAX_NUM_INTRO_RECTANGLES); // jb
@@ -587,32 +604,23 @@ game::expand_memory()
 				memory::write(0x50874F, ScriptSprites);
 				memory::write(0x5097C6, ScriptSprites);
 		}
-
-		void* cjk_lib = []() -> void* {
-				// CJK support mod may have any of these names
-				const char* names[4] = {
-						"wm_vcchs.asi",
-						"wm_vcchs.dll",
-						"wm_lcchs.asi",
-						"wm_lcchs.dll"
-				};
-
-				void* handle = nullptr;
-				for (int i = 0; i < 4 && !handle; ++i) {
-						handle = memory::load_library(names[i]);
-				}
-
-				return handle;
-		}();
 }
 
 void
 game::free_memory()
 {
-		memory::free_library(cjk_lib);
-
 		delete[] ScriptSprites;
 		delete[] IntroRectangles;
 		delete[] IntroTextLines;
 		delete[] ScriptsArray;
+}
+
+bool
+game::is_chinese()
+{
+		// CJK support mod may have any of these names
+		static bool china_lib = memory::get_module_handle("wm_vcchs.asi") || memory::get_module_handle("wm_vcchs.dll") ||
+								memory::get_module_handle("wm_lcchs.asi") || memory::get_module_handle("wm_lcchs.dll");
+
+		return china_lib;
 }

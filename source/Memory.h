@@ -19,6 +19,7 @@ namespace memory
 
 		void* load_library(const char* name);
 		void free_library(const void* handle);
+		void* get_module_handle(const char* name);
 		void* get_proc_address(const void* handle, const char* proc_name);
 
 		short get_key_state(int virtual_key);

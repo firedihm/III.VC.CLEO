@@ -68,6 +68,12 @@ memory::free_library(const void* handle)
 }
 
 void*
+memory::get_module_handle(const char* name)
+{
+        return ::GetModuleHandleA(name);
+}
+
+void*
 memory::get_proc_address(const void* handle, const char* proc_name)
 {
 		return ::GetProcAddress((HMODULE)handle, proc_name);

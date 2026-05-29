@@ -66,6 +66,9 @@ namespace game
                 ObjectPoolGetIndex,
 
                 // Events
+                RwRenderStateSet,
+                RwRenderStateSet_call0,
+                RwRenderStateSet_call1,
                 Idle_jump,
                 Idle_jumptable,
                 FrontendIdle_jump,
@@ -185,10 +188,13 @@ namespace game
 
                 // Events
                 // III_1_0 III_1_1   III_Steam          VC_1_0    VC_1_1    VC_Steam
-                {0x48E8FA, 0,        0       , /*    */ 0x4A5BDD, 0,        0       }, // Idle_jump
-                {0x5F5920, 0,        0       , /*    */ 0x68E7DC, 0,        0       }, // Idle_jumptable
-                {0x48E90D, 0,        0       , /*    */ 0x4A5BF0, 0,        0       }, // FrontendIdle_jump
-                {0x5F5924, 0,        0       , /*    */ 0x68E7E0, 0,        0       }, // FrontendIdle_jumptable
+                {0x5A43C0, 0,        0,        /*    */ 0x649BA0, 0,        0       }, // RwRenderStateSet
+                {0x51F965, 0x51FB95, 0x51FB25, /*    */ 0x578737, 0x578757, 0x5786A5}, // RwRenderStateSet_call0
+                {0,        0,        0,        /*    */ 0x5786E7, 0x578707, 0x578627}, // RwRenderStateSet_call1
+                {0x48E8FA, 0,        0,        /*    */ 0x4A5BDD, 0,        0       }, // Idle_jump
+                {0x5F5920, 0,        0,        /*    */ 0x68E7DC, 0,        0       }, // Idle_jumptable
+                {0x48E90D, 0,        0,        /*    */ 0x4A5BF0, 0,        0       }, // FrontendIdle_jump
+                {0x5F5924, 0,        0,        /*    */ 0x68E7E0, 0,        0       }, // FrontendIdle_jumptable
                 {0x438790, 0x438790, 0x438790, /*    */ 0x450330, 0x450330, 0x450240}, // InitScripts
                 {0x48C26B, 0x48C35B, 0x48C2EB, /*    */ 0x4A492F, 0x4A494F, 0x4A47EF}, // InitScripts_call0
                 {0x453B43, 0x453B43, 0x453B43, /*    */ 0x45F463, 0x45F463, 0x45F343}, // InitScripts_call1

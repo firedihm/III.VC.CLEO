@@ -24,6 +24,7 @@ namespace game
 		using PoolGetAt_ft = void* __fastcall(CPool*, int, int handle); // __thiscall
 		using PoolGetIndex_ft = int __fastcall(CPool*, int, void* entry); // __thiscall
 
+		using RwRenderStateSet_ft = void* __cdecl(int /* RwRenderState */, void*);
 		using InitScripts_ft = void __cdecl();
 		using SaveAllScripts_ft = void __cdecl(uchar* buf, uint* size);
 		using CdStreamRemoveImages_ft = void __cdecl();
@@ -39,13 +40,13 @@ namespace game
 		using RwV3dTransformPoints_ft = void __cdecl(CVector* out, const CVector* in, int num_points, const void* matrix);
 		using BlendAnimation_ft = void* __cdecl(void* /* RpClump* */ clump, int assoc_group_id, int anim_id, float delta);
 
-		// these have to fit 1 byte, as game has array range checks compiled with 1 byte params
+		// most have to fit 1 signed byte, due to how game performs array range checks
 		constexpr uchar MAX_NUM_OPCODE_HANDLERS = 15; // 15 in VC, 12 in III
 		constexpr uchar MAX_NUM_SCRIPT_PARAMS = 32; // 32 in both games
 		constexpr uchar MAX_NUM_SCRIPTS = 128; // 128 in both games; reallocation is needed because of increased Script size
 		constexpr uchar MAX_NUM_INTRO_TEXT_LINES = 48; // VC has 48, III has just 2
-		constexpr uchar MAX_NUM_INTRO_RECTANGLES = 128; // 16 in both games; must be divisible by 8 due to loop unrolling
-		constexpr uchar MAX_NUM_SCRIPT_SRPITES = 128; // 16 in both games
+		constexpr uchar MAX_NUM_INTRO_RECTANGLES = 120; // 16 in both games; must be divisible by 8 due to loop unrolling
+		constexpr uchar MAX_NUM_SCRIPT_SRPITES = 127; // 16 in both games
 
 		enum class Version : int {
 				III_1_0,
@@ -113,6 +114,7 @@ namespace game
 		extern PoolGetIndex_ft* ObjectPoolGetIndex;
 
 		// Events
+		extern RwRenderStateSet_ft* RwRenderStateSet;
 		extern InitScripts_ft* InitScripts;
 		extern SaveAllScripts_ft* SaveAllScripts;
 		extern CdStreamRemoveImages_ft* CdStreamRemoveImages;
@@ -146,13 +148,13 @@ namespace game
 		extern intro_text_line* IntroTextLines;
 		extern intro_script_rectangle* IntroRectangles;
 		extern CSprite2d* ScriptSprites;
-		extern void* cjk_lib; // adds unicode support to game
-
-		inline bool is_III() { return version >= Version::III_1_0 && version <= Version::III_Steam; }
-		inline bool is_VC() { return version >= Version::VC_1_0 && version <= Version::VC_Steam; }
 
 		void expand_memory();
 		void free_memory();
+
+		inline bool is_III() { return version >= Version::III_1_0 && version <= Version::III_Steam; }
+		inline bool is_VC() { return version >= Version::VC_1_0 && version <= Version::VC_Steam; }
+		bool is_chinese();
 
 		// first member of CPlayerInfo is a CPed*
 		inline uchar* FindPlayerPed(int player_id) { return *(uchar**)(Players + player_id * (is_III() ? 0x13C : 0x170)); }

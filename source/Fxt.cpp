@@ -36,7 +36,7 @@ fxt::add(const char* key, const char* text)
 {
 		// CJK support makes game text Unicode; it's Extended ASCII with custom encoding by default
 		std::wstring wide_text;
-		if (game::cjk_lib) {
+		if (game::is_chinese()) {
 				std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
 				wide_text = converter.from_bytes(text);
 		} else {
