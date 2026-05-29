@@ -202,7 +202,6 @@ namespace game
 		intro_text_line* IntroTextLines = gaddr<intro_text_line*>(Address::IntroTextLines_0);
 		intro_script_rectangle* IntroRectangles = gaddr<intro_script_rectangle*>(Address::IntroRectangles_0);
 		CSprite2d* ScriptSprites = gaddr<CSprite2d*>(Address::ScriptSprites_0);
-		void* cjk_lib = nullptr;
 
 		bool make_hooks = []() {
 				memory::make_call(gaddr(Address::RwRenderStateSet_call0), &OnRwRenderStateSet);
