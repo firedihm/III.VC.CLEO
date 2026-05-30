@@ -49,6 +49,7 @@ private:
 				bool cond_result;
 				ushort and_or_state;
 				bool not_flag;
+				int argc;
 		};
 
 		struct RegData {
