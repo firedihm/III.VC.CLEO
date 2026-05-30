@@ -454,9 +454,9 @@ CLEO_CALL(Script* script)
 {
         script->CollectParameters(2);
         int address = game::ScriptParams[0].nVar;
-        int param_count = game::ScriptParams[1].nVar;
+        int argc = game::ScriptParams[1].nVar;
 
-        script->CollectParameters(param_count);
+        script->CollectParameters(argc);
 
         /*
         	We didn't actually read all params this opcode provides just yet: after we read values that caller 
@@ -466,7 +466,8 @@ CLEO_CALL(Script* script)
         script->push_call_frame();
 
         std::memset(script->local_vars_, 0, sizeof(script->local_vars_));
-        std::memcpy(script->local_vars_, game::ScriptParams, param_count * sizeof(ScriptParam));
+        std::memcpy(script->local_vars_, game::ScriptParams, argc * sizeof(ScriptParam));
+        script->call_stack_->argc = argc;
 
         script->jump(address);
 
@@ -477,16 +478,16 @@ eOpcodeResult __stdcall
 CLEO_RETURN(Script* script)
 {
         script->CollectParameters(1);
-        int param_count = game::ScriptParams[0].nVar;
+        int argc = game::ScriptParams[0].nVar;
 
         // collect callee's retvals; ScriptParam::Type::EOP isn't consumed here, but it's no problem...
-        script->CollectParameters(param_count);
+        script->CollectParameters(argc);
 
         // ...since we return to caller anyway
         script->pop_call_frame();
 
         // continue reading indexes of caller's local_vars_ to store callee's retvals
-        script->StoreParameters(param_count);
+        script->StoreParameters(argc);
 
         // consume ScriptParam::Type::EOP
         script->ip_++;
