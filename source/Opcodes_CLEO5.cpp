@@ -12,22 +12,39 @@ GET_PLATFORM(Script* script)
 }
 
 eOpcodeResult __stdcall
+GET_CLEO_ARG_COUNT(Script* script)
+{
+		CallFrame* callee = script->call_stack_;
+
+		game::ScriptParams[0].nVar = callee ? callee->argc : 0;
+		script->StoreParameters(1);
+
+		return OR_CONTINUE;
+}
+
+eOpcodeResult __stdcall
+WAIT_UNTIL_GAME_IS_LOADED(Script* script)
+{
+
+}
+
+eOpcodeResult __stdcall
 CLEO_RETURN_WITH(Script* script)
 {
 		script->CollectParameters(2);
 		bool conditional_result = game::ScriptParams[0].nVar;
-		int param_count = game::ScriptParams[1].nVar;
+		int argc = game::ScriptParams[1].nVar;
 
 		script->UpdateCompareFlag(conditional_result);
 
 		// collect callee's retvals; ScriptParam::Type::EOP isn't consumed here, but it's no problem...
-		script->CollectParameters(param_count);
+		script->CollectParameters(argc);
 
 		// ...since we return to caller anyway
 		script->pop_call_frame();
 
 		// continue reading indexes of caller's local_vars_ to store callee's retvals
-		script->StoreParameters(param_count);
+		script->StoreParameters(argc);
 
 		// consume ScriptParam::Type::EOP
 		script->ip_++;
@@ -52,6 +69,8 @@ void
 opcodes::reg_CLEO5()
 {
 		reg(0x0DD5, &GET_PLATFORM);
+		reg(0x2000, &GET_CLEO_ARG_COUNT);
+		reg(0x2001, &WAIT_UNTIL_GAME_IS_LOADED);
 		reg(0x2002, &CLEO_RETURN_WITH);
 		reg(0x2003, &CLEO_RETURN_FAIL);
 }
