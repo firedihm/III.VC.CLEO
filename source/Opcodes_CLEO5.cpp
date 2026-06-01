@@ -14,18 +14,12 @@ GET_PLATFORM(Script* script)
 eOpcodeResult __stdcall
 GET_CLEO_ARG_COUNT(Script* script)
 {
-		CallFrame* callee = script->call_stack_;
+		auto* callee = script->call_stack_;
 
 		game::ScriptParams[0].nVar = callee ? callee->argc : 0;
 		script->StoreParameters(1);
 
 		return OR_CONTINUE;
-}
-
-eOpcodeResult __stdcall
-WAIT_UNTIL_GAME_IS_LOADED(Script* script)
-{
-
 }
 
 eOpcodeResult __stdcall
@@ -70,7 +64,6 @@ opcodes::reg_CLEO5()
 {
 		reg(0x0DD5, &GET_PLATFORM);
 		reg(0x2000, &GET_CLEO_ARG_COUNT);
-		reg(0x2001, &WAIT_UNTIL_GAME_IS_LOADED);
 		reg(0x2002, &CLEO_RETURN_WITH);
 		reg(0x2003, &CLEO_RETURN_FAIL);
 }
